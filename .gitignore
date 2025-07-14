@@ -1,0 +1,65 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.xcuserstate
+**/.xcode.env.local
+
+# React Native
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+pnpm-lock.yaml
+
+# Metro
+.metro-health-check*
+
+# CocoaPods
+**/Pods/
+**/*.lock
+
+# Debug and development files
+debug_*.md
+MDNS_*.md
+CRITICAL_*.md
+*_DEBUG.md
+*_ERROR_FIX.md
+SimpleHTTPServer.tsx
+quick_test.md
+test_procedure.md
+
+# Temporary development scripts
+manual-connect.swift
+manual-test.sh
+simple-test.swift
+clipboard-monitor.swift
+clipboard-test.sh
+keyboard-test.sh
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+.build/
