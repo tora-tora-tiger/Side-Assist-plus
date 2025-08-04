@@ -1,10 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
 import { NetworkService } from '../services/NetworkService';
+import { NetworkPermissionService } from '../services/NetworkPermissionService';
 
 export const useConnection = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [macIP, setMacIP] = useState<string>('');
   const [isSearching, setIsSearching] = useState(false);
+  const [showPermissionGuide, setShowPermissionGuide] = useState(false);
   const connectionMonitorRef = useRef<NodeJS.Timeout | null>(null);
 
   const startConnectionMonitoring = useCallback(() => {
@@ -45,11 +47,23 @@ export const useConnection = () => {
     setMacIP('Scanning network...');
 
     try {
+      // 権限チェックを先に実行
+      const shouldShowGuide =
+        await NetworkPermissionService.shouldShowPermissionGuide();
+      if (shouldShowGuide) {
+        setShowPermissionGuide(true);
+        setMacIP('Network permission required');
+        setIsConnected(false);
+        setIsSearching(false);
+        return;
+      }
+
       const foundIP = await NetworkService.scanForServer();
 
       if (foundIP) {
         setMacIP(foundIP);
         setIsConnected(true);
+        setShowPermissionGuide(false);
         console.log('✅ Found Mac server at:', foundIP);
       } else {
         setMacIP('No server found');
@@ -60,6 +74,11 @@ export const useConnection = () => {
       console.error('Network scan error:', error);
       setMacIP('Scan failed');
       setIsConnected(false);
+
+      // エラーが権限関連の可能性をチェック
+      const shouldShowGuide =
+        await NetworkPermissionService.shouldShowPermissionGuide();
+      setShowPermissionGuide(shouldShowGuide);
     } finally {
       setIsSearching(false);
     }
@@ -76,13 +95,19 @@ export const useConnection = () => {
     [macIP, isConnected],
   );
 
+  const dismissPermissionGuide = useCallback(() => {
+    setShowPermissionGuide(false);
+  }, []);
+
   return {
     isConnected,
     macIP,
     isSearching,
+    showPermissionGuide,
     startConnectionMonitoring,
     stopConnectionMonitoring,
     scanForServer,
     sendText,
+    dismissPermissionGuide,
   };
 };

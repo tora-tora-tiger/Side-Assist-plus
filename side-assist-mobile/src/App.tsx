@@ -13,6 +13,7 @@ import { StatusIndicator } from './components/StatusIndicator';
 import { StatusMessage } from './components/StatusMessage';
 import { MainButton } from './components/MainButton';
 import { SettingsPanel } from './components/SettingsPanel';
+import { NetworkPermissionGuide } from './components/NetworkPermissionGuide';
 import { commonStyles, buttonStyles } from './styles/commonStyles';
 
 const App = () => {
@@ -23,10 +24,12 @@ const App = () => {
     isConnected,
     macIP,
     isSearching,
+    showPermissionGuide,
     startConnectionMonitoring,
     stopConnectionMonitoring,
     scanForServer,
     sendText,
+    dismissPermissionGuide,
   } = useConnection();
 
   useEffect(() => {
@@ -85,6 +88,11 @@ const App = () => {
         macIP={macIP}
         onClose={() => setShowSettings(false)}
         onRefresh={scanForServer}
+      />
+
+      <NetworkPermissionGuide
+        isVisible={showPermissionGuide}
+        onDismiss={dismissPermissionGuide}
       />
     </View>
   );
