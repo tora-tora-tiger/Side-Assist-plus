@@ -63,15 +63,6 @@ if [ -f "side-assist-mobile/.metro.pid" ]; then
     echo "   PIDファイルから Metro終了: $SAVED_PID"
 fi
 
-# Mac サーバー終了 (レガシー)
-echo "🍎 Mac サーバー終了中 (レガシー)..."
-MAC_LEGACY_PIDS=$(ps aux | grep "swift run\|MacCompanion" | grep -v grep | awk '{print $2}')
-if [ ! -z "$MAC_LEGACY_PIDS" ]; then
-    echo $MAC_LEGACY_PIDS | xargs kill -9 2>/dev/null
-    echo "   Mac サーバー (レガシー) 終了完了"
-else
-    echo "   Mac サーバー (レガシー) は実行されていません"
-fi
 
 # ADB転送削除
 echo "🔗 ADB転送削除中..."
@@ -82,10 +73,8 @@ echo ""
 echo "✅ 全プロセス終了完了！"
 echo ""
 echo "📁 プロジェクト構造:"
-echo "  side-assist-desktop/   # Tauri v2 デスクトップアプリ (推奨)"
+echo "  side-assist-desktop/   # Tauri v2 デスクトップアプリ"
 echo "  side-assist-mobile/    # React Native モバイルアプリ"
-echo "  side-assist-server/    # Swift サーバー (レガシー)"
 echo ""
 echo "🚀 再起動方法:"
-echo "  ./run.sh desktop   # Tauri デスクトップアプリ (推奨)"
-echo "  ./run.sh mac       # Swift サーバー (レガシー)"
+echo "  ./run.sh desktop   # Tauri デスクトップアプリ"

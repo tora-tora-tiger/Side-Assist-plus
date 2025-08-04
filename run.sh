@@ -84,11 +84,6 @@ if [ "$1" == "desktop" ]; then
         exit 1
     fi
 
-elif [ "$1" == "mac" ]; then
-    echo "🍎 Mac サーバー起動 (レガシー)..."
-    echo "⚠️  推奨: ./run.sh desktop を使用してください"
-    cd side-assist-server
-    ./start-mac.sh
 elif [ "$1" == "metro" ]; then
     echo "Metro Bundler 起動..."
     
@@ -269,13 +264,12 @@ elif [ "$1" == "android" ]; then
     
 else
     echo "使用方法:"
-    echo "  ./run.sh desktop  # Tauri デスクトップアプリ起動 (推奨)"
-    echo "  ./run.sh mac      # Mac側サーバー起動 (レガシー)"
+    echo "  ./run.sh desktop  # Tauri デスクトップアプリ起動"
     echo "  ./run.sh metro    # Metro Bundler起動"
     echo "  ./run.sh ios      # iPhone側アプリセットアップ"
     echo "  ./run.sh android  # Android側アプリセットアップ"
     echo ""
-    echo "🎯 手順 (新構成):"
+    echo "🎯 手順:"
     echo "  1. ./run.sh desktop     (ターミナル1) - サーバー機能付きデスクトップアプリ"
     echo "  2. ./run.sh metro       (ターミナル2) - React Native開発サーバー"
     echo "  3. ./run.sh ios         (Xcode開く)"
@@ -287,5 +281,4 @@ else
     echo "📁 プロジェクト構造:"
     echo "  side-assist-desktop/   # Tauri v2 デスクトップアプリ (Rust + React)"
     echo "  side-assist-mobile/    # React Native モバイルアプリ"
-    echo "  side-assist-server/    # Swift サーバー (レガシー)"
 fi
