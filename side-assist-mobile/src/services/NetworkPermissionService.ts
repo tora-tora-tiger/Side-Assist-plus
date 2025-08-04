@@ -26,7 +26,9 @@ export class NetworkPermissionService {
       console.log('Network permission check passed');
       return true;
     } catch (error: any) {
-      console.log('Network permission check - no access to router, checking common gateway');
+      console.log(
+        'Network permission check - no access to router, checking common gateway',
+      );
 
       // ルーターに失敗した場合、別の一般的なゲートウェイをチェック
       try {

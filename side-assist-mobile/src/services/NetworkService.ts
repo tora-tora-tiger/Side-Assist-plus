@@ -34,7 +34,7 @@ export class NetworkService {
 
   static async sendText(ip: string, text: string): Promise<boolean> {
     try {
-      const response = await fetch(`http://${ip}:8080/type`, {
+      const response = await fetch(`http://${ip}:8080/input`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
