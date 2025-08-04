@@ -1,26 +1,49 @@
-# 🚀 Side Assist
+# 🚀 Side Assist Plus
 
-**モバイルボタン → Mac自動入力**
+**モバイルボタン → デスクトップ自動入力 (クロスプラットフォーム対応)**
 
 ## 🎯 できること
 
-iPhone/Androidで「ultradeepthink」ボタン → Macで自動入力される
+iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入力される
 
 ## 📁 プロジェクト構成
 
 ```
 Side-Assist-plus/
-├── side-assist-mobile/     # React Nativeモバイルアプリ
-├── side-assist-server/     # Swift HTTPサーバー (一時的)
-├── side-assist-desktop/    # Tauriデスクトップアプリ (今後)
+├── side-assist-desktop/    # Tauri v2 デスクトップアプリ (推奨)
+│   ├── src/               # React + TypeScript UI
+│   ├── src-tauri/         # Rust バックエンド + HTTP サーバー
+│   └── locales/           # 国際化 (日本語/英語)
+├── side-assist-mobile/     # React Native モバイルアプリ
+│   ├── src/               # コンポーネント分割済み
+│   │   ├── components/    # UI コンポーネント
+│   │   ├── hooks/         # カスタムフック
+│   │   ├── services/      # ネットワーク通信
+│   │   └── styles/        # スタイル定義
+│   └── ios/android/       # ネイティブプラットフォーム
+├── side-assist-server/     # Swift HTTPサーバー (レガシー)
 └── docs/                  # ドキュメント
 ```
 
 ## ⚡ 超簡単！ワンコマンド実行
 
-### 🍎 iOS の場合
+### 🖥️ 新構成 (推奨) - Tauri デスクトップ
 ```bash
-# ターミナル1: Mac サーバー
+# ターミナル1: Tauri デスクトップアプリ (サーバー機能内蔵)
+./run.sh desktop
+
+# ターミナル2: Metro Bundler  
+./run.sh metro
+
+# ターミナル3: モバイルアプリ
+./run.sh ios      # iOS (Xcode)
+# または
+./run.sh android  # Android (完全自動)
+```
+
+### 🍎 レガシー構成 - Swift サーバー
+```bash
+# ターミナル1: Mac サーバー (レガシー)
 ./run.sh mac
 
 # ターミナル2: iOS アプリ
@@ -30,18 +53,9 @@ Side-Assist-plus/
 ./run.sh metro  # Metro 起動
 ```
 
-### 🤖 Android の場合 (完全自動)
-```bash
-# ターミナル1: Mac サーバー  
-./run.sh mac
-
-# ターミナル2: Android 完全自動実行  
-./run.sh android  # 全て自動: Metro + ADB設定 + ビルド + 実行
-```
-
 ### 🛑 全停止
 ```bash
-./stop.sh  # 全プロセス自動終了
+./stop.sh  # 全プロセス自動終了 (Tauri + Metro + Swift)
 ```
 
 ## 🎮 使い方
@@ -53,27 +67,56 @@ Side-Assist-plus/
 
 ## 📱 対応プラットフォーム
 
+### デスクトップ (サーバー側)
+| プラットフォーム | 実装状況 | 実行コマンド | 備考 |
+|-------------|---------|------------|------|
+| **macOS** | ✅ 完成 | `./run.sh desktop` | Tauri v2 (推奨) |
+| **Windows** | ✅ 完成 | `./run.sh desktop` | Tauri v2 クロスプラットフォーム |
+| **Linux** | ✅ 完成 | `./run.sh desktop` | Tauri v2 クロスプラットフォーム |
+| **macOS** | ✅ 完成 | `./run.sh mac` | Swift (レガシー) |
+
+### モバイル (クライアント側)
 | プラットフォーム | 実装状況 | 実行コマンド | 自動化レベル |
 |-------------|---------|------------|------------|
 | **Android** | ✅ 完成 | `./run.sh android` | 🤖 完全自動 |
 | **iOS** | ✅ 完成 | `./run.sh ios` + `./run.sh metro` | ⚡ 半自動 |
-| **macOS** | ✅ 完成 | `./run.sh mac` | 🚀 ワンコマンド |
 
 ## 🛠️ 技術スタック
 
-- **モバイル**: React Native 0.80.1 (クロスプラットフォーム)
-- **バンドラー**: Metro Bundler (最適化済み)
-- **サーバー**: Swift HTTP Server (macOS)
-- **通信**: HTTP REST API + ADB ポート転送
-- **入力**: macOS Accessibility API
-- **パッケージ管理**: npm (最適化済み)
+### デスクトップ (Tauri v2 - 推奨)
+- **フロントエンド**: React + TypeScript + Tailwind CSS v4
+- **バックエンド**: Rust + Axum HTTP Server  
+- **入力シミュレーション**: enigo (クロスプラットフォーム)
+- **国際化**: react-i18next (日本語/英語)
+- **パッケージ管理**: pnpm
+- **コード品質**: ESLint + Prettier + Lefthook
+
+### モバイル (React Native)
+- **フレームワーク**: React Native 0.80.1
+- **言語**: TypeScript
+- **アーキテクチャ**: コンポーネント分割 + カスタムフック
+- **ネットワーク**: HTTP REST API + Service Discovery
+- **バンドラー**: Metro Bundler
+- **パッケージ管理**: npm
+
+### レガシー (Swift - macOS専用)
+- **サーバー**: Swift HTTP Server + Network Framework
+- **入力**: Carbon Framework (macOS Accessibility API)
 
 ## 🔧 最適化機能
 
+### デスクトップ
+- **クロスプラットフォーム**: Windows/macOS/Linux 単一コードベース
+- **パフォーマンス**: Rust ネイティブパフォーマンス
+- **UI**: システムフォント使用でプライバシー&パフォーマンス向上
+- **国際化**: ブラウザ言語検出 + リアルタイム切り替え
+
+### モバイル  
+- **コード品質**: 自動lint/format + git hooks
+- **アーキテクチャ**: 機能別コンポーネント分割
 - **ビルド高速化**: Gradle 並列実行 + キャッシュ
 - **Metro最適化**: InitializeCore.js 問題解決
 - **自動プロセス管理**: PID追跡 + 自動終了
-- **エラー回避**: キャッシュクリア + ADB自動設定
 - **リアルタイム通信**: ハートビート監視 + 自動再接続
 
 ## 🔄 通信システム
