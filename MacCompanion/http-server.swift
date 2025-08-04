@@ -5,12 +5,18 @@ import Carbon
 class HTTPKeyboardServer {
     private var listener: NWListener?
     private let port: NWEndpoint.Port = 8080
+    private var connectedClients: Set<String> = []
+    private var lastHealthCheck: [String: Date] = [:]
     
     func start() {
         print("🚀 HTTP Keyboard Server Starting on port \(port)")
-        print("🎯 Waiting for iPad HTTP requests...")
-        print("📱 iPad can now send POST to http://localhost:\(port)/input")
+        print("🎯 Waiting for mobile HTTP requests...")
+        print("📱 Mobile can now send POST to http://localhost:\(port)/input")
+        print("💓 Health check endpoint: http://localhost:\(port)/health")
         print("")
+        
+        // Start client cleanup timer
+        startClientCleanupTimer()
         
         do {
             listener = try NWListener(using: .tcp, on: port)
@@ -98,9 +104,33 @@ class HTTPKeyboardServer {
         let method = parts[0]
         let path = parts[1]
         
-        // Handle health check endpoint
+        // Handle health check endpoint with client tracking
         if method == "GET" && path == "/health" {
-            sendResponse(connection, status: "200 OK", body: "{\"status\": \"ok\", \"service\": \"UltraDeepThink Mac Server\"}")
+            // Extract client ID from headers if present
+            var clientID = "anonymous"
+            for line in lines {
+                if line.lowercased().hasPrefix("x-client-id:") {
+                    clientID = String(line.dropFirst(12)).trimmingCharacters(in: .whitespaces)
+                    break
+                }
+            }
+            
+            // Update client tracking
+            connectedClients.insert(clientID)
+            lastHealthCheck[clientID] = Date()
+            
+            let responseBody = """
+            {
+                "status": "ok", 
+                "service": "UltraDeepThink Mac Server",
+                "clientID": "\(clientID)",
+                "timestamp": "\(Date().timeIntervalSince1970)",
+                "connectedClients": \(connectedClients.count)
+            }
+            """
+            
+            print("💓 Health check from \(clientID) - \(connectedClients.count) clients connected")
+            sendResponse(connection, status: "200 OK", body: responseBody)
             return
         }
         
@@ -232,6 +262,31 @@ class HTTPKeyboardServer {
         case ".": return 0x2F
         case " ": return 0x31
         default: return 0
+        }
+    }
+    
+    // Client cleanup timer - remove inactive clients
+    private func startClientCleanupTimer() {
+        Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { _ in
+            let now = Date()
+            let timeout: TimeInterval = 15.0 // 15 seconds timeout
+            
+            var clientsToRemove: [String] = []
+            for (clientID, lastSeen) in self.lastHealthCheck {
+                if now.timeIntervalSince(lastSeen) > timeout {
+                    clientsToRemove.append(clientID)
+                }
+            }
+            
+            for clientID in clientsToRemove {
+                self.connectedClients.remove(clientID)
+                self.lastHealthCheck.removeValue(forKey: clientID)
+                print("🗑️ Removed inactive client: \(clientID)")
+            }
+            
+            if !clientsToRemove.isEmpty {
+                print("📊 Active clients: \(self.connectedClients.count)")
+            }
         }
     }
 }

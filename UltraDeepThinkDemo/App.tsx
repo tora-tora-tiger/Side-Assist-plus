@@ -26,13 +26,16 @@ const App = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [buttonScale] = useState(new Animated.Value(1));
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionMonitor, setConnectionMonitor] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     console.log('🚀 [DEBUG] App component mounted');
     initializeService();
+    startConnectionMonitoring();
     return () => {
       console.log('🛑 [DEBUG] App component unmounting');
       stopService();
+      stopConnectionMonitoring();
     };
   }, []);
 
@@ -104,16 +107,26 @@ const App = () => {
   const testMacConnection = async (ip: string): Promise<boolean> => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1000);
+      const timeoutId = setTimeout(() => controller.abort(), 2000); // Increased timeout
       
       const response = await fetch(`http://${ip}:8080/health`, {
         method: 'GET',
         signal: controller.signal,
+        headers: {
+          'Cache-Control': 'no-cache',
+          'X-Client-ID': 'UltraDeepThink-Mobile',
+        },
       });
       
       clearTimeout(timeoutId);
-      return response.ok;
-    } catch {
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.status === 'ok';
+      }
+      return false;
+    } catch (error) {
+      console.log('🔍 Connection test failed:', error.message);
       return false;
     }
   };
@@ -193,12 +206,37 @@ const App = () => {
     }
   };
 
-  // TODO: Setup WebSocket connection event listeners
-  // useEffect(() => {
-  //   if (servicePublished) {
-  //     // Handle WebSocket connections
-  //   }
-  // }, [servicePublished]);
+  // Connection monitoring with heartbeat
+  const startConnectionMonitoring = () => {
+    const monitor = setInterval(async () => {
+      if (macIP) {
+        const isAlive = await testMacConnection(macIP);
+        if (isAlive !== isConnected) {
+          console.log(`🔄 Connection status changed: ${isAlive ? 'Connected' : 'Disconnected'}`);
+          setIsConnected(isAlive);
+          
+          if (!isAlive) {
+            // Connection lost - try to reconnect
+            console.log('🔍 Connection lost, attempting to reconnect...');
+            scanForMacServer();
+          }
+        }
+      } else if (isConnected) {
+        // Had connection but lost IP
+        setIsConnected(false);
+        scanForMacServer();
+      }
+    }, 5000); // Check every 5 seconds
+    
+    setConnectionMonitor(monitor);
+  };
+
+  const stopConnectionMonitoring = () => {
+    if (connectionMonitor) {
+      clearInterval(connectionMonitor);
+      setConnectionMonitor(null);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -220,19 +258,54 @@ const App = () => {
       </View>
 
       <View style={styles.content}>
+        {/* Connection Status Message */}
+        {!isConnected && (
+          <View style={styles.statusMessage}>
+            <Text style={styles.statusIcon}>⚠️</Text>
+            <Text style={styles.statusText}>
+              {isSearchingMac ? 'Searching for Mac...' : 'Mac not found'}
+            </Text>
+            <Text style={styles.statusSubtext}>
+              {isSearchingMac ? 'Please wait' : 'Tap settings to connect'}
+            </Text>
+          </View>
+        )}
+
         {/* Main Button */}
         <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
           <TouchableOpacity
             style={[
               styles.mainButton,
-              { opacity: isConnected ? 1 : 0.3 }
+              isConnected ? styles.mainButtonConnected : styles.mainButtonDisconnected
             ]}
             onPress={sendUltraDeepThink}
             disabled={!isConnected}
-            activeOpacity={0.8}>
-            <Text style={styles.mainButtonText}>ultradeepthink</Text>
+            activeOpacity={isConnected ? 0.8 : 1}>
+            <View style={styles.buttonContent}>
+              {!isConnected && (
+                <Text style={styles.buttonIcon}>🔒</Text>
+              )}
+              <Text style={[
+                styles.mainButtonText,
+                isConnected ? styles.mainButtonTextConnected : styles.mainButtonTextDisconnected
+              ]}>
+                ultradeepthink
+              </Text>
+              {!isConnected && (
+                <Text style={styles.buttonSubtext}>Disabled</Text>
+              )}
+            </View>
           </TouchableOpacity>
         </Animated.View>
+
+        {/* Connection Hint */}
+        {isConnected && (
+          <View style={styles.connectedHint}>
+            <Text style={styles.connectedIcon}>✅</Text>
+            <Text style={styles.connectedText}>Connected to Mac</Text>
+            <Text style={styles.connectedSubtext}>Ready to send command</Text>
+          </View>
+        )}
       </View>
 
       {/* Settings Panel */}
@@ -318,23 +391,96 @@ const styles = StyleSheet.create({
     width: isPhone ? 280 : 320,
     height: isPhone ? 280 : 320,
     borderRadius: isPhone ? 140 : 160,
-    backgroundColor: '#111',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#333',
+    elevation: 10,
+  },
+  mainButtonConnected: {
+    backgroundColor: '#111',
+    borderColor: '#00ff88',
     shadowColor: '#00ff88',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOpacity: 0.4,
+    shadowRadius: 25,
+  },
+  mainButtonDisconnected: {
+    backgroundColor: '#222',
+    borderColor: '#555',
+    borderStyle: 'dashed',
+    shadowColor: '#ff6b6b',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+  },
+  buttonContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonIcon: {
+    fontSize: 24,
+    marginBottom: 8,
   },
   mainButtonText: {
     fontSize: isPhone ? 24 : 28,
     fontWeight: '300',
-    color: '#fff',
     letterSpacing: 2,
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
+    textAlign: 'center',
+  },
+  mainButtonTextConnected: {
+    color: '#fff',
+  },
+  mainButtonTextDisconnected: {
+    color: '#888',
+  },
+  buttonSubtext: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 8,
+    fontWeight: '400',
+  },
+  statusMessage: {
+    alignItems: 'center',
+    marginBottom: 40,
+    paddingHorizontal: 20,
+  },
+  statusIcon: {
+    fontSize: 32,
+    marginBottom: 12,
+  },
+  statusText: {
+    fontSize: 18,
+    color: '#ff6b6b',
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  statusSubtext: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+  },
+  connectedHint: {
+    alignItems: 'center',
+    marginTop: 30,
+    paddingHorizontal: 20,
+  },
+  connectedIcon: {
+    fontSize: 24,
+    marginBottom: 8,
+  },
+  connectedText: {
+    fontSize: 16,
+    color: '#00ff88',
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  connectedSubtext: {
+    fontSize: 14,
+    color: '#aaa',
+    textAlign: 'center',
   },
   settingsPanel: {
     position: 'absolute',
