@@ -195,12 +195,17 @@ elif [ "$1" == "android" ]; then
         npm install
     fi
     
-    # 既存プロセス終了
-    echo "🛑 既存のMetroプロセスを終了中..."
-    EXISTING_PIDS=$(lsof -ti:8081 2>/dev/null)
-    if [ ! -z "$EXISTING_PIDS" ]; then
-        echo $EXISTING_PIDS | xargs kill -9 2>/dev/null
-        sleep 1
+    # Metro接続確認
+    echo "🔗 Metro Bundler接続確認中..."
+    if ! curl -s http://localhost:8081/status > /dev/null 2>&1; then
+        echo "⚠️  Metro Bundlerが起動していません"
+        echo "📋 先に以下を実行してください:"
+        echo "   ./run.sh metro"
+        echo ""
+        echo "❌ Android セットアップを中止します"
+        exit 1
+    else
+        echo "✅ Metro Bundler接続OK"
     fi
     
     # Android実機接続確認
@@ -215,52 +220,36 @@ elif [ "$1" == "android" ]; then
         exit 1
     fi
     
+    # Android権限チェック説明
+    echo "📱 Android権限設定について:"
+    echo "   アプリ初回起動時に以下の権限許可が必要です:"
+    echo "   1. 📶 ネットワーク使用許可 → 「許可」を選択"
+    echo "   2. 🔍 ローカルネットワークアクセス → 「許可」を選択"
+    echo ""
+    echo "   ⚠️  権限を拒否すると、デスクトップサーバーに接続できません"
+    echo ""
+    
     # ADBポート転送設定
     echo "🔗 ADB ポート転送設定中..."
     adb reverse tcp:8081 tcp:8081
-    
-    # Metro Bundler起動 (バックグラウンド)
-    echo "📱 Metro Bundler起動中..."
-    npx react-native start --reset-cache &
-    METRO_PID=$!
-    
-    # Metro起動待機
-    echo "⏳ Metro起動を待機中..."
-    sleep 5
-    
-    # Metro接続確認
-    for i in {1..10}; do
-        if curl -s http://localhost:8081/status > /dev/null 2>&1; then
-            echo "✅ Metro起動完了"
-            break
-        fi
-        echo "   Metro起動中... ($i/10)"
-        sleep 2
-    done
     
     # Androidビルド&実行
     echo "🚀 Android実機でビルド&実行中..."
     npm run android
     
     echo ""
-    echo "✅ Android完全自動セットアップ完了！"
+    echo "✅ Android セットアップ完了！"
     echo ""
-    echo "📋 実行中のプロセス:"
-    echo "   Metro PID: $METRO_PID"
-    echo "   ADB転送: tcp:8081 -> tcp:8081"
+    echo "📋 次のステップ:"
+    echo "   1. ✅ Metro起動済み (http://localhost:8081)"
+    echo "   2. ✅ ADB転送設定済み (tcp:8081)"
+    echo "   3. ✅ Android実機にアプリインストール済み"
+    echo "   4. アプリで権限許可を確認"
+    echo "   5. デスクトップサーバーに接続してテスト"
     echo ""
-    echo "🛑 終了方法:"
-    echo "   kill $METRO_PID"
-    echo "   または Ctrl+C でスクリプト終了"
-    
-    # PIDをファイルに保存
-    echo $METRO_PID > .metro.pid
-    
-    # 終了シグナル処理
-    trap "kill $METRO_PID 2>/dev/null; rm -f .metro.pid; exit" INT TERM
-    
-    # スクリプト継続 (Metro監視)
-    wait $METRO_PID
+    echo "🔧 Metro接続エラーの場合:"
+    echo "   - Android設定 → WiFi → 同じネットワーク確認"
+    echo "   - ./stop.sh → ./run.sh metro → 再実行"
     
 else
     echo "使用方法:"
