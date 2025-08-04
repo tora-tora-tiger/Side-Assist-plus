@@ -4,18 +4,38 @@ echo "🛑 Side Assist Plus プロセス終了中..."
 
 # Tauri Desktop アプリ終了 (新構成)
 echo "🖥️  Tauri Desktop アプリ終了中..."
-TAURI_PIDS=$(ps aux | grep "tauri dev\|cargo tauri dev" | grep -v grep | awk '{print $2}')
+
+# Tauriプロセス終了 (複数パターン対応)
+TAURI_PIDS=$(ps aux | grep -E "tauri dev|cargo.*tauri|side-assist-desktop" | grep -v grep | awk '{print $2}')
 if [ ! -z "$TAURI_PIDS" ]; then
+    echo "   Tauriプロセス終了中... (PID: $TAURI_PIDS)"
     echo $TAURI_PIDS | xargs kill -TERM 2>/dev/null
-    sleep 2
+    sleep 3
+    
     # 強制終了が必要な場合
-    REMAINING_PIDS=$(ps aux | grep "tauri dev\|cargo tauri dev" | grep -v grep | awk '{print $2}')
+    REMAINING_PIDS=$(ps aux | grep -E "tauri dev|cargo.*tauri|side-assist-desktop" | grep -v grep | awk '{print $2}')
     if [ ! -z "$REMAINING_PIDS" ]; then
+        echo "   強制終了中... (PID: $REMAINING_PIDS)"
         echo $REMAINING_PIDS | xargs kill -9 2>/dev/null
+        sleep 1
     fi
-    echo "   Tauri Desktop終了完了"
+    echo "   ✅ Tauri Desktop終了完了"
 else
     echo "   Tauri Desktop は実行されていません"
+fi
+
+# Viteプロセス終了 (ポート1420)
+VITE_PIDS=$(lsof -ti:1420 2>/dev/null)
+if [ ! -z "$VITE_PIDS" ]; then
+    echo "   Viteサーバー終了中... (PID: $VITE_PIDS)"
+    echo $VITE_PIDS | xargs kill -TERM 2>/dev/null
+    sleep 2
+    # 強制終了が必要な場合
+    REMAINING_VITE_PIDS=$(lsof -ti:1420 2>/dev/null)
+    if [ ! -z "$REMAINING_VITE_PIDS" ]; then
+        echo $REMAINING_VITE_PIDS | xargs kill -9 2>/dev/null
+    fi
+    echo "   ✅ Viteサーバー終了完了"
 fi
 
 # ポート8080で動作中のサーバー終了 (Tauri/Swift両方)
