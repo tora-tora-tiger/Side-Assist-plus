@@ -49,14 +49,57 @@ elif [ "$1" == "ios" ]; then
     echo ""
     echo "🛑 終了: kill $METRO_PID"
     
+elif [ "$1" == "android" ]; then
+    echo "Android アプリセットアップ..."
+    
+    if [ ! -d "UltraDeepThinkDemo" ]; then
+        echo "❌ UltraDeepThinkDemo ディレクトリが見つかりません"
+        exit 1
+    fi
+    
+    cd UltraDeepThinkDemo
+    
+    # 依存関係チェック
+    if [ ! -d "node_modules" ]; then
+        echo "📦 依存関係インストール中..."
+        pnpm install
+    fi
+    
+    # Android Studio起動
+    echo "🤖 Android Studio起動中..."
+    open -a "Android Studio" android/
+    
+    # Metro起動
+    echo "📱 Metro bundler起動中..."
+    pnpm start &
+    METRO_PID=$!
+    
+    echo ""
+    echo "✅ セットアップ完了！"
+    echo ""
+    echo "📋 次のステップ:"
+    echo "   1. Android Studioでプロジェクト開く"
+    echo "   2. USB Debugging有効なAndroid実機を接続"
+    echo "   3. デバイス選択 → Android実機"
+    echo "   4. ▶️ Run 'app' でビルド&実行"
+    echo ""
+    echo "🔧 実機セットアップが必要な場合:"
+    echo "   - 設定 → システム → 開発者向けオプション → USBデバッグ ON"
+    echo "   - 設定 → セキュリティ → 提供元不明のアプリ ON"
+    echo ""
+    echo "🛑 終了: kill $METRO_PID"
+    
 else
     echo "使用方法:"
-    echo "  ./run.sh mac    # Mac側サーバー起動"
-    echo "  ./run.sh ios    # iPhone側アプリセットアップ"
+    echo "  ./run.sh mac      # Mac側サーバー起動"
+    echo "  ./run.sh ios      # iPhone側アプリセットアップ"
+    echo "  ./run.sh android  # Android側アプリセットアップ"
     echo ""
     echo "🎯 手順:"
-    echo "  1. ./run.sh mac    (別ターミナル)"
-    echo "  2. ./run.sh ios    (Xcode + Metro起動)"
-    echo "  3. XcodeでiPhone実機にビルド"
-    echo "  4. iPhoneアプリでテスト"
+    echo "  1. ./run.sh mac         (別ターミナル)"
+    echo "  2. ./run.sh ios         (Xcode + Metro起動)"
+    echo "     または"
+    echo "  2. ./run.sh android     (Android Studio + Metro起動)"
+    echo "  3. 実機にビルド&実行"
+    echo "  4. アプリでテスト"
 fi
