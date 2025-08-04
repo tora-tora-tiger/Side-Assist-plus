@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 export class NetworkPermissionService {
   /**
    * ネットワーク権限が許可されているかチェック
-   * iOS: 実際のネットワークスキャンを試行して判定
+   * iOS: 最小限のリクエストで権限チェック
    * Android: 常にtrue（権限不要）
    */
   static async checkNetworkPermission(): Promise<boolean> {
@@ -12,59 +12,59 @@ export class NetworkPermissionService {
     }
 
     try {
-      // ローカルネットワークスキャンを試行
-      // 192.168.1.1 へのテスト接続で権限チェック
+      // 単一の軽量なリクエストで権限チェック
+      // ルーターへの軽いHEADリクエスト（通常は192.168.1.1）
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const timeoutId = setTimeout(() => controller.abort(), 1500);
 
-      const response = await fetch('http://192.168.1.1:80', {
+      await fetch('http://192.168.1.1:80', {
         method: 'HEAD',
         signal: controller.signal,
       });
 
-      if (!response.ok) {
-        throw new Error('Network request failed');
-      }
-
-      // スキャン成功なら権限あり
-      console.log('Network permission check passed');
-
       clearTimeout(timeoutId);
-
-      // 接続成功/失敗に関わらず、エラーが出なければ権限あり
+      console.log('Network permission check passed');
       return true;
     } catch (error: any) {
-      console.log('Network permission check error:', error);
+      console.log('Network permission check - no access to router, checking common gateway');
 
-      // iOS でローカルネットワーク権限がない場合の特定エラー
-      if (
-        error.message?.includes('Network request failed') ||
-        error.name === 'AbortError'
-      ) {
-        // 権限がない可能性が高い
+      // ルーターに失敗した場合、別の一般的なゲートウェイをチェック
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1500);
+
+        await fetch('http://192.168.0.1:80', {
+          method: 'HEAD',
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+        console.log('Network permission check passed (alternative gateway)');
+        return true;
+      } catch (secondError: any) {
+        // 両方失敗した場合は権限なしと判定
+        console.log('Network permission denied - no access to local network');
         return false;
       }
-
-      // その他のエラーは権限ありと判定
-      return true;
     }
   }
 
   /**
    * ネットワークスキャンを実行して、サーバーが発見できるかテスト
+   * 権限チェック後にのみ実行される軽量なテスト
    */
   static async testServerDiscovery(): Promise<boolean> {
     try {
-      // 一般的なローカルIPレンジをテスト
-      const subnets = ['192.168.1', '192.168.0', '10.0.0', '172.16.0'];
+      // 権限が確認済みの場合のみ、最小限のサーバー発見テストを実行
+      const subnets = ['192.168.1', '192.168.0']; // 最も一般的な2つのサブネットのみ
 
       for (const subnet of subnets) {
-        for (let i = 1; i <= 10; i++) {
-          // 最初の10個のIPのみテスト
+        for (let i = 2; i <= 5; i++) {
+          // 一般的なサーバーIPの範囲のみテスト（1はルーター、6以降は少ない）
           try {
             const testIP = `${subnet}.${i}`;
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 1000);
+            const timeoutId = setTimeout(() => controller.abort(), 800);
 
             await fetch(`http://${testIP}:8080/health`, {
               method: 'GET',

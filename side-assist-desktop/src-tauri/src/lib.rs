@@ -221,6 +221,7 @@ async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Erro
     let app = Router::new()
         .route("/health", get(health_check))
         .route("/input", post(handle_input))
+        .route("/type", post(handle_input))  // モバイルアプリとの互換性のため
         .layer(CorsLayer::permissive())
         .with_state(state);
 
@@ -229,6 +230,7 @@ async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Erro
     println!("📱 Mobile endpoints:");
     println!("  - GET  /health - Health check with client tracking");
     println!("  - POST /input  - Keyboard input simulation");
+    println!("  - POST /type   - Keyboard input simulation (mobile compatibility)");
     
     axum::serve(listener, app).await?;
     Ok(())
