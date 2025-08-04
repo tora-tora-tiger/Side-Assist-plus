@@ -173,16 +173,19 @@ check_unused_keys
 echo "========================================"
 if [ $ISSUES_FOUND -eq 0 ]; then
     echo -e "${GREEN}🎉 No i18n issues found! Your app is fully internationalized.${NC}"
+    echo
+    echo -e "${BLUE}💡 Tips:${NC}"
+    echo "   - Use t('key.name') for user-facing strings"
+    echo "   - Keep technical strings (CSS classes, URLs) untranslated"
+    echo "   - Test language switching in the app"
+    echo
+    exit 0
 else
     echo -e "${RED}🚨 Found $ISSUES_FOUND potential i18n issues.${NC}"
     echo -e "${YELLOW}📝 Review the issues above and consider adding translations.${NC}"
+    echo
+    echo -e "${RED}💥 Commit blocked due to i18n issues!${NC}"
+    echo -e "${YELLOW}Fix the issues above and try again.${NC}"
+    echo
+    exit 1
 fi
-
-echo
-echo -e "${BLUE}💡 Tips:${NC}"
-echo "   - Use t('key.name') for user-facing strings"
-echo "   - Keep technical strings (CSS classes, URLs) untranslated"
-echo "   - Test language switching in the app"
-echo
-
-exit $ISSUES_FOUND

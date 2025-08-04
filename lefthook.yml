@@ -1,0 +1,26 @@
+# Side Assist Plus - Lefthook Configuration
+# Git hooks for automated quality checks
+
+pre-commit:
+  parallel: true
+  commands:
+    # Desktop i18n check
+    desktop-i18n:
+      root: "side-assist-desktop/"
+      run: "./check-i18n.sh"
+      fail_text: "❌ Desktop i18n check failed. Fix internationalization issues before committing."
+      glob: "side-assist-desktop/**/*.{ts,tsx,json}"
+      
+    # Mobile linting (if needed in future)
+    # mobile-lint:
+    #   root: "side-assist-mobile/"
+    #   run: "npm run lint"
+    #   files: git diff --name-only --cached | grep -E "\.(js|jsx|ts|tsx)$" | grep "side-assist-mobile"
+
+# Skip hooks for emergency commits
+skip_output:
+  - meta
+  - summary
+
+# Colors for better output
+colors: true
