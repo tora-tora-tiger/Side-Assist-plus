@@ -8,7 +8,12 @@ import {
   Alert,
   Platform,
   TextInput,
+  NativeModules,
+  Dimensions,
 } from 'react-native';
+
+const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
+const isPhone = screenWidth < 768; // iPhone判定
 
 // mDNS + HTTP approach - the reliable solution!
 const SERVICE_TYPE = '_ultradeepthink._tcp';
@@ -20,12 +25,16 @@ const App = () => {
   const [connectedClients, setConnectedClients] = useState<string[]>([]);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [localIP, setLocalIP] = useState<string>('Detecting...');
+  const [macIP, setMacIP] = useState<string>('Searching...');
   const [showManualMode, setShowManualMode] = useState(false);
+  const [isSearchingMac, setIsSearchingMac] = useState(false);
 
   useEffect(() => {
+    console.log('🚀 [DEBUG] App component mounted');
     initializeService();
     return () => {
       // Cleanup when component unmounts
+      console.log('🛑 [DEBUG] App component unmounting');
       stopService();
     };
   }, []);
@@ -52,16 +61,84 @@ const App = () => {
     setLocalIP('Settings → WiFi → (i) → IP Address');
   };
 
+  const scanForMacServer = async () => {
+    console.log('🔍 [DEBUG] scanForMacServer started');
+    setIsSearchingMac(true);
+    setMacIP('Scanning network...');
+    
+    try {
+      // Get current IP range
+      const subnet = await getNetworkSubnet();
+      console.log('🔍 [DEBUG] Scanning subnet:', subnet);
+      
+      // Try common IP addresses in parallel
+      const promises = [];
+      for (let i = 1; i <= 254; i++) {
+        const testIP = `${subnet}.${i}`;
+        promises.push(testMacConnection(testIP));
+      }
+      
+      const results = await Promise.allSettled(promises);
+      const successfulIPs = results
+        .map((result, index) => ({
+          ip: `${subnet}.${index + 1}`,
+          success: result.status === 'fulfilled' && result.value
+        }))
+        .filter(item => item.success)
+        .map(item => item.ip);
+      
+      if (successfulIPs.length > 0) {
+        setMacIP(successfulIPs[0]);
+        console.log('✅ [DEBUG] Found Mac server at:', successfulIPs[0]);
+        console.log('✅ [DEBUG] All found servers:', successfulIPs);
+      } else {
+        setMacIP('Not found - Use manual mode');
+        console.log('❌ [DEBUG] No Mac server found on subnet:', subnet);
+      }
+    } catch (error) {
+      console.error('Scan error:', error);
+      setMacIP('Scan failed - Use manual mode');
+    } finally {
+      setIsSearchingMac(false);
+    }
+  };
+
+  const getNetworkSubnet = async (): Promise<string> => {
+    // Simple approach: assume 192.168.1.x or 192.168.0.x
+    // In production, would use native network info
+    return '192.168.1';
+  };
+
+  const testMacConnection = async (ip: string): Promise<boolean> => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1000);
+      
+      const response = await fetch(`http://${ip}:8080/health`, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      return response.ok;
+    } catch {
+      return false;
+    }
+  };
+
   const startService = async () => {
     try {
-      console.log('🚀 Starting Clipboard Service Mode...');
+      console.log('🚀 Starting Auto HTTP Service...');
       
       setServicePublished(true);
       setShowManualMode(true);
       
+      // Start scanning for Mac server
+      scanForMacServer();
+      
       Alert.alert(
-        'Service Started (Clipboard Mode)!', 
-        'Simple clipboard-based communication is now active.\n\n1. On Mac: Run clipboard monitor\n2. iPad: Press "Send Message"\n3. Mac: Automatic typing!'
+        'Service Started!', 
+        'Auto-scanning for Mac server...\n\nMake sure Mac HTTP server is running:\n./start-mac.sh'
       );
       
     } catch (error) {
@@ -92,16 +169,37 @@ const App = () => {
 
     try {
       const message = 'ultradeepthink';
-      console.log('📤 Message ready:', message);
+      console.log('📤 Sending message via HTTP:', message);
       
+      // Try to send to Mac via HTTP (using discovered IP)
+      if (macIP && !macIP.includes('Searching') && !macIP.includes('Not found') && !macIP.includes('failed')) {
+        try {
+          const response = await fetch(`http://${macIP}:8080/input`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text: message }),
+          });
+          
+          if (response.ok) {
+            Alert.alert('✅ Success!', `Automatically sent "${message}" to Mac!\n\nMac IP: ${macIP}`);
+            return;
+          }
+        } catch (httpError) {
+          console.log('HTTP failed:', httpError);
+          Alert.alert('Connection Failed', `Could not reach Mac at ${macIP}\n\nPlease:\n1. Check Mac server is running\n2. Try "Find Mac" button\n3. Use manual copy as backup`);
+          return;
+        }
+      }
+      
+      // Fallback to clipboard mode
       setPendingMessage(message);
-      
-      // Clear message after 5 seconds
       setTimeout(() => setPendingMessage(null), 5000);
       
       Alert.alert(
         'Manual Copy Required!', 
-        `Please manually copy this text:\n\n"${message}"\n\nThen Mac clipboard monitor will detect it and type automatically.\n\nOr test Mac keyboard directly with ./keyboard-test.sh`
+        `Mac server not found. Please manually copy:\n\n"${message}"\n\nOr:\n1. Start Mac server: ./start-mac.sh\n2. Press "Find Mac" button\n3. Try again`
       );
       
     } catch (error) {
@@ -122,32 +220,34 @@ const App = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Ultra Deep Think Demo</Text>
-        <Text style={styles.subtitle}>iPad Bluetooth Keyboard</Text>
+        <Text style={styles.subtitle}>iPhone/iPad → Mac Keyboard</Text>
         
         <View style={styles.statusContainer}>
           <Text style={styles.statusText}>
-            Status: {servicePublished ? 'Service Active' : 'Stopped'}
+            Status: {servicePublished ? '🟢 Ready' : '🔴 Stopped'}
           </Text>
           <Text style={styles.statusText}>
-            iPad IP: {localIP}
+            Mac IP: {macIP}
+          </Text>
+          <Text style={[styles.statusText, macIP.includes('Not found') || macIP.includes('failed') ? styles.errorText : {}]}>
+            Connection: {
+              macIP.includes('Searching') ? '🔍 Scanning...' :
+              macIP.includes('Not found') || macIP.includes('failed') ? '❌ No Mac Found' :
+              macIP.length > 7 ? '✅ Mac Found' : '⚪ Waiting'
+            }
           </Text>
           <Text style={styles.statusText}>
             Port: {HTTP_PORT}
           </Text>
-          <Text style={styles.statusText}>
-            Connected PCs: {connectedClients.length}
-          </Text>
         </View>
 
         <View style={styles.instructionContainer}>
-          <Text style={styles.instructionTitle}>📋 Manual Mode:</Text>
+          <Text style={styles.instructionTitle}>🚀 Quick Start:</Text>
           <Text style={styles.instructionText}>
-            Option 1 - Keyboard Test:{'\n'}
-            • Mac: ./keyboard-test.sh{'\n'}{'\n'}
-            Option 2 - Clipboard Monitor:{'\n'}
-            • Mac: ./clipboard-test.sh{'\n'}
-            • Copy "ultradeepthink" manually{'\n'}
-            • Mac will auto-type!
+            1. Mac: Run "./start-mac.sh"{'\n'}
+            2. {Platform.OS === 'ios' ? (isPhone ? 'iPhone' : 'iPad') : 'Device'}: Press "Start Service"{'\n'}
+            3. {Platform.OS === 'ios' ? (isPhone ? 'iPhone' : 'iPad') : 'Device'}: Press "Send Message"{'\n'}
+            4. ✅ Auto-typing on Mac!
           </Text>
         </View>
         
@@ -166,10 +266,10 @@ const App = () => {
             <Text style={styles.manualTitle}>📱 Ready to Test:</Text>
             <Text style={styles.manualText}>
               Text to copy: "ultradeepthink"{'\n'}{'\n'}
-              Mac Commands:{'\n'}
-              • ./keyboard-test.sh (direct test){'\n'}
-              • ./clipboard-test.sh (monitor mode){'\n'}{'\n'}
-              Both methods work perfectly!
+              Mac Commands:{'\n'}  
+              • ./start-mac.sh (auto server){'\n'}
+              • ./test-http.sh (manual test){'\n'}{'\n'}
+              Works on iPhone & iPad! 🎉
             </Text>
           </View>
         )}
@@ -185,6 +285,17 @@ const App = () => {
               {servicePublished ? 'Stop Service' : 'Start Service'}
             </Text>
           </TouchableOpacity>
+
+          {servicePublished && (
+            <TouchableOpacity
+              style={[styles.button, styles.findButton]}
+              onPress={scanForMacServer}
+              disabled={isSearchingMac}>
+              <Text style={styles.buttonText}>
+                {isSearchingMac ? 'Scanning...' : 'Find Mac'}
+              </Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
             style={[
@@ -214,29 +325,31 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: isPhone ? 'flex-start' : 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: isPhone ? 16 : 20,
+    paddingTop: isPhone ? 50 : 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: isPhone ? 24 : 28,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 10,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: isPhone ? 14 : 16,
     color: '#666',
-    marginBottom: 40,
+    marginBottom: isPhone ? 20 : 40,
     textAlign: 'center',
   },
   statusContainer: {
     backgroundColor: '#fff',
-    padding: 20,
+    padding: isPhone ? 16 : 20,
     borderRadius: 10,
-    marginBottom: 40,
-    minWidth: 250,
+    marginBottom: isPhone ? 20 : 40,
+    minWidth: isPhone ? screenWidth - 40 : 250,
+    maxWidth: isPhone ? screenWidth - 40 : 350,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
@@ -245,10 +358,11 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   statusText: {
-    fontSize: 16,
+    fontSize: isPhone ? 14 : 16,
     fontWeight: '600',
     color: '#333',
     marginBottom: 5,
+    textAlign: 'center',
   },
   deviceText: {
     fontSize: 14,
@@ -256,7 +370,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     width: '100%',
-    maxWidth: 300,
+    maxWidth: isPhone ? screenWidth - 40 : 300,
   },
   button: {
     backgroundColor: '#007AFF',
@@ -291,24 +405,31 @@ const styles = StyleSheet.create({
   disabledText: {
     color: '#999',
   },
+  errorText: {
+    color: '#FF3B30',
+  },
+  findButton: {
+    backgroundColor: '#007AFF',
+  },
   instructionContainer: {
     backgroundColor: '#f0f8ff',
-    padding: 20,
+    padding: isPhone ? 16 : 20,
     borderRadius: 10,
-    marginVertical: 20,
+    marginVertical: isPhone ? 12 : 20,
     borderWidth: 1,
     borderColor: '#007AFF',
+    maxWidth: isPhone ? screenWidth - 40 : undefined,
   },
   instructionTitle: {
-    fontSize: 18,
+    fontSize: isPhone ? 16 : 18,
     fontWeight: 'bold',
     color: '#007AFF',
     marginBottom: 10,
   },
   instructionText: {
-    fontSize: 14,
+    fontSize: isPhone ? 12 : 14,
     color: '#333',
-    lineHeight: 20,
+    lineHeight: isPhone ? 18 : 20,
   },
   manualButton: {
     backgroundColor: '#007AFF',

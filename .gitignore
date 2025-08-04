@@ -47,13 +47,28 @@ SimpleHTTPServer.tsx
 quick_test.md
 test_procedure.md
 
-# Temporary development scripts
+# Temporary development scripts  
 manual-connect.swift
 manual-test.sh
 simple-test.swift
-clipboard-monitor.swift
 clipboard-test.sh
 keyboard-test.sh
+health-check.sh
+test-http.sh
+http-server.sh
+setup-debug.sh
+test-ios.sh
+quick-setup.sh
+quick-test.sh
+
+# Development docs
+docs/
+DEBUG.md
+
+# React Native specific
+ios/build/
+android/build/
+android/app/build/
 
 # IDE
 .vscode/
