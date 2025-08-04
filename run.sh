@@ -21,7 +21,7 @@ elif [ "$1" == "ios" ]; then
     # 依存関係チェック
     if [ ! -d "node_modules" ]; then
         echo "📦 依存関係インストール中..."
-        pnpm install
+        npm install
     fi
     
     if [ ! -d "ios/Pods" ]; then
@@ -35,7 +35,7 @@ elif [ "$1" == "ios" ]; then
     
     # Metro起動
     echo "📱 Metro bundler起動中..."
-    pnpm start &
+    npm start &
     METRO_PID=$!
     
     echo ""
@@ -62,7 +62,7 @@ elif [ "$1" == "android" ]; then
     # 依存関係チェック
     if [ ! -d "node_modules" ]; then
         echo "📦 依存関係インストール中..."
-        pnpm install
+        npm install
     fi
     
     # Android Studio起動
@@ -71,7 +71,7 @@ elif [ "$1" == "android" ]; then
     
     # Metro起動
     echo "📱 Metro bundler起動中..."
-    pnpm start &
+    npm start &
     METRO_PID=$!
     
     echo ""
