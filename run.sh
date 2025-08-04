@@ -1,22 +1,22 @@
 #!/bin/bash
 
-echo "🚀 UltraDeepThink - iPhone実機版"
+echo "🚀 Side Assist - Mobile & Desktop"
 echo "=============================="
 echo ""
 
 if [ "$1" == "mac" ]; then
     echo "Mac サーバー起動..."
-    cd MacCompanion
+    cd side-assist-server
     ./start-mac.sh
 elif [ "$1" == "metro" ]; then
     echo "Metro Bundler 起動..."
     
-    if [ ! -d "UltraDeepThinkDemo" ]; then
-        echo "❌ UltraDeepThinkDemo ディレクトリが見つかりません"
+    if [ ! -d "side-assist-mobile" ]; then
+        echo "❌ side-assist-mobile ディレクトリが見つかりません"
         exit 1
     fi
     
-    cd UltraDeepThinkDemo
+    cd side-assist-mobile
     
     # 既存のMetroプロセス確認
     EXISTING_PID=$(lsof -ti:8081 2>/dev/null)
@@ -45,12 +45,12 @@ elif [ "$1" == "metro" ]; then
 elif [ "$1" == "ios" ]; then
     echo "iPhone アプリセットアップ..."
     
-    if [ ! -d "UltraDeepThinkDemo" ]; then
-        echo "❌ UltraDeepThinkDemo ディレクトリが見つかりません"
+    if [ ! -d "side-assist-mobile" ]; then
+        echo "❌ side-assist-mobile ディレクトリが見つかりません"
         exit 1
     fi
     
-    cd UltraDeepThinkDemo
+    cd side-assist-mobile
     
     # 依存関係チェック
     if [ ! -d "node_modules" ]; then
@@ -65,7 +65,7 @@ elif [ "$1" == "ios" ]; then
     
     # Xcode開く
     echo "🚀 Xcode起動中..."
-    open ios/UltraDeepThinkDemo.xcworkspace
+    open ios/SideAssist.xcworkspace
     
     echo ""
     echo "✅ セットアップ完了！"
@@ -73,19 +73,19 @@ elif [ "$1" == "ios" ]; then
     echo "📋 次のステップ:"
     echo "   1. 別ターミナルで: ./run.sh metro"
     echo "   2. Xcodeでデバイス選択 → iPhone実機"
-    echo "   3. Bundle ID変更: com.yourname.ultradeepthink"
+    echo "   3. Bundle ID変更: com.yourname.sideassist"
     echo "   4. Team設定: 自分のApple ID"
     echo "   5. ▶️ でビルド&実行"
     
 elif [ "$1" == "android" ]; then
     echo "Android アプリ完全自動セットアップ..."
     
-    if [ ! -d "UltraDeepThinkDemo" ]; then
-        echo "❌ UltraDeepThinkDemo ディレクトリが見つかりません"
+    if [ ! -d "side-assist-mobile" ]; then
+        echo "❌ side-assist-mobile ディレクトリが見つかりません"
         exit 1
     fi
     
-    cd UltraDeepThinkDemo
+    cd side-assist-mobile
     
     # 依存関係チェック
     if [ ! -d "node_modules" ]; then

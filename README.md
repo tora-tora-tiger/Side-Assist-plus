@@ -1,10 +1,20 @@
-# 🚀 UltraDeepThink
+# 🚀 Side Assist
 
 **モバイルボタン → Mac自動入力**
 
 ## 🎯 できること
 
 iPhone/Androidで「ultradeepthink」ボタン → Macで自動入力される
+
+## 📁 プロジェクト構成
+
+```
+Side-Assist-plus/
+├── side-assist-mobile/     # React Nativeモバイルアプリ
+├── side-assist-server/     # Swift HTTPサーバー (一時的)
+├── side-assist-desktop/    # Tauriデスクトップアプリ (今後)
+└── docs/                  # ドキュメント
+```
 
 ## ⚡ 超簡単！ワンコマンド実行
 
@@ -97,7 +107,7 @@ iPhone/Androidで「ultradeepthink」ボタン → Macで自動入力される
 ## 📋 詳細ドキュメント
 
 - [Android実機デバッグガイド](docs/ANDROID_DEBUG.md)
-- [React Native セットアップ](UltraDeepThinkDemo/README.md)
+- [React Native セットアップ](side-assist-mobile/README.md)
 
 ## 🚨 トラブルシューティング
 

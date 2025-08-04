@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🛑 UltraDeepThink プロセス終了中..."
+echo "🛑 Side Assist プロセス終了中..."
 
 # Metro Bundler 終了
 echo "📱 Metro Bundler終了中..."
@@ -13,10 +13,10 @@ else
 fi
 
 # 保存されたPIDファイルから終了
-if [ -f "UltraDeepThinkDemo/.metro.pid" ]; then
-    SAVED_PID=$(cat UltraDeepThinkDemo/.metro.pid)
+if [ -f "side-assist-mobile/.metro.pid" ]; then
+    SAVED_PID=$(cat side-assist-mobile/.metro.pid)
     kill $SAVED_PID 2>/dev/null
-    rm -f UltraDeepThinkDemo/.metro.pid
+    rm -f side-assist-mobile/.metro.pid
     echo "   PIDファイルから Metro終了: $SAVED_PID"
 fi
 
