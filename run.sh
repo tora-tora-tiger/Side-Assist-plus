@@ -54,31 +54,11 @@ if [ "$1" == "desktop" ]; then
         fi
     fi
     
-    # システム権限チェック (macOS)
+    # ネットワーク権限情報 (macOS)
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "🔐 システム権限チェック中..."
-        
-        # アクセシビリティ権限チェック
-        ACCESSIBILITY_CHECK=$(sqlite3 /Library/Application\ Support/com.apple.TCC/TCC.db "SELECT allowed FROM access WHERE service='kTCCServiceAccessibility' AND client LIKE '%Terminal%' OR client LIKE '%iTerm%' OR client LIKE '%Code%'" 2>/dev/null | grep 1 | wc -l | tr -d ' ')
-        
-        if [ "$ACCESSIBILITY_CHECK" -eq "0" ]; then
-            echo "⚠️  アクセシビリティ権限が必要です"
-            echo ""
-            echo "📋 権限設定手順:"
-            echo "   1. システム環境設定 → プライバシーとセキュリティ"
-            echo "   2. アクセシビリティ"
-            echo "   3. ＋ボタンでターミナルアプリを追加"
-            echo "   4. チェックボックスにチェック"
-            echo ""
-            echo "🚀 権限設定後、再度 ./run.sh desktop を実行してください"
-            exit 1
-        else
-            echo "✅ アクセシビリティ権限OK"
-        fi
-        
-        echo "🌐 ネットワーク権限について:"
-        echo "   起動後にネットワーク接続許可ダイアログが表示されます"
-        echo "   「許可」を選択してください (HTTP サーバー: localhost:8080)"
+        echo "🌐 権限について:"
+        echo "   起動後にアクセシビリティ・ネットワーク接続許可が表示されます"
+        echo "   アプリ内で権限ガイドを確認してください"
         echo ""
     fi
     
