@@ -81,8 +81,8 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
-            // リリースビルド最適化
-            shrinkResources true
+            // リリースビルド最適化 (minifyEnabledがtrueの時のみshrinkResourcesを有効化)
+            shrinkResources enableProguardInReleaseBuilds
             debuggable false
         }
     }
