@@ -1,0 +1,70 @@
+import { StyleSheet } from 'react-native';
+
+export const settingsStyles = StyleSheet.create({
+  settingsPanel: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    padding: 20,
+    paddingTop: 120,
+    zIndex: 50,
+  },
+  settingsTitle: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  settingsLabel: {
+    color: '#ccc',
+    fontSize: 16,
+  },
+  settingsValue: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  refreshButton: {
+    backgroundColor: '#333',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignSelf: 'center',
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#555',
+  },
+  refreshButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+});

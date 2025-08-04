@@ -11,11 +11,19 @@ pre-commit:
       fail_text: "❌ Desktop i18n check failed. Fix internationalization issues before committing."
       glob: "side-assist-desktop/**/*.{ts,tsx,json}"
       
-    # Mobile linting (if needed in future)
-    # mobile-lint:
-    #   root: "side-assist-mobile/"
-    #   run: "npm run lint"
-    #   files: git diff --name-only --cached | grep -E "\.(js|jsx|ts|tsx)$" | grep "side-assist-mobile"
+    # Mobile linting
+    mobile-lint:
+      root: "side-assist-mobile/"
+      run: "npm run lint"
+      fail_text: "❌ Mobile lint check failed. Fix code issues before committing."
+      glob: "side-assist-mobile/**/*.{js,jsx,ts,tsx}"
+    
+    # Mobile formatting
+    mobile-format:
+      root: "side-assist-mobile/"
+      run: "npm run format:check"
+      fail_text: "❌ Mobile format check failed. Run 'npm run format' to fix formatting issues."
+      glob: "side-assist-mobile/**/*.{js,jsx,ts,tsx,json}"
 
 # Skip hooks for emergency commits
 skip_output:

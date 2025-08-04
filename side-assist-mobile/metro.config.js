@@ -9,8 +9,8 @@ const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 const config = {
   // Fix InitializeCore.js module resolution
   serializer: {
-    getRunBeforeMainModule: (entryFilePath) => [
-      'node_modules/react-native/Libraries/Core/InitializeCore.js'
+    getRunBeforeMainModule: entryFilePath => [
+      'node_modules/react-native/Libraries/Core/InitializeCore.js',
     ],
   },
   resolver: {
