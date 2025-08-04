@@ -24,6 +24,9 @@ Side-Assist-plus/
 └── docs/                  # ドキュメント
 ```
 
+## なぜnpmなのか？
+androidのビルドで、node_modulesの構造の違いでpnpmではエラーがおきたから。
+
 ## ⚡ 超簡単！ワンコマンド実行
 
 ```bash
