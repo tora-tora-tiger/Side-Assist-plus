@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from 'react-i18next';
+import { permissionConfig } from './config/permissions';
+import { usePermissions } from './hooks/usePermissions';
+import { PermissionBanner } from './components/PermissionBanner';
+import { PermissionStatus } from './components/PermissionStatus';
 import "./App.css";
 
 interface ServerStatus {
@@ -26,6 +30,8 @@ function App() {
   const [testResult, setTestResult] = useState("");
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // 権限設定（固定）
 
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
     const newLog: LogEntry = {
@@ -35,6 +41,15 @@ function App() {
     };
     setLogs(prev => [...prev.slice(-9), newLog]); // Keep last 10 logs
   };
+
+  // 権限管理フック
+  const {
+    hasAccessibilityPermission,
+    isLoading: isPermissionLoading,
+    checkPermissions,
+    requestPermissions,
+    openSystemPreferences,
+  } = usePermissions(permissionConfig, addLog);
 
   const refreshServerStatus = async () => {
     try {
@@ -60,8 +75,15 @@ function App() {
     }
   };
 
+
   const testTyping = async () => {
     if (!testText.trim()) return;
+    
+    // アクセシビリティ権限チェック（設定で無効にされている場合はスキップ）
+    if (permissionConfig.disableKeyboardWhenDenied && hasAccessibilityPermission === false) {
+      setTestResult('アクセシビリティ権限が必要です。権限を許可してください。');
+      return;
+    }
     
     try {
       setIsLoading(true);
@@ -88,6 +110,7 @@ function App() {
     // Refresh status every 5 seconds
     const interval = setInterval(refreshServerStatus, 5000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t]);
 
   const getStatusColor = () => {
@@ -196,6 +219,25 @@ function App() {
             </div>
           </div>
 
+          {/* System Permissions Banner */}
+          <PermissionBanner
+            config={permissionConfig}
+            hasAccessibilityPermission={hasAccessibilityPermission}
+            isLoading={isPermissionLoading}
+            onRequestPermissions={requestPermissions}
+            onOpenSystemPreferences={openSystemPreferences}
+          />
+
+          {/* Permission Status */}
+          <PermissionStatus
+            config={permissionConfig}
+            hasAccessibilityPermission={hasAccessibilityPermission}
+            isLoading={isPermissionLoading}
+            onCheckPermissions={checkPermissions}
+            onRequestPermissions={requestPermissions}
+            onOpenSystemPreferences={openSystemPreferences}
+          />
+
           {/* Keyboard Test */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -214,15 +256,20 @@ function App() {
                 />
                 <button
                   onClick={testTyping}
-                  disabled={!testText.trim() || isLoading}
+                  disabled={!testText.trim() || isLoading || (permissionConfig.disableKeyboardWhenDenied && hasAccessibilityPermission === false)}
                   className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? t('keyboard.testing') : t('keyboard.testButton')}
                 </button>
               </div>
               {testResult && (
-                <div className={`text-sm ${testResult.includes(t('messages.failed')) ? 'text-red-600' : 'text-green-600'}`}>
+                <div className={`text-sm ${testResult.includes(t('messages.failed')) || testResult.includes('アクセシビリティ権限') ? 'text-red-600' : 'text-green-600'}`}>
                   {testResult}
+                </div>
+              )}
+              {permissionConfig.enabled && permissionConfig.disableKeyboardWhenDenied && hasAccessibilityPermission === false && (
+                <div className="text-sm text-yellow-600">
+                  ⚠️ アクセシビリティ権限が必要です。システム権限セクションで権限を許可してください。
                 </div>
               )}
             </div>

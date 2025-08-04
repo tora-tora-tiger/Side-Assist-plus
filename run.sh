@@ -54,9 +54,39 @@ if [ "$1" == "desktop" ]; then
         fi
     fi
     
+    # システム権限チェック (macOS)
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "🔐 システム権限チェック中..."
+        
+        # アクセシビリティ権限チェック
+        ACCESSIBILITY_CHECK=$(sqlite3 /Library/Application\ Support/com.apple.TCC/TCC.db "SELECT allowed FROM access WHERE service='kTCCServiceAccessibility' AND client LIKE '%Terminal%' OR client LIKE '%iTerm%' OR client LIKE '%Code%'" 2>/dev/null | grep 1 | wc -l | tr -d ' ')
+        
+        if [ "$ACCESSIBILITY_CHECK" -eq "0" ]; then
+            echo "⚠️  アクセシビリティ権限が必要です"
+            echo ""
+            echo "📋 権限設定手順:"
+            echo "   1. システム環境設定 → プライバシーとセキュリティ"
+            echo "   2. アクセシビリティ"
+            echo "   3. ＋ボタンでターミナルアプリを追加"
+            echo "   4. チェックボックスにチェック"
+            echo ""
+            echo "🚀 権限設定後、再度 ./run.sh desktop を実行してください"
+            exit 1
+        else
+            echo "✅ アクセシビリティ権限OK"
+        fi
+        
+        echo "🌐 ネットワーク権限について:"
+        echo "   起動後にネットワーク接続許可ダイアログが表示されます"
+        echo "   「許可」を選択してください (HTTP サーバー: localhost:8080)"
+        echo ""
+    fi
+    
     echo "🚀 Tauri デスクトップアプリ起動中..."
     echo "   - フロントエンド: http://localhost:1420"
     echo "   - サーバー: http://localhost:8080"
+    echo ""
+    echo "⏳ 起動完了まで10-15秒お待ちください..."
     echo ""
     
     # Tauri起動
@@ -134,6 +164,28 @@ elif [ "$1" == "ios" ]; then
         cd ios && pod install && cd ..
     fi
     
+    # iOS権限チェック説明
+    echo "📱 iOS権限設定について:"
+    echo "   アプリ初回起動時に以下の権限許可が必要です:"
+    echo "   1. 📶 ローカルネットワーク使用許可 → 「許可」を選択"
+    echo "   2. 🔍 ネットワークスキャン許可 → 「許可」を選択"
+    echo ""
+    echo "   ⚠️  権限を拒否すると、Macサーバーに接続できません"
+    echo ""
+    
+    # Metro接続確認
+    echo "🔗 Metro Bundler接続確認中..."
+    if ! curl -s http://localhost:8081/status > /dev/null 2>&1; then
+        echo "⚠️  Metro Bundlerが起動していません"
+        echo "📋 先に以下を実行してください:"
+        echo "   ./run.sh metro"
+        echo ""
+        echo "❌ iOS セットアップを中止します"
+        exit 1
+    else
+        echo "✅ Metro Bundler接続OK"
+    fi
+    
     # Xcode開く
     echo "🚀 Xcode起動中..."
     open ios/SideAssist.xcworkspace
@@ -142,11 +194,15 @@ elif [ "$1" == "ios" ]; then
     echo "✅ セットアップ完了！"
     echo ""
     echo "📋 次のステップ:"
-    echo "   1. 別ターミナルで: ./run.sh metro"
+    echo "   1. ✅ Metro起動済み (http://localhost:8081)"
     echo "   2. Xcodeでデバイス選択 → iPhone実機"
     echo "   3. Bundle ID変更: com.yourname.sideassist"
     echo "   4. Team設定: 自分のApple ID"
     echo "   5. ▶️ でビルド&実行"
+    echo ""
+    echo "🔧 Metro接続エラーの場合:"
+    echo "   - iPhone設定 → WiFi → 同じネットワーク確認"
+    echo "   - ./stop.sh → ./run.sh metro → 再実行"
     
 elif [ "$1" == "android" ]; then
     echo "Android アプリ完全自動セットアップ..."

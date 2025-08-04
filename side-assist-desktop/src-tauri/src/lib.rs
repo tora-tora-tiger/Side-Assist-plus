@@ -12,6 +12,9 @@ use axum::{
 use tower_http::cors::CorsLayer;
 use enigo::{Enigo, Keyboard, Settings};
 
+#[cfg(target_os = "macos")]
+use std::process::Command;
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ServerStatus {
     pub running: bool,
@@ -106,6 +109,100 @@ async fn start_server(state: tauri::State<'_, AppState>) -> Result<String, Strin
     });
 
     Ok("Side Assist Server started on port 8080".to_string())
+}
+
+#[tauri::command]
+async fn check_accessibility_permission() -> Result<bool, String> {
+    #[cfg(target_os = "macos")]
+    {
+        // 権限チェック：System Eventsに簡単なアクセスを試行
+        // AppleScriptでエラー処理を含む形式を使用
+        let script = r#"
+            try
+                tell application "System Events"
+                    get name of first application process
+                end tell
+                return "granted"
+            on error
+                return "denied"
+            end try
+        "#;
+        
+        let output = Command::new("osascript")
+            .arg("-e")
+            .arg(script)
+            .output()
+            .map_err(|e| format!("Failed to execute permission check: {}", e))?;
+        
+        // スクリプトの出力を確認
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let has_permission = output.status.success() && stdout.contains("granted");
+        
+        println!("🔍 Accessibility permission check:");
+        println!("   Status: {}", output.status.success());
+        println!("   Output: '{}'", stdout);
+        println!("   Result: {}", has_permission);
+        
+        if !has_permission {
+            if let Ok(stderr) = String::from_utf8(output.stderr) {
+                if !stderr.trim().is_empty() {
+                    println!("❌ Permission check stderr: {}", stderr);
+                }
+            }
+        }
+        
+        Ok(has_permission)
+    }
+    
+    #[cfg(not(target_os = "macos"))]
+    {
+        // macOS以外では常にtrueを返す（Windowsなどは権限チェック不要）
+        Ok(true)
+    }
+}
+
+#[tauri::command]
+async fn open_system_preferences() -> Result<String, String> {
+    #[cfg(target_os = "macos")]
+    {
+        // macOSのシステム設定（アクセシビリティ）を開く
+        // Sonoma/Sequoia対応: 複数のURL形式を試行
+        let urls = [
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
+            "x-apple.systempreferences:com.apple.preference.security?Privacy",
+            "x-apple.systempreferences:com.apple.preference.security"
+        ];
+        
+        let mut last_error = String::new();
+        for url in &urls {
+            let output = Command::new("open")
+                .arg(url)
+                .output();
+                
+            match output {
+                Ok(result) if result.status.success() => {
+                    println!("✅ Successfully opened system settings with URL: {}", url);
+                    return Ok("システム設定を開きました".to_string());
+                }
+                Ok(result) => {
+                    let stderr = String::from_utf8_lossy(&result.stderr);
+                    println!("⚠️ URL {} failed: {}", url, stderr);
+                    last_error = format!("URL {} failed: {}", url, stderr);
+                }
+                Err(e) => {
+                    println!("❌ Failed to execute open command for {}: {}", url, e);
+                    last_error = format!("Failed to execute: {}", e);
+                }
+            }
+        }
+        
+        Err(format!("全てのURL形式で失敗しました: {}", last_error))
+    }
+    
+    #[cfg(not(target_os = "macos"))]
+    {
+        Err("macOS以外ではサポートされていません".to_string())
+    }
 }
 
 #[tauri::command]
@@ -234,11 +331,14 @@ pub fn run() {
     
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_macos_permissions::init())
         .manage(state)
         .invoke_handler(tauri::generate_handler![
             get_server_status,
             start_server,
-            simulate_typing
+            simulate_typing,
+            check_accessibility_permission,
+            open_system_preferences
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

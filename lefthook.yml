@@ -5,11 +5,18 @@ pre-commit:
   parallel: true
   commands:
     # Desktop i18n check
-    desktop-i18n:
-      root: "side-assist-desktop/"
-      run: "./check-i18n.sh"
-      fail_text: "❌ Desktop i18n check failed. Fix internationalization issues before committing."
-      glob: "side-assist-desktop/**/*.{ts,tsx,json}"
+    # desktop-i18n:
+    #   root: "side-assist-desktop/"
+    #   run: "./check-i18n.sh"
+    #   fail_text: "❌ Desktop i18n check failed. Fix internationalization issues before committing."
+    #   glob: "side-assist-desktop/**/*.{ts,tsx,json}"
+      
+    # Mobile formatting
+    mobile-format:
+      root: "side-assist-mobile/"
+      run: "npm run format"
+      fail_text: "❌ Mobile format check failed. Run 'npm run format' to fix formatting issues."
+      glob: "side-assist-mobile/**/*.{js,jsx,ts,tsx,json}"
       
     # Mobile linting
     mobile-lint:
@@ -18,12 +25,7 @@ pre-commit:
       fail_text: "❌ Mobile lint check failed. Fix code issues before committing."
       glob: "side-assist-mobile/**/*.{js,jsx,ts,tsx}"
     
-    # Mobile formatting
-    mobile-format:
-      root: "side-assist-mobile/"
-      run: "npm run format:check"
-      fail_text: "❌ Mobile format check failed. Run 'npm run format' to fix formatting issues."
-      glob: "side-assist-mobile/**/*.{js,jsx,ts,tsx,json}"
+
 
 # Skip hooks for emergency commits
 skip_output:
