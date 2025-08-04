@@ -78,7 +78,7 @@ elif [ "$1" == "ios" ]; then
     echo "   5. ▶️ でビルド&実行"
     
 elif [ "$1" == "android" ]; then
-    echo "Android アプリセットアップ..."
+    echo "Android アプリ完全自動セットアップ..."
     
     if [ ! -d "UltraDeepThinkDemo" ]; then
         echo "❌ UltraDeepThinkDemo ディレクトリが見つかりません"
@@ -93,23 +93,72 @@ elif [ "$1" == "android" ]; then
         npm install
     fi
     
-    # Android Studio起動
-    echo "🤖 Android Studio起動中..."
-    open -a "Android Studio" android/
+    # 既存プロセス終了
+    echo "🛑 既存のMetroプロセスを終了中..."
+    EXISTING_PIDS=$(lsof -ti:8081 2>/dev/null)
+    if [ ! -z "$EXISTING_PIDS" ]; then
+        echo $EXISTING_PIDS | xargs kill -9 2>/dev/null
+        sleep 1
+    fi
+    
+    # Android実機接続確認
+    echo "📱 Android実機接続確認中..."
+    DEVICE_COUNT=$(adb devices | grep -v "List of devices" | grep "device" | wc -l | tr -d ' ')
+    if [ "$DEVICE_COUNT" -eq "0" ]; then
+        echo "❌ Android実機が接続されていません"
+        echo "🔧 以下を確認してください:"
+        echo "   - USB接続"
+        echo "   - USBデバッグ有効"
+        echo "   - adb devices でデバイス表示"
+        exit 1
+    fi
+    
+    # ADBポート転送設定
+    echo "🔗 ADB ポート転送設定中..."
+    adb reverse tcp:8081 tcp:8081
+    
+    # Metro Bundler起動 (バックグラウンド)
+    echo "📱 Metro Bundler起動中..."
+    npx react-native start --reset-cache &
+    METRO_PID=$!
+    
+    # Metro起動待機
+    echo "⏳ Metro起動を待機中..."
+    sleep 5
+    
+    # Metro接続確認
+    for i in {1..10}; do
+        if curl -s http://localhost:8081/status > /dev/null 2>&1; then
+            echo "✅ Metro起動完了"
+            break
+        fi
+        echo "   Metro起動中... ($i/10)"
+        sleep 2
+    done
+    
+    # Androidビルド&実行
+    echo "🚀 Android実機でビルド&実行中..."
+    npm run android
     
     echo ""
-    echo "✅ セットアップ完了！"
+    echo "✅ Android完全自動セットアップ完了！"
     echo ""
-    echo "📋 次のステップ:"
-    echo "   1. 別ターミナルで: ./run.sh metro"
-    echo "   2. Android Studioでプロジェクト開く"
-    echo "   3. USB Debugging有効なAndroid実機を接続"
-    echo "   4. デバイス選択 → Android実機"
-    echo "   5. ▶️ Run 'app' でビルド&実行"
+    echo "📋 実行中のプロセス:"
+    echo "   Metro PID: $METRO_PID"
+    echo "   ADB転送: tcp:8081 -> tcp:8081"
     echo ""
-    echo "🔧 実機セットアップが必要な場合:"
-    echo "   - 設定 → システム → 開発者向けオプション → USBデバッグ ON"
-    echo "   - 設定 → セキュリティ → 提供元不明のアプリ ON"
+    echo "🛑 終了方法:"
+    echo "   kill $METRO_PID"
+    echo "   または Ctrl+C でスクリプト終了"
+    
+    # PIDをファイルに保存
+    echo $METRO_PID > .metro.pid
+    
+    # 終了シグナル処理
+    trap "kill $METRO_PID 2>/dev/null; rm -f .metro.pid; exit" INT TERM
+    
+    # スクリプト継続 (Metro監視)
+    wait $METRO_PID
     
 else
     echo "使用方法:"
