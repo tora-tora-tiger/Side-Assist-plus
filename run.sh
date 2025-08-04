@@ -1,11 +1,25 @@
 #!/bin/bash
 
-echo "🚀 Side Assist - Mobile & Desktop"
-echo "=============================="
+echo "🚀 Side Assist Plus - Mobile & Desktop"
+echo "======================================="
 echo ""
 
-if [ "$1" == "mac" ]; then
-    echo "Mac サーバー起動..."
+if [ "$1" == "desktop" ]; then
+    echo "🖥️  Tauri Desktop アプリ起動..."
+    cd side-assist-desktop
+    
+    # 依存関係チェック
+    if [ ! -d "node_modules" ]; then
+        echo "📦 依存関係インストール中..."
+        pnpm install
+    fi
+    
+    echo "🚀 Tauri デスクトップアプリ起動中..."
+    pnpm tauri dev
+
+elif [ "$1" == "mac" ]; then
+    echo "🍎 Mac サーバー起動 (レガシー)..."
+    echo "⚠️  推奨: ./run.sh desktop を使用してください"
     cd side-assist-server
     ./start-mac.sh
 elif [ "$1" == "metro" ]; then
@@ -162,17 +176,23 @@ elif [ "$1" == "android" ]; then
     
 else
     echo "使用方法:"
-    echo "  ./run.sh mac      # Mac側サーバー起動"
+    echo "  ./run.sh desktop  # Tauri デスクトップアプリ起動 (推奨)"
+    echo "  ./run.sh mac      # Mac側サーバー起動 (レガシー)"
     echo "  ./run.sh metro    # Metro Bundler起動"
     echo "  ./run.sh ios      # iPhone側アプリセットアップ"
     echo "  ./run.sh android  # Android側アプリセットアップ"
     echo ""
-    echo "🎯 手順:"
-    echo "  1. ./run.sh mac         (ターミナル1)"
-    echo "  2. ./run.sh metro       (ターミナル2)"
+    echo "🎯 手順 (新構成):"
+    echo "  1. ./run.sh desktop     (ターミナル1) - サーバー機能付きデスクトップアプリ"
+    echo "  2. ./run.sh metro       (ターミナル2) - React Native開発サーバー"
     echo "  3. ./run.sh ios         (Xcode開く)"
     echo "     または"
     echo "  3. ./run.sh android     (Android Studio開く)"
     echo "  4. 実機にビルド&実行"
     echo "  5. アプリでテスト"
+    echo ""
+    echo "📁 プロジェクト構造:"
+    echo "  side-assist-desktop/   # Tauri v2 デスクトップアプリ (Rust + React)"
+    echo "  side-assist-mobile/    # React Native モバイルアプリ"
+    echo "  side-assist-server/    # Swift サーバー (レガシー)"
 fi
