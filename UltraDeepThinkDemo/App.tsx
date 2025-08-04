@@ -5,15 +5,14 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Alert,
   Platform,
-  TextInput,
-  NativeModules,
   Dimensions,
+  Animated,
+  StatusBar,
 } from 'react-native';
 
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
-const isPhone = screenWidth < 768; // iPhone判定
+const isPhone = screenWidth < 768;
 
 // mDNS + HTTP approach - the reliable solution!
 const SERVICE_TYPE = '_ultradeepthink._tcp';
@@ -22,18 +21,16 @@ const HTTP_PORT = 8080;
 
 const App = () => {
   const [servicePublished, setServicePublished] = useState(false);
-  const [connectedClients, setConnectedClients] = useState<string[]>([]);
-  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
-  const [localIP, setLocalIP] = useState<string>('Detecting...');
-  const [macIP, setMacIP] = useState<string>('Searching...');
-  const [showManualMode, setShowManualMode] = useState(false);
+  const [macIP, setMacIP] = useState<string>('');
   const [isSearchingMac, setIsSearchingMac] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [buttonScale] = useState(new Animated.Value(1));
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
     console.log('🚀 [DEBUG] App component mounted');
     initializeService();
     return () => {
-      // Cleanup when component unmounts
       console.log('🛑 [DEBUG] App component unmounting');
       stopService();
     };
@@ -42,17 +39,10 @@ const App = () => {
   const initializeService = async () => {
     try {
       console.log('🚀 Initializing service...');
-      
-      // Get local IP address
-      getLocalIPAddress();
-      
-      Alert.alert(
-        'Ready to Connect',
-        'Service initialized! Press "Start Service" to begin advertising.'
-      );
+      setServicePublished(true);
+      scanForMacServer();
     } catch (error) {
       console.error('Initialization error:', error);
-      Alert.alert('Setup Failed', 'Could not initialize service');
     }
   };
   
@@ -89,15 +79,17 @@ const App = () => {
       
       if (successfulIPs.length > 0) {
         setMacIP(successfulIPs[0]);
+        setIsConnected(true);
         console.log('✅ [DEBUG] Found Mac server at:', successfulIPs[0]);
-        console.log('✅ [DEBUG] All found servers:', successfulIPs);
       } else {
-        setMacIP('Not found - Use manual mode');
+        setMacIP('');
+        setIsConnected(false);
         console.log('❌ [DEBUG] No Mac server found on subnet:', subnet);
       }
     } catch (error) {
       console.error('Scan error:', error);
-      setMacIP('Scan failed - Use manual mode');
+      setMacIP('');
+      setIsConnected(false);
     } finally {
       setIsSearchingMac(false);
     }
@@ -161,9 +153,25 @@ const App = () => {
     }
   };
 
+  const animateButton = () => {
+    Animated.sequence([
+      Animated.timing(buttonScale, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScale, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
   const sendUltraDeepThink = async () => {
-    if (!servicePublished) {
-      Alert.alert('Service Not Started', 'Please start the service first');
+    animateButton();
+    
+    if (!isConnected || !macIP) {
       return;
     }
 
@@ -171,41 +179,17 @@ const App = () => {
       const message = 'ultradeepthink';
       console.log('📤 Sending message via HTTP:', message);
       
-      // Try to send to Mac via HTTP (using discovered IP)
-      if (macIP && !macIP.includes('Searching') && !macIP.includes('Not found') && !macIP.includes('failed')) {
-        try {
-          const response = await fetch(`http://${macIP}:8080/input`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ text: message }),
-          });
-          
-          if (response.ok) {
-            Alert.alert('✅ Success!', `Automatically sent "${message}" to Mac!\n\nMac IP: ${macIP}`);
-            return;
-          }
-        } catch (httpError) {
-          console.log('HTTP failed:', httpError);
-          Alert.alert('Connection Failed', `Could not reach Mac at ${macIP}\n\nPlease:\n1. Check Mac server is running\n2. Try "Find Mac" button\n3. Use manual copy as backup`);
-          return;
-        }
-      }
-      
-      // Fallback to clipboard mode
-      setPendingMessage(message);
-      setTimeout(() => setPendingMessage(null), 5000);
-      
-      Alert.alert(
-        'Manual Copy Required!', 
-        `Mac server not found. Please manually copy:\n\n"${message}"\n\nOr:\n1. Start Mac server: ./start-mac.sh\n2. Press "Find Mac" button\n3. Try again`
-      );
+      await fetch(`http://${macIP}:8080/input`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: message }),
+      });
       
     } catch (error) {
-      console.error('Send error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      Alert.alert('Send Failed', `Could not prepare message: ${errorMessage}`);
+      console.log('HTTP failed:', error);
+      // サイレントフォールバック
     }
   };
 
@@ -218,102 +202,71 @@ const App = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      
+      {/* Settings Button */}
+      <TouchableOpacity 
+        style={styles.settingsButton}
+        onPress={() => setShowSettings(!showSettings)}>
+        <Text style={styles.settingsIcon}>⚪</Text>
+      </TouchableOpacity>
+
+      {/* Connection Status Indicator */}
+      <View style={styles.statusIndicator}>
+        <View style={[
+          styles.connectionDot, 
+          { backgroundColor: isConnected ? '#00ff88' : '#666' }
+        ]} />
+      </View>
+
       <View style={styles.content}>
-        <Text style={styles.title}>Ultra Deep Think Demo</Text>
-        <Text style={styles.subtitle}>iPhone/iPad → Mac Keyboard</Text>
-        
-        <View style={styles.statusContainer}>
-          <Text style={styles.statusText}>
-            Status: {servicePublished ? '🟢 Ready' : '🔴 Stopped'}
-          </Text>
-          <Text style={styles.statusText}>
-            Mac IP: {macIP}
-          </Text>
-          <Text style={[styles.statusText, macIP.includes('Not found') || macIP.includes('failed') ? styles.errorText : {}]}>
-            Connection: {
-              macIP.includes('Searching') ? '🔍 Scanning...' :
-              macIP.includes('Not found') || macIP.includes('failed') ? '❌ No Mac Found' :
-              macIP.length > 7 ? '✅ Mac Found' : '⚪ Waiting'
-            }
-          </Text>
-          <Text style={styles.statusText}>
-            Port: {HTTP_PORT}
-          </Text>
-        </View>
-
-        <View style={styles.instructionContainer}>
-          <Text style={styles.instructionTitle}>🚀 Quick Start:</Text>
-          <Text style={styles.instructionText}>
-            1. Mac: Run "./start-mac.sh"{'\n'}
-            2. {Platform.OS === 'ios' ? (isPhone ? 'iPhone' : 'iPad') : 'Device'}: Press "Start Service"{'\n'}
-            3. {Platform.OS === 'ios' ? (isPhone ? 'iPhone' : 'iPad') : 'Device'}: Press "Send Message"{'\n'}
-            4. ✅ Auto-typing on Mac!
-          </Text>
-        </View>
-        
-        {!servicePublished && (
-          <TouchableOpacity
-            style={[styles.button, styles.manualButton]}
-            onPress={() => setShowManualMode(!showManualMode)}>
-            <Text style={styles.buttonText}>
-              {showManualMode ? 'Hide Manual Mode' : 'Manual Mode (IP Address)'}
-            </Text>
-          </TouchableOpacity>
-        )}
-        
-        {showManualMode && (
-          <View style={styles.manualContainer}>
-            <Text style={styles.manualTitle}>📱 Ready to Test:</Text>
-            <Text style={styles.manualText}>
-              Text to copy: "ultradeepthink"{'\n'}{'\n'}
-              Mac Commands:{'\n'}  
-              • ./start-mac.sh (auto server){'\n'}
-              • ./test-http.sh (manual test){'\n'}{'\n'}
-              Works on iPhone & iPad! 🎉
-            </Text>
-          </View>
-        )}
-
-        <View style={styles.buttonContainer}>
+        {/* Main Button */}
+        <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
           <TouchableOpacity
             style={[
-              styles.button, 
-              servicePublished ? styles.disconnectButton : styles.scanButton
+              styles.mainButton,
+              { opacity: isConnected ? 1 : 0.3 }
             ]}
-            onPress={servicePublished ? stopService : startService}>
-            <Text style={styles.buttonText}>
-              {servicePublished ? 'Stop Service' : 'Start Service'}
-            </Text>
+            onPress={sendUltraDeepThink}
+            disabled={!isConnected}
+            activeOpacity={0.8}>
+            <Text style={styles.mainButtonText}>ultradeepthink</Text>
           </TouchableOpacity>
+        </Animated.View>
+      </View>
 
-          {servicePublished && (
-            <TouchableOpacity
-              style={[styles.button, styles.findButton]}
-              onPress={scanForMacServer}
-              disabled={isSearchingMac}>
-              <Text style={styles.buttonText}>
-                {isSearchingMac ? 'Scanning...' : 'Find Mac'}
-              </Text>
-            </TouchableOpacity>
+      {/* Settings Panel */}
+      {showSettings && (
+        <View style={styles.settingsPanel}>
+          <Text style={styles.settingsTitle}>Connection</Text>
+          
+          <View style={styles.settingsRow}>
+            <Text style={styles.settingsLabel}>Status</Text>
+            <Text style={[
+              styles.settingsValue,
+              { color: isConnected ? '#00ff88' : '#ff6b6b' }
+            ]}>
+              {isSearchingMac ? 'Scanning...' : isConnected ? 'Connected' : 'Disconnected'}
+            </Text>
+          </View>
+
+          {macIP && (
+            <View style={styles.settingsRow}>
+              <Text style={styles.settingsLabel}>Mac IP</Text>
+              <Text style={styles.settingsValue}>{macIP}</Text>
+            </View>
           )}
 
           <TouchableOpacity
-            style={[
-              styles.button,
-              styles.sendButton,
-              !servicePublished && styles.disabledButton,
-            ]}
-            onPress={sendUltraDeepThink}
-            disabled={!servicePublished}>
-            <Text style={[
-              styles.buttonText, 
-              !servicePublished && styles.disabledText
-            ]}>
-              Send "ultradeepthink"
+            style={styles.refreshButton}
+            onPress={scanForMacServer}
+            disabled={isSearchingMac}>
+            <Text style={styles.refreshButtonText}>
+              {isSearchingMac ? 'Scanning...' : 'Find Mac'}
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -321,138 +274,116 @@ const App = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#000',
   },
   content: {
     flex: 1,
-    justifyContent: isPhone ? 'flex-start' : 'center',
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: isPhone ? 16 : 20,
-    paddingTop: isPhone ? 50 : 20,
   },
-  title: {
+  settingsButton: {
+    position: 'absolute',
+    top: 60,
+    right: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  settingsIcon: {
+    fontSize: 20,
+    color: '#fff',
+  },
+  statusIndicator: {
+    position: 'absolute',
+    top: 60,
+    left: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  connectionDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  mainButton: {
+    width: isPhone ? 280 : 320,
+    height: isPhone ? 280 : 320,
+    borderRadius: isPhone ? 140 : 160,
+    backgroundColor: '#111',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#333',
+    shadowColor: '#00ff88',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  mainButtonText: {
     fontSize: isPhone ? 24 : 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
-    textAlign: 'center',
+    fontWeight: '300',
+    color: '#fff',
+    letterSpacing: 2,
+    fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
-  subtitle: {
-    fontSize: isPhone ? 14 : 16,
-    color: '#666',
-    marginBottom: isPhone ? 20 : 40,
-    textAlign: 'center',
+  settingsPanel: {
+    position: 'absolute',
+    top: 120,
+    right: 24,
+    left: 24,
+    backgroundColor: 'rgba(17, 17, 17, 0.95)',
+    borderRadius: 16,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#333',
   },
-  statusContainer: {
-    backgroundColor: '#fff',
-    padding: isPhone ? 16 : 20,
-    borderRadius: 10,
-    marginBottom: isPhone ? 20 : 40,
-    minWidth: isPhone ? screenWidth - 40 : 250,
-    maxWidth: isPhone ? screenWidth - 40 : 350,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statusText: {
-    fontSize: isPhone ? 14 : 16,
+  settingsTitle: {
+    fontSize: 18,
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 5,
+    color: '#fff',
+    marginBottom: 20,
     textAlign: 'center',
   },
-  deviceText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  buttonContainer: {
-    width: '100%',
-    maxWidth: isPhone ? screenWidth - 40 : 300,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    marginVertical: 8,
+  settingsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginBottom: 16,
   },
-  scanButton: {
-    backgroundColor: '#34C759',
+  settingsLabel: {
+    fontSize: 16,
+    color: '#999',
+    fontWeight: '400',
   },
-  sendButton: {
-    backgroundColor: '#FF9500',
+  settingsValue: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '500',
   },
-  disconnectButton: {
-    backgroundColor: '#FF3B30',
+  refreshButton: {
+    backgroundColor: '#333',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#555',
   },
-  disabledButton: {
-    backgroundColor: '#ccc',
-  },
-  buttonText: {
+  refreshButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
-  },
-  disabledText: {
-    color: '#999',
-  },
-  errorText: {
-    color: '#FF3B30',
-  },
-  findButton: {
-    backgroundColor: '#007AFF',
-  },
-  instructionContainer: {
-    backgroundColor: '#f0f8ff',
-    padding: isPhone ? 16 : 20,
-    borderRadius: 10,
-    marginVertical: isPhone ? 12 : 20,
-    borderWidth: 1,
-    borderColor: '#007AFF',
-    maxWidth: isPhone ? screenWidth - 40 : undefined,
-  },
-  instructionTitle: {
-    fontSize: isPhone ? 16 : 18,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 10,
-  },
-  instructionText: {
-    fontSize: isPhone ? 12 : 14,
-    color: '#333',
-    lineHeight: isPhone ? 18 : 20,
-  },
-  manualButton: {
-    backgroundColor: '#007AFF',
-    marginVertical: 10,
-  },
-  manualContainer: {
-    backgroundColor: '#fff3cd',
-    padding: 15,
-    borderRadius: 10,
-    marginVertical: 10,
-    borderWidth: 1,
-    borderColor: '#ffeaa7',
-  },
-  manualTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#856404',
-    marginBottom: 8,
-  },
-  manualText: {
-    fontSize: 13,
-    color: '#856404',
-    lineHeight: 18,
+    fontWeight: '500',
   },
 });
 
