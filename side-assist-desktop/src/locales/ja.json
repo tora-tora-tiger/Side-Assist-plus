@@ -1,0 +1,51 @@
+{
+  "app": {
+    "title": "Side Assist デスクトップ",
+    "subtitle": "クロスプラットフォーム キーボード自動化サーバー"
+  },
+  "status": {
+    "online": "オンライン",
+    "offline": "オフライン",
+    "connected": "接続中", 
+    "waiting": "待機中",
+    "running": "実行中",
+    "stopped": "停止中"
+  },
+  "server": {
+    "title": "サーバー状態",
+    "port": "ポート",
+    "status": "ステータス",
+    "connectedClients": "接続クライアント数"
+  },
+  "mobile": {
+    "title": "モバイル接続",
+    "description": "モバイルデバイスは以下に接続できます:",
+    "networkNote": "モバイルデバイスが同じWi-Fiネットワークに接続されていることを確認してください。"
+  },
+  "keyboard": {
+    "title": "キーボードシミュレーションテスト",
+    "placeholder": "入力をテストするテキストを入力してください...",
+    "testButton": "テスト",
+    "testing": "テスト中..."
+  },
+  "activity": {
+    "title": "アクティビティログ",
+    "startingServer": "Side Assist デスクトップサーバーを開始しています",
+    "serverStarted": "Side Assist サーバーがポート8080で開始されました",
+    "serverAlreadyRunning": "サーバーは既に実行中です",
+    "keyboardTest": "キーボードテスト",
+    "keyboardTestFailed": "キーボードテストが失敗しました",
+    "healthCheck": "ヘルスチェック",
+    "clientsConnected": "クライアントが接続されています",
+    "removedInactiveClient": "非アクティブなクライアントを削除しました",
+    "activeClients": "アクティブなクライアント",
+    "failedToGetServerStatus": "サーバー状態の取得に失敗しました",
+    "failedToStartServer": "サーバーの開始に失敗しました",
+    "keyboardTestPrefix": "キーボードテスト"
+  },
+  "messages": {
+    "success": "成功",
+    "error": "エラー",
+    "failed": "失敗"
+  }
+}

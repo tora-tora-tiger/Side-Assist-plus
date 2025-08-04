@@ -1,0 +1,51 @@
+{
+  "app": {
+    "title": "Side Assist Desktop",
+    "subtitle": "Cross-platform keyboard automation server"
+  },
+  "status": {
+    "online": "Online",
+    "offline": "Offline", 
+    "connected": "Connected",
+    "waiting": "Waiting",
+    "running": "Running",
+    "stopped": "Stopped"
+  },
+  "server": {
+    "title": "Server Status",
+    "port": "Port",
+    "status": "Status",
+    "connectedClients": "Connected Clients"
+  },
+  "mobile": {
+    "title": "Mobile Connection",
+    "description": "Mobile devices can connect to:",
+    "networkNote": "Make sure your mobile device is on the same Wi-Fi network."
+  },
+  "keyboard": {
+    "title": "Test Keyboard Simulation",
+    "placeholder": "Enter text to simulate typing...",
+    "testButton": "Test",
+    "testing": "Testing..."
+  },
+  "activity": {
+    "title": "Activity Log",
+    "startingServer": "Starting Side Assist Desktop Server",
+    "serverStarted": "Side Assist Server started on port 8080",
+    "serverAlreadyRunning": "Server is already running",
+    "keyboardTest": "Keyboard test",
+    "keyboardTestFailed": "Keyboard test failed",
+    "healthCheck": "Health check from",
+    "clientsConnected": "clients connected",
+    "removedInactiveClient": "Removed inactive client",
+    "activeClients": "Active clients",
+    "failedToGetServerStatus": "Failed to get server status",
+    "failedToStartServer": "Failed to start server",
+    "keyboardTestPrefix": "Keyboard test"
+  },
+  "messages": {
+    "success": "Success",
+    "error": "Error",
+    "failed": "Failed"
+  }
+}
