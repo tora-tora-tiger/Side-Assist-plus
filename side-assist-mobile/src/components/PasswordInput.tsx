@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput } from 'react-native';
 import AlertManager from '../utils/AlertManager';
-import { commonStyles } from '../styles/commonStyles';
+import CustomButton from './CustomButton';
 
 interface PasswordInputProps {
   onAuthenticate: (password: string) => Promise<boolean>;
@@ -45,33 +45,18 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
   }
 
   return (
-    <View style={[commonStyles.card, { marginBottom: 20 }]}>
-      <Text
-        style={[commonStyles.title, { marginBottom: 10, textAlign: 'center' }]}
-      >
+    <View className="bg-white rounded-4xl p-6 mx-5 mb-5 shadow-lg">
+      <Text className="text-2xl font-bold text-gray-900 text-center mb-3">
         🔐 パスワード認証
       </Text>
 
-      <Text
-        style={[
-          commonStyles.subtitle,
-          { marginBottom: 15, textAlign: 'center' },
-        ]}
-      >
+      <Text className="text-base text-gray-600 text-center mb-4 leading-6">
         PCに表示されている5桁のパスワードを入力してください
       </Text>
 
-      <View style={{ marginBottom: 15 }}>
+      <View className="mb-4">
         <TextInput
-          style={[
-            commonStyles.textInput,
-            {
-              fontSize: 24,
-              textAlign: 'center',
-              letterSpacing: 8,
-              fontFamily: 'monospace',
-            },
-          ]}
+          className="border border-gray-200 rounded-xl px-4 py-4 text-2xl text-center font-mono tracking-widest bg-white"
           value={password}
           onChangeText={setPassword}
           placeholder="12345"
@@ -79,35 +64,18 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
           maxLength={5}
           autoFocus={true}
           editable={!isAuthenticating}
+          placeholderTextColor="#999999"
         />
       </View>
 
-      <TouchableOpacity
-        style={[
-          commonStyles.button,
-          {
-            backgroundColor:
-              password.length === 5 && !isAuthenticating
-                ? '#007AFF'
-                : '#cccccc',
-          },
-        ]}
+      <CustomButton
+        title="認証する"
+        isActive={password.length === 5 && !isAuthenticating}
+        isLoading={isAuthenticating}
         onPress={handleAuthenticate}
-        disabled={password.length !== 5 || isAuthenticating}
-      >
-        <Text style={[commonStyles.buttonText, { color: 'white' }]}>
-          {isAuthenticating ? '認証中...' : '認証する'}
-        </Text>
-      </TouchableOpacity>
+      />
 
-      <Text
-        style={{
-          fontSize: 12,
-          color: '#666',
-          textAlign: 'center',
-          marginTop: 10,
-        }}
-      >
+      <Text className="text-xs text-gray-500 text-center mt-3">
         パスワードは5分間有効です
       </Text>
     </View>

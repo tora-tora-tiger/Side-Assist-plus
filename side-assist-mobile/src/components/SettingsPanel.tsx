@@ -1,7 +1,5 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { settingsStyles } from '../styles/settingsStyles';
-import { statusStyles } from '../styles/commonStyles';
 
 interface SettingsPanelProps {
   isVisible: boolean;
@@ -21,72 +19,56 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   if (!isVisible) return null;
 
   return (
-    <View style={settingsStyles.settingsPanel}>
-      <TouchableOpacity style={settingsStyles.closeButton} onPress={onClose}>
-        <Text style={settingsStyles.closeButtonText}>✕</Text>
-      </TouchableOpacity>
-
-      <Text style={settingsStyles.settingsTitle}>接続情報</Text>
-
-      <View style={settingsStyles.settingsRow}>
-        <Text style={settingsStyles.settingsLabel}>接続状態</Text>
-        <Text
-          style={[
-            settingsStyles.settingsValue,
-            isConnected
-              ? statusStyles.statusConnected
-              : statusStyles.statusDisconnected,
-          ]}
+    <View className="absolute inset-0 bg-black/50 justify-center items-center z-40 p-5">
+      <View className="bg-white rounded-3xl p-6 w-full max-w-sm">
+        <TouchableOpacity
+          className="absolute top-4 right-4 w-8 h-8 bg-gray-100 rounded-full justify-center items-center"
+          onPress={onClose}
         >
-          {isConnected ? '接続済み' : '未接続'}
-        </Text>
-      </View>
+          <Text className="text-gray-600 text-lg">✕</Text>
+        </TouchableOpacity>
 
-      {macIP && (
-        <View style={settingsStyles.settingsRow}>
-          <Text style={settingsStyles.settingsLabel}>PC IP</Text>
-          <Text style={settingsStyles.settingsValue}>{macIP}</Text>
+        <Text className="text-2xl font-bold text-gray-900 text-center mb-6 mt-2">
+          接続情報
+        </Text>
+
+        <View className="mb-6">
+          <View className="flex-row items-center mb-3">
+            <View
+              className={`w-3 h-3 rounded-full mr-3 ${
+                isConnected ? 'bg-success' : 'bg-gray-300'
+              }`}
+            />
+            <Text className="text-lg font-medium text-gray-800">
+              {isConnected ? '接続済み' : '未接続'}
+            </Text>
+          </View>
+
+          {isConnected && macIP && (
+            <Text className="text-sm text-gray-600 ml-6">IP: {macIP}</Text>
+          )}
         </View>
-      )}
 
-      <View style={settingsStyles.infoSection}>
-        <Text style={settingsStyles.infoTitle}>📱 QRコード接続について</Text>
-        <Text style={settingsStyles.infoText}>
-          • PCで「新しいパスワード & QRコードを生成」をクリック
-        </Text>
-        <Text style={settingsStyles.infoText}>
-          • 「📷 QRコードをスキャン」ボタンでカメラアプリを起動
-        </Text>
-        <Text style={settingsStyles.infoText}>
-          • QRコードを読み取ると自動的にアプリに戻って接続完了
-        </Text>
-      </View>
-
-      <View style={settingsStyles.infoSection}>
-        <Text style={settingsStyles.infoTitle}>⌨️ 手動接続について</Text>
-        <Text style={settingsStyles.infoText}>
-          QRコードが使えない場合は「手動で入力」から接続できます
-        </Text>
-      </View>
-
-      {onShowPermissionGuide && (
-        <View style={settingsStyles.infoSection}>
-          <Text style={settingsStyles.infoTitle}>
-            🔧 接続のトラブルシューティング
-          </Text>
-          <Text style={settingsStyles.infoText}>
-            手動入力でも接続できない場合：
-          </Text>
+        {onShowPermissionGuide && (
           <TouchableOpacity
-            style={settingsStyles.permissionButton}
+            className="bg-primary rounded-2xl py-4 px-6 mb-4"
             onPress={onShowPermissionGuide}
           >
-            <Text style={settingsStyles.permissionButtonText}>
-              📶 ネットワーク権限を確認
+            <Text className="text-white text-base font-semibold text-center">
+              📶 ネットワーク権限ガイド
             </Text>
           </TouchableOpacity>
-        </View>
-      )}
+        )}
+
+        <TouchableOpacity
+          className="bg-gray-100 rounded-2xl py-4 px-6"
+          onPress={onClose}
+        >
+          <Text className="text-gray-700 text-base font-semibold text-center">
+            閉じる
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };

@@ -1,3 +1,12 @@
 {
-  "extends": "@react-native/typescript-config"
+  "extends": "@react-native/typescript-config/tsconfig.json",
+  "compilerOptions": {
+    "types": ["nativewind/types", "jest", "node"],
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "downlevelIteration": true,
+    "target": "ES2017",
+    "lib": ["ES2017", "DOM"]
+  },
+  "include": ["src/**/*", "*.d.ts", "nativewind-env.d.ts"]
 }

@@ -1,11 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Platform,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import {
   Camera,
   useCameraDevice,
@@ -157,27 +151,31 @@ export const QRScanner: React.FC<QRScannerProps> = ({
 
   if (hasPermission === null) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.message}>カメラ権限を確認中...</Text>
+      <View className="flex-1 bg-black justify-center items-center">
+        <Text className="text-white text-base text-center m-5">
+          カメラ権限を確認中...
+        </Text>
       </View>
     );
   }
 
   if (hasPermission === false) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.message}>カメラへのアクセスが拒否されました</Text>
+      <View className="flex-1 bg-black justify-center items-center">
+        <Text className="text-white text-base text-center m-5">
+          カメラへのアクセスが拒否されました
+        </Text>
         <TouchableOpacity
-          style={styles.button}
+          className="bg-primary py-4 px-6 rounded-2xl m-3 items-center"
           onPress={requestCameraPermission}
         >
-          <Text style={styles.buttonText}>権限を再要求</Text>
+          <Text className="text-white text-base font-bold">権限を再要求</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.button, styles.cancelButton]}
+          className="bg-gray-600 py-4 px-6 rounded-2xl m-3 items-center"
           onPress={onClose}
         >
-          <Text style={styles.buttonText}>キャンセル</Text>
+          <Text className="text-white text-base font-bold">キャンセル</Text>
         </TouchableOpacity>
       </View>
     );
@@ -189,41 +187,52 @@ export const QRScanner: React.FC<QRScannerProps> = ({
 
   if (!device) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>QRコードスキャン</Text>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>✕</Text>
+      <View className="flex-1 bg-black">
+        <View className="flex-row justify-between items-center p-5 pt-15 bg-black/80">
+          <Text className="text-white text-lg font-bold">QRコードスキャン</Text>
+          <TouchableOpacity
+            className="w-10 h-10 rounded-full bg-white/20 justify-center items-center"
+            onPress={onClose}
+          >
+            <Text className="text-white text-lg font-bold">✕</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.errorContainer}>
+        <View className="flex-1 justify-center items-center px-10">
           {isSimulator ? (
             <>
-              <Text style={styles.simulatorIcon}>📱</Text>
-              <Text style={styles.simulatorTitle}>シミュレーター環境</Text>
-              <Text style={styles.simulatorMessage}>
+              <Text className="text-6xl mb-6">📱</Text>
+              <Text className="text-white text-2xl font-bold mb-4 text-center">
+                シミュレーター環境
+              </Text>
+              <Text className="text-gray-300 text-base text-center leading-6 mb-8">
                 iOSシミュレーターではカメラ機能を使用できません。{'\n'}
                 実際のiOS端末でテストしてください。
               </Text>
-              <View style={styles.simulatorTips}>
-                <Text style={styles.tipsTitle}>💡 テスト用のヒント:</Text>
-                <Text style={styles.tipsText}>• 物理的なiOS端末を使用</Text>
-                <Text style={styles.tipsText}>• 手動入力で接続をテスト</Text>
-                <Text style={styles.tipsText}>
+              <View className="bg-white/10 p-5 rounded-3xl mb-8 w-full">
+                <Text className="text-white text-base font-bold mb-3">
+                  💡 テスト用のヒント:
+                </Text>
+                <Text className="text-gray-300 text-sm mb-1">
+                  • 物理的なiOS端末を使用
+                </Text>
+                <Text className="text-gray-300 text-sm mb-1">
+                  • 手動入力で接続をテスト
+                </Text>
+                <Text className="text-gray-300 text-sm">
                   • PCのQRコード生成は正常動作
                 </Text>
               </View>
             </>
           ) : (
             <>
-              <Text style={styles.errorIcon}>❌</Text>
-              <Text style={styles.errorTitle}>
+              <Text className="text-6xl mb-6">❌</Text>
+              <Text className="text-error text-2xl font-bold mb-4 text-center">
                 {isRealDevice
                   ? 'カメラデバイスが見つかりません'
                   : 'カメラが見つかりません'}
               </Text>
-              <Text style={styles.errorMessage}>
+              <Text className="text-gray-300 text-base text-center leading-6 mb-8">
                 {isRealDevice ? (
                   <>
                     実機でカメラデバイスが検出されません。{'\n'}
@@ -242,8 +251,11 @@ export const QRScanner: React.FC<QRScannerProps> = ({
             </>
           )}
 
-          <TouchableOpacity style={styles.button} onPress={onClose}>
-            <Text style={styles.buttonText}>閉じる</Text>
+          <TouchableOpacity
+            className="bg-primary py-4 px-6 rounded-2xl items-center"
+            onPress={onClose}
+          >
+            <Text className="text-white text-base font-bold">閉じる</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -251,32 +263,35 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>QRコードをスキャン</Text>
-        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-          <Text style={styles.closeButtonText}>✕</Text>
+    <View className="flex-1 bg-black">
+      <View className="flex-row justify-between items-center p-5 pt-15 bg-black/80">
+        <Text className="text-white text-lg font-bold">QRコードをスキャン</Text>
+        <TouchableOpacity
+          className="w-10 h-10 rounded-full bg-white/20 justify-center items-center"
+          onPress={onClose}
+        >
+          <Text className="text-white text-lg font-bold">✕</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.cameraContainer}>
+      <View className="flex-1 relative">
         <Camera
-          style={styles.camera}
+          className="flex-1"
           device={device}
           isActive={isVisible}
           codeScanner={codeScanner}
         />
 
-        <View style={styles.overlay}>
-          <View style={styles.scanArea} />
-          <Text style={styles.instruction}>
+        <View className="absolute inset-0 justify-center items-center">
+          <View className="w-64 h-64 border-2 border-primary rounded-2xl bg-transparent" />
+          <Text className="text-white text-base text-center mt-8 px-5 bg-black/70 py-3 rounded-lg">
             {isProcessing
               ? 'QRコードを処理中...'
               : 'PCのQRコードを枠内に合わせてください'}
           </Text>
           {isProcessing && (
-            <View style={styles.processingOverlay}>
-              <Text style={styles.processingText}>処理中...</Text>
+            <View className="absolute inset-0 bg-black/70 justify-center items-center">
+              <Text className="text-white text-lg font-bold">処理中...</Text>
             </View>
           )}
         </View>
@@ -284,166 +299,3 @@ export const QRScanner: React.FC<QRScannerProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-  },
-  title: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  cameraContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  camera: {
-    flex: 1,
-  },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scanArea: {
-    width: 250,
-    height: 250,
-    borderWidth: 2,
-    borderColor: '#007AFF',
-    borderRadius: 10,
-    backgroundColor: 'transparent',
-  },
-  instruction: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 30,
-    paddingHorizontal: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingVertical: 10,
-    borderRadius: 5,
-  },
-  message: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
-    margin: 20,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 10,
-    margin: 10,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#666',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  simulatorIcon: {
-    fontSize: 80,
-    marginBottom: 24,
-  },
-  simulatorTitle: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  simulatorMessage: {
-    color: '#ccc',
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
-  },
-  simulatorTips: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 32,
-    width: '100%',
-  },
-  tipsTitle: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  tipsText: {
-    color: '#ccc',
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  errorIcon: {
-    fontSize: 80,
-    marginBottom: 24,
-  },
-  errorTitle: {
-    color: '#ff6b6b',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  errorMessage: {
-    color: '#ccc',
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
-  },
-  processingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  processingText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-});
