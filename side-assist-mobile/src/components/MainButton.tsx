@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, View, Animated } from 'react-native';
+import { buttonStyles } from '../styles/commonStyles';
 import AlertManager from '../utils/AlertManager';
 
 interface MainButtonProps {
@@ -42,18 +43,26 @@ export const MainButton: React.FC<MainButtonProps> = ({
   return (
     <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
       <TouchableOpacity
-        className={`mx-5 mb-8 mt-auto rounded-4xl py-8 px-8 shadow-2xl ${
-          isConnected ? 'bg-primary' : 'bg-gray-300'
-        }`}
+        style={[
+          buttonStyles.mainButton,
+          isConnected
+            ? buttonStyles.mainButtonConnected
+            : buttonStyles.mainButtonDisconnected,
+        ]}
         onPress={handlePress}
         activeOpacity={0.8}
       >
-        <View className="items-center">
-          <Text className="text-5xl mb-3">{isConnected ? '🤝' : '🔌'}</Text>
+        <View style={buttonStyles.buttonContent}>
+          <Text style={buttonStyles.buttonIcon}>
+            {isConnected ? '🤝' : '🔌'}
+          </Text>
           <Text
-            className={`text-2xl font-bold ${
-              isConnected ? 'text-white' : 'text-gray-500'
-            }`}
+            style={[
+              buttonStyles.mainButtonText,
+              isConnected
+                ? buttonStyles.mainButtonTextConnected
+                : buttonStyles.mainButtonTextDisconnected,
+            ]}
           >
             ultradeepthink
           </Text>

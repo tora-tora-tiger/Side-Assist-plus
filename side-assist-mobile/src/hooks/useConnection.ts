@@ -194,11 +194,7 @@ export const useConnection = () => {
   );
 
   const connectManually = useCallback(
-    async (
-      ip: string,
-      port: string,
-      authPassword: string,
-    ): Promise<boolean> => {
+    async (ip: string, port: string, password: string): Promise<boolean> => {
       try {
         console.log(
           '🔗 [useConnection] connectManually START - ip:',
@@ -240,11 +236,11 @@ export const useConnection = () => {
         const authSuccess = await NetworkService.authenticateWithPassword(
           ip,
           port,
-          authPassword,
+          password,
         );
         if (authSuccess) {
           setIsAuthenticated(true);
-          setPassword(authPassword);
+          setPassword(password);
           console.log(
             '🎉 [useConnection] Manual connection and authentication successful!',
           );

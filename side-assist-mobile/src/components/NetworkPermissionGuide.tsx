@@ -18,62 +18,144 @@ export const NetworkPermissionGuide: React.FC<NetworkPermissionGuideProps> = ({
   };
 
   return (
-    <View className="absolute inset-0 bg-black/80 justify-center items-center z-50 p-5">
-      <View className="bg-gray-900 rounded-3xl p-6 w-full max-w-sm border border-gray-700">
-        <Text className="text-xl font-bold text-white text-center mb-4">
-          📶 ネットワーク権限が必要です
-        </Text>
+    <View style={styles.overlay}>
+      <View style={styles.modal}>
+        <Text style={styles.title}>📶 ネットワーク権限が必要です</Text>
 
-        <Text className="text-base text-gray-300 text-center mb-4 leading-6">
+        <Text style={styles.description}>
           Side Assistがデスクトップと通信するため、以下の権限が必要です：
         </Text>
 
-        <View className="bg-gray-800 rounded-2xl p-4 mb-4">
-          <Text className="text-sm text-success mb-2">
+        <View style={styles.permissionList}>
+          <Text style={styles.permissionItem}>
             • ローカルネットワーク使用許可
           </Text>
-          <Text className="text-sm text-success">
-            • ネットワークスキャン許可
-          </Text>
+          <Text style={styles.permissionItem}>• ネットワークスキャン許可</Text>
         </View>
 
-        <Text className="text-base font-semibold text-white mb-3">
-          権限を許可するには：
-        </Text>
+        <Text style={styles.steps}>権限を許可するには：</Text>
 
-        <View className="bg-gray-800 rounded-2xl p-4 mb-6">
-          <Text className="text-sm text-gray-300 mb-2 pl-2">
-            1. 「設定を開く」をタップ
-          </Text>
-          <Text className="text-sm text-gray-300 mb-2 pl-2">
-            2. 「ローカルネットワーク」をオン
-          </Text>
-          <Text className="text-sm text-gray-300 mb-2 pl-2">
-            3. アプリに戻る
-          </Text>
-          <Text className="text-sm text-gray-300 pl-2">
+        <View style={styles.stepsList}>
+          <Text style={styles.step}>1. 「設定を開く」をタップ</Text>
+          <Text style={styles.step}>2. 「ローカルネットワーク」をオン</Text>
+          <Text style={styles.step}>3. アプリに戻る</Text>
+          <Text style={styles.step}>
             4. 「ネットワークを再スキャン」をタップ
           </Text>
         </View>
 
-        <View className="flex-row justify-between gap-3">
+        <View style={styles.buttonContainer}>
           <TouchableOpacity
-            className="flex-1 bg-success py-3 px-4 rounded-2xl items-center"
+            style={styles.settingsButton}
             onPress={openSettings}
           >
-            <Text className="text-black text-base font-semibold">
-              設定を開く
-            </Text>
+            <Text style={styles.settingsButtonText}>設定を開く</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            className="flex-1 bg-transparent py-3 px-4 rounded-2xl border border-gray-600 items-center"
-            onPress={onDismiss}
-          >
-            <Text className="text-gray-300 text-base">後で設定</Text>
+          <TouchableOpacity style={styles.dismissButton} onPress={onDismiss}>
+            <Text style={styles.dismissButtonText}>後で設定</Text>
           </TouchableOpacity>
         </View>
       </View>
     </View>
   );
+};
+
+const styles = {
+  overlay: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    zIndex: 1000,
+    padding: 20,
+  },
+  modal: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold' as const,
+    color: '#fff',
+    textAlign: 'center' as const,
+    marginBottom: 16,
+  },
+  description: {
+    fontSize: 16,
+    color: '#ccc',
+    textAlign: 'center' as const,
+    marginBottom: 16,
+    lineHeight: 22,
+  },
+  permissionList: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+  },
+  permissionItem: {
+    fontSize: 14,
+    color: '#00ff88',
+    marginBottom: 8,
+  },
+  steps: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#fff',
+    marginBottom: 12,
+  },
+  stepsList: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 24,
+  },
+  step: {
+    fontSize: 14,
+    color: '#ccc',
+    marginBottom: 8,
+    paddingLeft: 8,
+  },
+  buttonContainer: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    gap: 12,
+  },
+  settingsButton: {
+    flex: 1,
+    backgroundColor: '#00ff88',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center' as const,
+  },
+  settingsButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600' as const,
+  },
+  dismissButton: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#555',
+    alignItems: 'center' as const,
+  },
+  dismissButtonText: {
+    color: '#ccc',
+    fontSize: 16,
+  },
 };
