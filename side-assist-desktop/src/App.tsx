@@ -37,7 +37,6 @@ function App() {
   const [oneTimePassword, setOneTimePassword] = useState<string | null>(null);
   const [isGeneratingPassword, setIsGeneratingPassword] = useState(false);
   const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
-  const [isGeneratingQR, setIsGeneratingQR] = useState(false);
 
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
     const newLog: LogEntry = {
@@ -98,7 +97,6 @@ function App() {
 
   const generateQRCode = async () => {
     try {
-      setIsGeneratingQR(true);
       const qrCode = await invoke<string>("generate_qr_code");
       setQrCodeImage(qrCode);
       addLog('QRコードを生成しました', 'success');
@@ -106,8 +104,6 @@ function App() {
       console.error("Failed to generate QR code:", error);
       addLog(`QRコード生成に失敗しました: ${error}`, 'error');
       setQrCodeImage(null);
-    } finally {
-      setIsGeneratingQR(false);
     }
   };
 
@@ -254,7 +250,6 @@ function App() {
               <div className="col-span-1 overflow-hidden">
                 <ServerStatus 
                   status={serverStatus}
-                  oneTimePassword={oneTimePassword}
                   isGeneratingPassword={isGeneratingPassword}
                   onGeneratePassword={generateOneTimePassword}
                 />

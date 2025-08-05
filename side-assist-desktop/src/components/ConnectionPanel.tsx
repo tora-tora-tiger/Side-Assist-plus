@@ -33,7 +33,7 @@ export const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
                 <div className="space-y-2 cursor-pointer" onClick={() => setIsQRModalOpen(true)}>
                   <div 
                     dangerouslySetInnerHTML={{ __html: qrCodeImage }}
-                    className="mx-auto w-[120px] h-[120px] bg-white p-2 rounded-lg [&>svg]:w-full [&>svg]:h-full hover:scale-105 transition-transform"
+                    className="mx-auto w-[120px] h-[120px] bg-white p-1 rounded-lg [&>svg]:w-full [&>svg]:h-full hover:scale-105 transition-transform"
                   />
                   <p className="text-xs text-stone-400">
                     Click to enlarge
@@ -96,9 +96,9 @@ export const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
           <div className="relative z-10 text-center">
             {qrCodeImage && (
               <div className="mb-4">
-                <div 
+                <div
                   dangerouslySetInnerHTML={{ __html: qrCodeImage }}
-                  className="mx-auto w-[400px] h-[400px] bg-white p-6 rounded-2xl shadow-2xl [&>svg]:w-full [&>svg]:h-full"
+                  className="mx-auto w-[400px] h-[400px] bg-white p-1 rounded-2xl shadow-2xl [&>svg]:w-full [&>svg]:h-full"
                 />
               </div>
             )}

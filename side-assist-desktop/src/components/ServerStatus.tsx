@@ -7,14 +7,12 @@ interface ServerStatusProps {
     connected_clients: number;
     port: number;
   };
-  oneTimePassword: string | null;
   isGeneratingPassword: boolean;
   onGeneratePassword: () => void;
 }
 
 export const ServerStatus: React.FC<ServerStatusProps> = ({ 
   status, 
-  oneTimePassword, 
   isGeneratingPassword, 
   onGeneratePassword
 }) => {
