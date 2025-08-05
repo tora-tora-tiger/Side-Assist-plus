@@ -52,8 +52,8 @@ export class NetworkService {
         );
         return false;
       }
-    } catch (error) {
-      if (error.name === 'AbortError') {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'AbortError') {
         console.log(`⏱️ [NetworkService] Connection aborted (timeout)`);
       } else {
         console.log(`💥 [NetworkService] Connection error:`, error);

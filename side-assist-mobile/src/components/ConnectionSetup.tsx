@@ -226,6 +226,70 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
       fontWeight: '600' as const,
       textAlign: 'center' as const,
     },
+    formContainer: {
+      marginTop: 20,
+    },
+    formField: {
+      marginBottom: 16,
+    },
+    formLabel: {
+      fontSize: 16,
+      fontWeight: '600' as const,
+      color: '#333333',
+      marginBottom: 8,
+    },
+    textInput: {
+      borderWidth: 1,
+      borderColor: '#e0e0e0',
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 16,
+      backgroundColor: '#ffffff',
+    },
+    passwordInput: {
+      borderWidth: 1,
+      borderColor: '#e0e0e0',
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 18,
+      backgroundColor: '#ffffff',
+      textAlign: 'center' as const,
+      letterSpacing: 4,
+      fontFamily: 'monospace',
+    },
+    buttonRow: {
+      flexDirection: 'row' as const,
+      justifyContent: 'space-between' as const,
+      marginTop: 24,
+      gap: 12,
+    },
+    backButton: {
+      flex: 1,
+      backgroundColor: '#f8f9fa',
+      borderRadius: 12,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      borderWidth: 1,
+      borderColor: '#e9ecef',
+    },
+    connectButton: {
+      flex: 1,
+      backgroundColor: '#007AFF',
+      borderRadius: 12,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+    },
+    disabledButton: {
+      backgroundColor: '#cccccc',
+    },
+    buttonText: {
+      fontSize: 16,
+      fontWeight: '600' as const,
+      textAlign: 'center' as const,
+      color: '#333333',
+    },
   };
 
   return (
