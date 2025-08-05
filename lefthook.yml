@@ -17,6 +17,7 @@ pre-commit:
       run: "npm run format"
       fail_text: "❌ Mobile format check failed. Run 'npm run format' to fix formatting issues."
       glob: "side-assist-mobile/**/*.{js,jsx,ts,tsx,json}"
+      stage_fixed: true
       
     # Mobile linting
     mobile-lint:
@@ -24,6 +25,7 @@ pre-commit:
       run: "npm run lint"
       fail_text: "❌ Mobile lint check failed. Fix code issues before committing."
       glob: "side-assist-mobile/**/*.{js,jsx,ts,tsx}"
+      stage_fixed: true
     
 
 
