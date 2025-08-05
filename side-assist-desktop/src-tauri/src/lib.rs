@@ -40,6 +40,7 @@ pub struct ServerState {
     pub port: u16,
     pub one_time_password: Option<String>,
     pub password_expiry: Option<u64>,
+    pub operation_in_progress: bool,
 }
 
 impl Default for ServerState {
@@ -50,6 +51,7 @@ impl Default for ServerState {
             port: 8080,
             one_time_password: None,
             password_expiry: None,
+            operation_in_progress: false,
         }
     }
 }
@@ -237,15 +239,105 @@ fn get_local_ip_address() -> Option<String> {
 }
 
 #[tauri::command]
+async fn set_port(state: tauri::State<'_, AppState>, port: u16) -> Result<String, String> {
+    let mut state = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+    
+    if state.operation_in_progress {
+        return Err("サーバー操作が実行中です。しばらくお待ちください。".to_string());
+    }
+    
+    if state.running {
+        return Err("サーバーが実行中です。まずサーバーを停止してください。".to_string());
+    }
+    
+    // ポート番号の妥当性チェック (u16の上限は65535なので上限チェックは不要)
+    if port < 1024 {
+        return Err("ポート番号は1024以上で指定してください。".to_string());
+    }
+    
+    state.port = port;
+    println!("🔧 Port changed to: {}", port);
+    Ok(format!("Port set to {}", port))
+}
+
+#[tauri::command]
+async fn stop_server(state: tauri::State<'_, AppState>) -> Result<String, String> {
+    // 最初のチェックと状態設定
+    {
+        let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+        
+        if state_guard.operation_in_progress {
+            return Err("サーバー操作が実行中です。しばらくお待ちください。".to_string());
+        }
+        
+        if !state_guard.running {
+            return Ok("Server is not running".to_string());
+        }
+        
+        state_guard.operation_in_progress = true;
+        state_guard.running = false;
+        state_guard.connected_clients.clear();
+        println!("🛑 Server marked as stopped (will terminate on next request cycle)");
+    } // MutexGuardはここで解放される
+    
+    // サーバーが完全に停止するまで待機
+    tokio::time::sleep(tokio::time::Duration::from_millis(2000)).await;
+    
+    // 操作完了フラグをクリア
+    {
+        let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+        state_guard.operation_in_progress = false;
+    } // MutexGuardはここで解放される
+    
+    println!("✅ Server stop operation completed");
+    Ok("Server stopped".to_string())
+}
+
+#[tauri::command]
 async fn start_server(state: tauri::State<'_, AppState>) -> Result<String, String> {
+    println!("🚀 start_server command called");
     let app_state = Arc::clone(&state);
     
+    let port = {
+        let mut state = app_state.lock().map_err(|e| {
+            println!("❌ Failed to lock state: {}", e);
+            format!("Failed to lock state: {}", e)
+        })?;
+        
+        println!("📊 Current state: running={}, operation_in_progress={}, port={}", 
+                state.running, state.operation_in_progress, state.port);
+        
+        if state.operation_in_progress {
+            println!("⚠️ Operation already in progress");
+            return Err("サーバー操作が実行中です。しばらくお待ちください。".to_string());
+        }
+        
+        if state.running {
+            println!("⚠️ Server already running");
+            return Err("Server is already running. Stop it first before starting a new one.".to_string());
+        }
+        
+        println!("✅ Setting operation_in_progress = true");
+        state.operation_in_progress = true;
+        state.port
+    };
+
+    // ポートが使用可能かチェック（一時的にバインドしてすぐに解放）
+    {
+        let test_listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await;
+        if let Err(e) = test_listener {
+            let mut state = app_state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+            state.operation_in_progress = false;
+            return Err(format!("ポート{}は使用できません: {}", port, e));
+        }
+        // test_listenerはここで自動的にドロップされ、ポートが解放される
+    }
+
+    // サーバーを実際に開始
     {
         let mut state = app_state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
-        if state.running {
-            return Ok("Server is already running".to_string());
-        }
         state.running = true;
+        state.operation_in_progress = false;
     }
 
     let server_state = Arc::clone(&app_state);
@@ -255,6 +347,7 @@ async fn start_server(state: tauri::State<'_, AppState>) -> Result<String, Strin
             eprintln!("Server error: {}", e);
             if let Ok(mut state) = error_state.lock() {
                 state.running = false;
+                state.operation_in_progress = false;
             }
         }
     });
@@ -265,10 +358,7 @@ async fn start_server(state: tauri::State<'_, AppState>) -> Result<String, Strin
         cleanup_inactive_clients(cleanup_state).await;
     });
 
-    let port = {
-        let state_guard = app_state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
-        state_guard.port
-    };
+    println!("✅ Server start operation completed on port {}", port);
     Ok(format!("Side Assist Server started on port {}", port))
 }
 
@@ -390,7 +480,7 @@ async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Erro
         .route("/type", post(handle_input))  // モバイルアプリとの互換性のため
         .route("/auth", post(handle_auth))
         .layer(CorsLayer::permissive())
-        .with_state(state);
+        .with_state(Arc::clone(&state));
 
     let bind_addr = format!("0.0.0.0:{}", port);
     println!("🔗 Attempting to bind to: {}", bind_addr);
@@ -404,7 +494,47 @@ async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Erro
     println!("  - POST /type   - Keyboard input simulation (mobile compatibility, requires password)");
     println!("  - POST /auth   - Authentication endpoint");
     
-    axum::serve(listener, app).await?;
+    // サーバーの実行中に定期的にstateをチェックして停止する
+    let server_task = tokio::spawn(async move {
+        axum::serve(listener, app).await
+    });
+    
+    // サーバー状態監視タスク
+    let monitor_state = Arc::clone(&state);
+    let monitor_task = tokio::spawn(async move {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(500));
+        loop {
+            interval.tick().await;
+            if let Ok(state_guard) = monitor_state.lock() {
+                if !state_guard.running {
+                    println!("🛑 Server shutdown requested, terminating...");
+                    break;
+                }
+            }
+        }
+    });
+    
+    // どちらかのタスクが完了したら終了
+    tokio::select! {
+        result = server_task => {
+            match result {
+                Ok(Ok(())) => println!("✅ Server task completed successfully"),
+                Ok(Err(e)) => println!("❌ Server task failed: {}", e),
+                Err(e) => println!("❌ Server task panicked: {}", e),
+            }
+        }
+        _ = monitor_task => {
+            println!("🔍 Server monitor requested shutdown");
+        }
+    }
+    
+    // 状態を更新
+    if let Ok(mut state_guard) = state.lock() {
+        state_guard.running = false;
+        state_guard.connected_clients.clear();
+        state_guard.operation_in_progress = false;
+    }
+    
     Ok(())
 }
 
@@ -571,7 +701,16 @@ async fn cleanup_inactive_clients(state: AppState) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let state = Arc::new(Mutex::new(ServerState::default()));
+    let mut initial_state = ServerState::default();
+    // アプリ起動時に状態をクリア
+    initial_state.running = false;
+    initial_state.operation_in_progress = false;
+    initial_state.connected_clients.clear();
+    
+    let state = Arc::new(Mutex::new(initial_state));
+    
+    println!("🚀 Side Assist Desktop starting up...");
+    println!("📊 Initial server state: stopped, port {}", 8080);
     
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -579,6 +718,8 @@ pub fn run() {
         .manage(state)
         .invoke_handler(tauri::generate_handler![
             get_server_status,
+            set_port,
+            stop_server,
             start_server,
             simulate_typing,
             check_accessibility_permission,

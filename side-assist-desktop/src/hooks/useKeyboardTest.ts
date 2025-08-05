@@ -7,6 +7,8 @@ interface LogEntry {
   time: string;
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
+  count: number;
+  id: string;
 }
 
 export const useKeyboardTest = (

@@ -5,6 +5,8 @@ interface LogEntry {
   time: string;
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
+  count: number;
+  id: string;
 }
 
 interface ActivityLogProps {
@@ -41,9 +43,9 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ logs }) => {
               <Text variant="muted" className="text-stone-400">No activity yet</Text>
             </Stack>
           ) : (
-            logs.map((log, index) => (
+            logs.map((log) => (
               <div
-                key={index}
+                key={log.id}
                 className="flex items-start gap-2 p-2 bg-gray-900/30 rounded-lg hover:bg-gray-900/40 transition-colors"
               >
                 <Icon name={getLogIcon(log.type)} className="text-stone-400 mt-0.5" size="sm" />
@@ -52,6 +54,11 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ logs }) => {
                   <Inline justify="between" align="start" className="gap-2">
                     <Text variant="small" className="text-stone-300 break-words">
                       {log.message}
+                      {log.count > 1 && (
+                        <span className="ml-2 px-1.5 py-0.5 bg-stone-600 text-stone-200 text-xs rounded-full font-mono">
+                          {log.count}
+                        </span>
+                      )}
                     </Text>
                     <Badge variant="default" size="sm">
                       {log.type}
@@ -60,6 +67,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ logs }) => {
                   
                   <Text variant="caption" className="text-stone-500 font-mono">
                     {log.time}
+                    {log.count > 1 && " (last occurrence)"}
                   </Text>
                 </Stack>
               </div>

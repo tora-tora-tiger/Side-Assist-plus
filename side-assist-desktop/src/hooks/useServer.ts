@@ -6,6 +6,8 @@ interface LogEntry {
   time: string;
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
+  count: number;
+  id: string;
 }
 
 export const useServer = (onLog: (message: string, type: LogEntry['type']) => void) => {
@@ -28,20 +30,6 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
       onLog('サーバーステータスの取得に失敗しました', 'error');
     }
   }, [onLog]);
-
-  const startServer = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const result = await serverService.start();
-      onLog(result, 'success');
-      await refreshServerStatus();
-    } catch (error) {
-      console.error("Failed to start server:", error);
-      onLog(`サーバー開始に失敗しました: ${error}`, 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [onLog, refreshServerStatus]);
 
   const generateQRCode = useCallback(async () => {
     try {
@@ -72,6 +60,20 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
     }
   }, [onLog, generateQRCode]);
 
+  const startServer = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const result = await serverService.start();
+      onLog(result, 'success');
+      await refreshServerStatus();
+    } catch (error) {
+      console.error("Failed to start server:", error);
+      onLog(`サーバー開始に失敗しました: ${error}`, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [onLog, refreshServerStatus]);
+
   const checkCurrentPassword = useCallback(async () => {
     try {
       const password = await passwordService.getCurrent();
@@ -82,6 +84,12 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
   }, []);
 
   const handlePortChange = useCallback(async (newPort: number) => {
+    // 既に処理中の場合は拒否
+    if (isLoading) {
+      onLog('サーバー操作が実行中です。しばらくお待ちください。', 'warning');
+      return;
+    }
+
     try {
       setIsLoading(true);
       onLog(`ポートを${newPort}に変更中...`, 'info');
@@ -91,20 +99,48 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
       
       // サーバーステータスを更新
       setServerStatus(prev => ({ ...prev, port: newPort }));
+      
+      // 少し待機してからステータスを確認
+      await new Promise(resolve => setTimeout(resolve, 1000));
       await refreshServerStatus();
     } catch (error) {
       console.error("Failed to change port:", error);
       onLog(`ポート変更に失敗しました: ${error}`, 'error');
+      
+      // エラー時はステータスを再取得して正しい状態に戻す
+      await refreshServerStatus();
     } finally {
       setIsLoading(false);
     }
-  }, [onLog, refreshServerStatus]);
+  }, [isLoading, onLog, refreshServerStatus]);
 
   // 初期化
   useEffect(() => {
-    onLog('サーバーを開始中...', 'info');
-    startServer();
-    checkCurrentPassword();
+    const initializeServer = async () => {
+      try {
+        onLog('サーバー状態を確認中...', 'info');
+        
+        // まずサーバーの状態を確認
+        await refreshServerStatus();
+        
+        // サーバーが実行中でない場合のみ起動
+        const currentStatus = await serverService.getStatus();
+        if (!currentStatus.running) {
+          onLog('サーバーを開始中...', 'info');
+          await startServer();
+        } else {
+          onLog('サーバーは既に実行中です', 'success');
+        }
+        
+        // パスワードをチェック
+        await checkCurrentPassword();
+      } catch (error) {
+        console.error("Server initialization failed:", error);
+        onLog(`サーバー初期化に失敗しました: ${error}`, 'error');
+      }
+    };
+    
+    initializeServer();
     
     // 定期的にステータスとパスワードを更新
     const interval = setInterval(() => {
@@ -113,7 +149,9 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
     }, 5000);
     
     return () => clearInterval(interval);
-  }, [startServer, checkCurrentPassword, refreshServerStatus, onLog]);
+    // 依存関係を削除して初期化を1回だけ実行
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     serverStatus,
