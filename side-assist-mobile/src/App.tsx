@@ -6,6 +6,7 @@ import {
   Text,
   Animated,
 } from 'react-native';
+import '../global.css';
 import AlertManager from './utils/AlertManager';
 
 import { useConnection } from './hooks/useConnection';
@@ -139,7 +140,7 @@ const App = () => {
   };
 
   return (
-    <View style={appStyles.container}>
+    <View className="flex-1 bg-gray-50">
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
       <View style={appStyles.header}>
@@ -160,7 +161,7 @@ const App = () => {
         <StatusIndicator isConnected={isConnected} />
       </View>
 
-      <View style={appStyles.content}>
+      <View className="flex-1 pt-5">
         <StatusMessage isConnected={isConnected} />
 
         <ConnectionSetup onConnect={connectManually} isVisible={!isConnected} />
