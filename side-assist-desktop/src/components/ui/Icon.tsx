@@ -1,4 +1,22 @@
 import React from 'react';
+import {
+  Link,
+  QrCode,
+  Server,
+  Smartphone,
+  Keyboard,
+  Settings,
+  BarChart3,
+  Lock,
+  RotateCcw,
+  Play,
+  AlertTriangle,
+  Clock,
+  Shield,
+  Activity,
+  X,
+  type LucideIcon
+} from 'lucide-react';
 
 interface IconProps {
   name: string;
@@ -11,61 +29,40 @@ export const Icon: React.FC<IconProps> = ({
   size = 'md',
   className = '',
 }) => {
-  const sizeClasses = {
-    sm: 'text-sm',
-    md: 'text-base',
-    lg: 'text-lg',
-    xl: 'text-xl',
-    '2xl': 'text-2xl',
+  const sizeMap = {
+    sm: 16,
+    md: 20,
+    lg: 24,
+    xl: 32,
+    '2xl': 40,
   };
 
-  const classes = `${sizeClasses[size]} ${className}`;
+  const iconSize = sizeMap[size];
 
-  const icons: Record<string, string> = {
-    // Connection & Network
-    connect: '🤝',
-    qr: '📷',
-    scan: '🔍',
-    wifi: '📶',
-    server: '🖥️',
-    mobile: '📱',
-    
-    // Status
-    success: '✅',
-    error: '❌',
-    warning: '⚠️',
-    info: 'ℹ️',
-    loading: '⏳',
-    
-    // Actions
-    play: '▶️',
-    pause: '⏸️',
-    stop: '⏹️',
-    refresh: '🔄',
-    settings: '⚙️',
-    edit: '✏️',
-    delete: '🗑️',
-    copy: '📋',
-    
-    // UI Elements
-    chevron_right: '›',
-    chevron_down: '⌄',
-    close: '✕',
-    check: '✓',
-    plus: '+',
-    minus: '-',
-    
-    // Specific to app
-    keyboard: '⌨️',
-    password: '🔐',
-    shield: '🛡️',
-    lock: '🔒',
-    unlock: '🔓',
+  const iconMap: Record<string, LucideIcon> = {
+    connect: Link,
+    qr: QrCode,
+    server: Server,
+    mobile: Smartphone,
+    keyboard: Keyboard,
+    settings: Settings,
+    activity: BarChart3,
+    lock: Lock,
+    refresh: RotateCcw,
+    play: Play,
+    warning: AlertTriangle,
+    clock: Clock,
+    shield: Shield,
+    loading: Activity,
+    close: X,
   };
+
+  const IconComponent = iconMap[name] || AlertTriangle;
 
   return (
-    <span className={classes} role="img" aria-label={name}>
-      {icons[name] || '❓'}
-    </span>
+    <IconComponent 
+      size={iconSize} 
+      className={className}
+    />
   );
 };

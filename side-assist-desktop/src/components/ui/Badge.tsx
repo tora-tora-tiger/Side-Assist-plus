@@ -29,29 +29,29 @@ export const Badge: React.FC<BadgeProps> = ({
 
   const variantClasses = {
     default: [
-      'bg-gray-100',
-      'text-gray-700',
-      'border-gray-200',
+      'bg-stone-700/50',
+      'text-stone-300',
+      'border-stone-600/50',
     ],
     success: [
-      'bg-green-100',
-      'text-green-700',
-      'border-green-200',
+      'bg-stone-600/50',
+      'text-stone-200',
+      'border-stone-500/50',
     ],
     warning: [
-      'bg-yellow-100',
-      'text-yellow-700',
-      'border-yellow-200',
+      'bg-stone-600/50',
+      'text-stone-300',
+      'border-stone-500/50',
     ],
     error: [
-      'bg-red-100',
-      'text-red-700',
-      'border-red-200',
+      'bg-stone-700/50',
+      'text-stone-400',
+      'border-stone-600/50',
     ],
     info: [
-      'bg-blue-100',
-      'text-blue-700',
-      'border-blue-200',
+      'bg-stone-600/50',
+      'text-stone-200',
+      'border-stone-500/50',
     ],
   };
 

@@ -20,6 +20,7 @@ export const usePermissions = (
 ): UsePermissionsReturn => {
   const [hasAccessibilityPermission, setHasAccessibilityPermission] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasLoggedPermissionStatus, setHasLoggedPermissionStatus] = useState(false);
 
   const checkPermissions = useCallback(async (): Promise<boolean> => {
     if (!config.enabled) {
@@ -34,12 +35,13 @@ export const usePermissions = (
       console.log('Permission check result:', hasPermission);
       setHasAccessibilityPermission(hasPermission);
       
-      if (config.logPermissionStatus && onLog) {
+      if (config.logPermissionStatus && onLog && !hasLoggedPermissionStatus) {
         if (!hasPermission) {
           onLog('⚠️ アクセシビリティ権限が未許可です', 'warning');
         } else {
           onLog('✅ アクセシビリティ権限が許可されています', 'success');
         }
+        setHasLoggedPermissionStatus(true);
       }
       
       return hasPermission;
@@ -52,12 +54,13 @@ export const usePermissions = (
         console.log('Rust permission check result:', rustResult);
         setHasAccessibilityPermission(rustResult);
         
-        if (config.logPermissionStatus && onLog) {
+        if (config.logPermissionStatus && onLog && !hasLoggedPermissionStatus) {
           if (!rustResult) {
             onLog('⚠️ アクセシビリティ権限が未許可です', 'warning');
           } else {
             onLog('✅ アクセシビリティ権限が許可されています', 'success');
           }
+          setHasLoggedPermissionStatus(true);
         }
         
         return rustResult;
@@ -67,14 +70,15 @@ export const usePermissions = (
         // macOS以外、または全てのチェックが失敗した場合は null を設定
         setHasAccessibilityPermission(null);
         
-        if (config.logPermissionStatus && onLog) {
+        if (config.logPermissionStatus && onLog && !hasLoggedPermissionStatus) {
           onLog('❓ 権限状態を取得できませんでした', 'error');
+          setHasLoggedPermissionStatus(true);
         }
         
         return false;
       }
     }
-  }, [config.enabled, config.logPermissionStatus, onLog]);
+  }, [config.enabled, config.logPermissionStatus, onLog, hasLoggedPermissionStatus]);
 
   const requestPermissions = useCallback(async (): Promise<boolean> => {
     if (!config.enabled) {

@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface ButtonProps {
-  variant?: 'primary' | 'secondary' | 'danger' | 'success';
+  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'warning';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   loading?: boolean;
@@ -26,16 +26,18 @@ export const Button: React.FC<ButtonProps> = ({
     'items-center',
     'justify-center',
     'font-medium',
-    'rounded-xl',
+    'rounded-lg',
     'transition-all',
     'duration-200',
     'focus:outline-none',
     'focus:ring-2',
     'focus:ring-offset-2',
+    'focus:ring-offset-gray-950',
     'disabled:opacity-50',
     'disabled:cursor-not-allowed',
-    'shadow-sm',
-    'hover:shadow-md',
+    'shadow-lg',
+    'hover:shadow-xl',
+    'active:scale-95',
   ];
 
   const sizeClasses = {
@@ -46,33 +48,56 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantClasses = {
     primary: [
-      'bg-blue-600',
-      'text-white',
-      'hover:bg-blue-700',
-      'focus:ring-blue-500',
-      'shadow-blue-200',
+      'bg-gradient-to-r',
+      'from-emerald-500',
+      'to-cyan-500',
+      'text-black',
+      'hover:from-emerald-400',
+      'hover:to-cyan-400',
+      'focus:ring-emerald-400',
+      'shadow-emerald-500/30',
+      'font-semibold',
     ],
     secondary: [
-      'bg-gray-100',
-      'text-gray-700',
-      'hover:bg-gray-200',
-      'focus:ring-gray-500',
+      'bg-gray-800/60',
+      'text-gray-200',
+      'hover:bg-gray-800/80',
+      'focus:ring-gray-400',
       'border',
-      'border-gray-300',
+      'border-gray-700/50',
+      'backdrop-blur-sm',
     ],
     danger: [
-      'bg-red-600',
+      'bg-gradient-to-r',
+      'from-red-500',
+      'to-pink-500',
       'text-white',
-      'hover:bg-red-700',
-      'focus:ring-red-500',
-      'shadow-red-200',
+      'hover:from-red-400',
+      'hover:to-pink-400',
+      'focus:ring-red-400',
+      'shadow-red-500/30',
     ],
     success: [
-      'bg-green-600',
-      'text-white',
-      'hover:bg-green-700',
-      'focus:ring-green-500',
-      'shadow-green-200',
+      'bg-gradient-to-r',
+      'from-emerald-500',
+      'to-green-500',
+      'text-black',
+      'hover:from-emerald-400',
+      'hover:to-green-400',
+      'focus:ring-emerald-400',
+      'shadow-emerald-500/30',
+      'font-semibold',
+    ],
+    warning: [
+      'bg-gradient-to-r',
+      'from-amber-500',
+      'to-yellow-500',
+      'text-black',
+      'hover:from-amber-400',
+      'hover:to-yellow-400',
+      'focus:ring-amber-400',
+      'shadow-amber-500/30',
+      'font-semibold',
     ],
   };
 

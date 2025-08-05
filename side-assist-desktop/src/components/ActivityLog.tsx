@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Badge, Icon } from './ui';
+import { Card, CardHeader, CardTitle, CardContent, Badge, Icon, Stack, Inline, Text } from './ui';
 
 interface LogEntry {
   time: string;
@@ -14,69 +14,58 @@ interface ActivityLogProps {
 export const ActivityLog: React.FC<ActivityLogProps> = ({ logs }) => {
   const getLogIcon = (type: LogEntry['type']) => {
     switch (type) {
-      case 'success': return 'success';
+      case 'success': return 'play';
       case 'warning': return 'warning';
-      case 'error': return 'error';
-      default: return 'info';
-    }
-  };
-
-  const getLogVariant = (type: LogEntry['type']) => {
-    switch (type) {
-      case 'success': return 'success';
-      case 'warning': return 'warning';
-      case 'error': return 'error';
-      default: return 'info';
+      case 'error': return 'warning';
+      default: return 'activity';
     }
   };
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
-        <div className="flex items-center gap-3">
-          <Icon name="info" size="lg" />
-          <CardTitle>Activity Log</CardTitle>
+        <Inline gap="sm" align="center">
+          <Icon name="activity" className="text-stone-400" />
+          <CardTitle className="text-stone-200">Activity Log</CardTitle>
           <Badge variant="default" size="sm">
             {logs.length} entries
           </Badge>
-        </div>
+        </Inline>
       </CardHeader>
       
       <CardContent>
-        <div className="space-y-3 max-h-80 overflow-y-auto">
+        <Stack gap="sm" className="h-full max-h-[300px] overflow-y-auto">
           {logs.length === 0 ? (
-            <div className="text-center py-8">
-              <Icon name="info" size="2xl" className="text-gray-300 mb-2" />
-              <p className="text-gray-500">No activity yet</p>
-            </div>
+            <Stack gap="sm" align="center" className="py-8">
+              <Icon name="activity" size="xl" className="text-stone-500" />
+              <Text variant="muted" className="text-stone-400">No activity yet</Text>
+            </Stack>
           ) : (
             logs.map((log, index) => (
               <div
                 key={index}
-                className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                className="flex items-start gap-2 p-2 bg-gray-900/30 rounded-lg hover:bg-gray-900/40 transition-colors"
               >
-                <div className="flex-shrink-0 mt-0.5">
-                  <Icon name={getLogIcon(log.type)} className="text-sm" />
-                </div>
+                <Icon name={getLogIcon(log.type)} className="text-stone-400 mt-0.5" size="sm" />
                 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm text-gray-900 break-words">
+                <Stack gap="xs" className="flex-1 min-w-0">
+                  <Inline justify="between" align="start" className="gap-2">
+                    <Text variant="small" className="text-stone-300 break-words">
                       {log.message}
-                    </p>
-                    <Badge variant={getLogVariant(log.type)} size="sm">
+                    </Text>
+                    <Badge variant="default" size="sm">
                       {log.type}
                     </Badge>
-                  </div>
+                  </Inline>
                   
-                  <p className="text-xs text-gray-500 mt-1 font-mono">
+                  <Text variant="caption" className="text-stone-500 font-mono">
                     {log.time}
-                  </p>
-                </div>
+                  </Text>
+                </Stack>
               </div>
             ))
           )}
-        </div>
+        </Stack>
       </CardContent>
     </Card>
   );

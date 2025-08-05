@@ -14,10 +14,10 @@ export const Card: React.FC<CardProps> = ({
   variant = 'default',
 }) => {
   const baseClasses = [
-    'bg-white',
     'rounded-xl',
     'transition-all',
     'duration-200',
+    'backdrop-blur-sm',
   ];
 
   const paddingClasses = {
@@ -29,21 +29,31 @@ export const Card: React.FC<CardProps> = ({
 
   const variantClasses = {
     default: [
+      'bg-gray-900/40',
       'border',
-      'border-gray-200',
-      'shadow-sm',
-      'hover:shadow-md',
+      'border-gray-800/30',
+      'shadow-2xl',
+      'hover:shadow-3xl',
+      'hover:bg-gray-900/50',
+      'backdrop-blur-xl',
     ],
     elevated: [
-      'shadow-lg',
-      'hover:shadow-xl',
-      'border-0',
+      'bg-gray-900/60',
+      'border',
+      'border-gray-700/40',
+      'shadow-3xl',
+      'hover:shadow-4xl',
+      'hover:bg-gray-900/70',
+      'backdrop-blur-xl',
     ],
     outlined: [
+      'bg-gray-950/30',
       'border-2',
-      'border-gray-200',
-      'shadow-none',
-      'hover:border-gray-300',
+      'border-gray-700/50',
+      'shadow-2xl',
+      'hover:border-gray-600/60',
+      'hover:bg-gray-950/40',
+      'backdrop-blur-xl',
     ],
   };
 
@@ -84,7 +94,7 @@ export const CardTitle: React.FC<CardTitleProps> = ({
   className = '',
   level = 2,
 }) => {
-  const baseClasses = 'font-semibold text-gray-900 leading-tight';
+  const baseClasses = 'font-semibold text-white leading-tight';
   
   const levelClasses = {
     1: 'text-2xl',
@@ -94,7 +104,7 @@ export const CardTitle: React.FC<CardTitleProps> = ({
 
   const classes = `${baseClasses} ${levelClasses[level]} ${className}`;
 
-  const Tag = `h${level}` as keyof JSX.IntrinsicElements;
+  const Tag = `h${level}` as keyof React.JSX.IntrinsicElements;
 
   return <Tag className={classes}>{children}</Tag>;
 };
@@ -109,7 +119,7 @@ export const CardContent: React.FC<CardContentProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`text-gray-600 leading-relaxed ${className}`}>
+    <div className={`text-gray-300 leading-relaxed ${className}`}>
       {children}
     </div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Badge, StatusDot, Icon } from './ui';
+import { Card, CardHeader, CardTitle, CardContent, CardActions, Badge, StatusDot, Icon, Button } from './ui';
 
 interface ServerStatusProps {
   status: {
@@ -7,17 +7,25 @@ interface ServerStatusProps {
     connected_clients: number;
     port: number;
   };
+  oneTimePassword: string | null;
+  isGeneratingPassword: boolean;
+  onGeneratePassword: () => void;
 }
 
-export const ServerStatus: React.FC<ServerStatusProps> = ({ status }) => {
+export const ServerStatus: React.FC<ServerStatusProps> = ({ 
+  status, 
+  oneTimePassword, 
+  isGeneratingPassword, 
+  onGeneratePassword
+}) => {
   const getStatusVariant = () => {
     if (!status.running) return 'error';
-    return status.connected_clients > 0 ? 'success' : 'warning';
+    return status.connected_clients > 0 ? 'success' : 'info';
   };
 
   const getStatusText = () => {
     if (!status.running) return 'Offline';
-    return status.connected_clients > 0 ? 'Connected' : 'Waiting for connections';
+    return status.connected_clients > 0 ? 'Connected' : 'Ready';
   };
 
   const getStatusDot = () => {
@@ -26,37 +34,60 @@ export const ServerStatus: React.FC<ServerStatusProps> = ({ status }) => {
   };
 
   return (
-    <Card variant="elevated">
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <Icon name="server" size="lg" />
-          <CardTitle>Server Status</CardTitle>
+    <Card variant="elevated" className="h-full flex flex-col">
+      <CardHeader className="pb-2 shrink-0">
+        <div className="flex items-center gap-2">
+          <Icon name="server" className="text-stone-400" />
+          <CardTitle className="text-stone-200">Server Status</CardTitle>
           <StatusDot status={getStatusDot()} />
         </div>
       </CardHeader>
       
-      <CardContent>
-        <div className="space-y-4">
+      <CardContent className="p-3 flex-1">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-600">Port:</span>
+            <span className="text-xs text-stone-400">Port</span>
             <Badge variant="default">{status.port}</Badge>
           </div>
           
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-600">Status:</span>
+            <span className="text-xs text-stone-400">Status</span>
             <Badge variant={getStatusVariant()}>
               {getStatusText()}
             </Badge>
           </div>
           
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-600">Connected Clients:</span>
-            <Badge variant={status.connected_clients > 0 ? 'success' : 'default'}>
+            <span className="text-xs text-stone-400">Clients</span>
+            <Badge variant={status.connected_clients > 0 ? 'default' : 'default'}>
               {status.connected_clients}
             </Badge>
           </div>
+          
+          {status.running && (
+            <div className="pt-2 mt-2 border-t border-gray-700/50">
+              <p className="text-xs text-stone-400 mb-1">Network</p>
+              <div className="bg-gray-900/50 border border-gray-600/30 rounded-lg p-2 font-mono text-xs text-stone-300">
+                localhost:{status.port}
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
+
+      <CardActions className="pt-2 shrink-0">
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={onGeneratePassword}
+          loading={isGeneratingPassword}
+          disabled={isGeneratingPassword}
+          className="w-full"
+        >
+          <Icon name="refresh" className="mr-1" />
+          {isGeneratingPassword ? 'Generating...' : 'Generate New'}
+        </Button>
+      </CardActions>
     </Card>
   );
 };
