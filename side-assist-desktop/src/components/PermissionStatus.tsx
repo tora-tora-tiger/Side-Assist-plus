@@ -15,6 +15,7 @@ export const PermissionStatus: React.FC<PermissionStatusProps> = ({
   isLoading,
   onOpenSystemPreferences,
 }) => {
+
   // 権限機能が無効の場合は何も表示しない
   if (!config.enabled) {
     return null;
@@ -45,14 +46,14 @@ export const PermissionStatus: React.FC<PermissionStatusProps> = ({
 
       <CardContent>
         <div className="space-y-4">
-          <div className="bg-gray-900/30 rounded-lg p-4">
+          <div className="bg-stone-900/30 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <Icon name="shield" className="text-emerald-400 mt-1" />
+              <Icon name="shield" className="text-stone-400 mt-1" />
               <div>
-                <h4 className="font-medium text-white mb-1">
+                <h4 className="font-medium text-stone-200 mb-1">
                   Accessibility Permission
                 </h4>
-                <p className="text-sm text-gray-300 mb-3">
+                <p className="text-sm text-stone-400 mb-3">
                   Required for keyboard input simulation on macOS
                 </p>
                 

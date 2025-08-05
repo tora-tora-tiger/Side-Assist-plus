@@ -1,21 +1,16 @@
-import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { useTranslation } from 'react-i18next';
+import { useState } from "react";
 import { permissionConfig } from './config/permissions';
 import { usePermissions } from './hooks/usePermissions';
+import { useServer } from './hooks/useServer';
+import { useKeyboardTest } from './hooks/useKeyboardTest';
 import { ServerStatus } from './components/ServerStatus';
 import { ConnectionPanel } from './components/ConnectionPanel';
 import { KeyboardTest } from './components/KeyboardTest';
 import { ActivityLog } from './components/ActivityLog';
 import { PermissionStatus } from './components/PermissionStatus';
+import { PortSettings } from './components/PortSettings';
 import { Icon } from './components/ui';
 import "./App.css";
-
-interface ServerStatusType {
-  running: boolean;
-  connected_clients: number;
-  port: number;
-}
 
 interface LogEntry {
   time: string;
@@ -24,19 +19,8 @@ interface LogEntry {
 }
 
 function App() {
-  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('connection');
-  const [serverStatus, setServerStatus] = useState<ServerStatusType>({
-    running: false,
-    connected_clients: 0,
-    port: 8080
-  });
-  const [testResult, setTestResult] = useState("");
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [oneTimePassword, setOneTimePassword] = useState<string | null>(null);
-  const [isGeneratingPassword, setIsGeneratingPassword] = useState(false);
-  const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
 
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
     const newLog: LogEntry = {
@@ -54,108 +38,23 @@ function App() {
     openSystemPreferences,
   } = usePermissions(permissionConfig, addLog);
 
-  const refreshServerStatus = async () => {
-    try {
-      const status = await invoke<ServerStatusType>("get_server_status");
-      setServerStatus(status);
-    } catch (error) {
-      console.error("Failed to get server status:", error);
-      addLog(t('activity.failedToGetServerStatus'), 'error');
-    }
-  };
+  // サーバー管理フック
+  const {
+    serverStatus,
+    isLoading: isServerLoading,
+    oneTimePassword,
+    isGeneratingPassword,
+    qrCodeImage,
+    generateOneTimePassword,
+    handlePortChange
+  } = useServer(addLog);
 
-  const startServer = async () => {
-    try {
-      setIsLoading(true);
-      const result = await invoke<string>("start_server");
-      addLog(result, 'success');
-      await refreshServerStatus();
-    } catch (error) {
-      console.error("Failed to start server:", error);
-      addLog(`${t('activity.failedToStartServer')}: ${error}`, 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const generateOneTimePassword = async () => {
-    try {
-      setIsGeneratingPassword(true);
-      const password = await invoke<string>("generate_one_time_password");
-      setOneTimePassword(password);
-      addLog(`新しいワンタイムパスワードを生成しました: ${password}`, 'success');
-      
-      // パスワード生成後、自動的にQRコードも生成
-      generateQRCode();
-    } catch (error) {
-      console.error("Failed to generate password:", error);
-      addLog(`パスワード生成に失敗しました: ${error}`, 'error');
-    } finally {
-      setIsGeneratingPassword(false);
-    }
-  };
-
-  const generateQRCode = async () => {
-    try {
-      const qrCode = await invoke<string>("generate_qr_code");
-      setQrCodeImage(qrCode);
-      addLog('QRコードを生成しました', 'success');
-    } catch (error) {
-      console.error("Failed to generate QR code:", error);
-      addLog(`QRコード生成に失敗しました: ${error}`, 'error');
-      setQrCodeImage(null);
-    }
-  };
-
-  const checkCurrentPassword = async () => {
-    try {
-      const password = await invoke<string | null>("get_current_password");
-      setOneTimePassword(password);
-    } catch (error) {
-      console.error("Failed to get current password:", error);
-    }
-  };
-
-  const testTyping = async (text: string) => {
-    // アクセシビリティ権限チェック（設定で無効にされている場合はスキップ）
-    if (permissionConfig.disableKeyboardWhenDenied && hasAccessibilityPermission === false) {
-      setTestResult('アクセシビリティ権限が必要です。権限を許可してください。');
-      return;
-    }
-    
-    try {
-      setIsLoading(true);
-      setTestResult(t('keyboard.testing'));
-      const result = await invoke<string>("simulate_typing", { text });
-      setTestResult(result);
-      addLog(`${t('activity.keyboardTestPrefix')}: "${text}"`, 'success');
-    } catch (error) {
-      console.error("Failed to test typing:", error);
-      setTestResult(`${t('messages.failed')}: ${error}`);
-      addLog(`${t('activity.keyboardTestFailed')}: ${error}`, 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    // Add initial log with proper translation
-    addLog(t('activity.startingServer'), 'info');
-    
-    // Initial server start
-    startServer();
-    
-    // Check current password
-    checkCurrentPassword();
-    
-    // Refresh status and password every 5 seconds
-    const interval = setInterval(() => {
-      refreshServerStatus();
-      checkCurrentPassword();
-    }, 5000);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t]);
+  // キーボードテストフック
+  const {
+    testResult,
+    isLoading: isKeyboardLoading,
+    testTyping
+  } = useKeyboardTest(hasAccessibilityPermission, addLog);
 
   const tabs = [
     {
@@ -268,7 +167,7 @@ function App() {
           <div className="h-full p-2 flex items-center justify-center overflow-hidden">
             <div className="w-full max-w-2xl">
               <KeyboardTest
-                isLoading={isLoading}
+                isLoading={isKeyboardLoading}
                 testResult={testResult}
                 hasAccessibilityPermission={hasAccessibilityPermission}
                 disableKeyboardWhenDenied={permissionConfig.disableKeyboardWhenDenied}
@@ -279,14 +178,23 @@ function App() {
         )}
         
         {activeTab === 'permissions' && (
-          <div className="h-full p-2 flex items-center justify-center overflow-hidden">
-            <div className="w-full max-w-3xl">
-              <PermissionStatus
-                config={permissionConfig}
-                hasAccessibilityPermission={hasAccessibilityPermission}
-                isLoading={isPermissionLoading}
-                onOpenSystemPreferences={openSystemPreferences}
-              />
+          <div className="h-full p-2 overflow-hidden">
+            <div className="h-full grid grid-cols-1 lg:grid-cols-2 gap-2 max-w-5xl mx-auto">
+              <div className="overflow-hidden">
+                <PortSettings
+                  currentPort={serverStatus.port}
+                  onPortChange={handlePortChange}
+                  isLoading={isServerLoading}
+                />
+              </div>
+              <div className="overflow-hidden">
+                <PermissionStatus
+                  config={permissionConfig}
+                  hasAccessibilityPermission={hasAccessibilityPermission}
+                  isLoading={isPermissionLoading}
+                  onOpenSystemPreferences={openSystemPreferences}
+                />
+              </div>
             </div>
           </div>
         )}
