@@ -67,4 +67,38 @@ export const settingsStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  infoSection: {
+    marginTop: 30,
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  infoTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  infoText: {
+    color: '#ccc',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 6,
+  },
+  permissionButton: {
+    backgroundColor: '#ff6b35',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignSelf: 'center',
+    marginTop: 12,
+  },
+  permissionButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
 });

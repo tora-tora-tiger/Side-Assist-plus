@@ -1,113 +1,277 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { NetworkService } from '../services/NetworkService';
-import { NetworkPermissionService } from '../services/NetworkPermissionService';
+import { DeepLinkService, ConnectionParams } from '../services/DeepLinkService';
 
 export const useConnection = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [macIP, setMacIP] = useState<string>('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [showPermissionGuide, setShowPermissionGuide] = useState(false);
+  const [macPort, setMacPort] = useState<string>('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState<string>('');
   const connectionMonitorRef = useRef<NodeJS.Timeout | null>(null);
+  const monitoringTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const startConnectionMonitoring = useCallback(() => {
-    if (connectionMonitorRef.current) {
-      clearInterval(connectionMonitorRef.current);
+  // DeepLink処理のハンドラー
+  const handleDeepLink = useCallback(async (params: ConnectionParams) => {
+    console.log('🔗 [useConnection] handleDeepLink START - params:', params);
+    console.log(
+      '🚨 [useConnection] This function should be called ONLY ONCE per QR scan!',
+    );
+
+    // まず接続をテスト
+    console.log('🔗 [useConnection] Calling NetworkService.testConnection...');
+    const connected = await NetworkService.testConnection(
+      params.ip,
+      params.port,
+    );
+    if (!connected) {
+      console.log(
+        '❌ [useConnection] Cannot reach server at:',
+        `${params.ip}:${params.port}`,
+      );
+      return;
     }
 
-    const checkConnection = async () => {
-      if (macIP) {
-        const connected = await NetworkService.testConnection(macIP);
+    // 接続成功時にステートを更新
+    console.log('🔗 [useConnection] Setting connection state...');
+    setMacIP(params.ip);
+    setMacPort(params.port);
+    setIsConnected(true);
+
+    console.log(
+      '✅ [useConnection] Connected to server:',
+      `${params.ip}:${params.port}`,
+    );
+
+    // パスワードで認証を試行
+    console.log(
+      '🔗 [useConnection] Calling NetworkService.authenticateWithPassword...',
+    );
+    const authSuccess = await NetworkService.authenticateWithPassword(
+      params.ip,
+      params.port,
+      params.password,
+    );
+    if (authSuccess) {
+      setIsAuthenticated(true);
+      setPassword(params.password);
+      console.log(
+        '🎉 [useConnection] QR code connection and authentication successful!',
+      );
+    } else {
+      console.log(
+        '❌ [useConnection] Authentication failed with provided password',
+      );
+    }
+    console.log('🔗 [useConnection] handleDeepLink END');
+  }, []);
+
+  // DeepLink処理のセットアップ
+  useEffect(() => {
+    DeepLinkService.initialize();
+    DeepLinkService.addListener(handleDeepLink);
+
+    return () => {
+      DeepLinkService.removeListener(handleDeepLink);
+      DeepLinkService.cleanup();
+    };
+  }, [handleDeepLink]);
+
+  const startConnectionMonitoring = useCallback(() => {
+    console.log(
+      '🔍 [useConnection] startConnectionMonitoring called with IP:',
+      macIP,
+      'Port:',
+      macPort,
+    );
+
+    // 既存のタイマーをクリア
+    if (connectionMonitorRef.current) {
+      console.log('🔍 [useConnection] Clearing existing monitor interval');
+      clearInterval(connectionMonitorRef.current);
+      connectionMonitorRef.current = null;
+    }
+    if (monitoringTimeoutRef.current) {
+      console.log('🔍 [useConnection] Clearing existing monitor timeout');
+      clearTimeout(monitoringTimeoutRef.current);
+      monitoringTimeoutRef.current = null;
+    }
+
+    // 現在のIP/Portを保存（クロージャー対策）
+    const currentIP = macIP;
+    const currentPort = macPort;
+
+    if (!currentIP || !currentPort) {
+      console.log(
+        '❌ [useConnection] Cannot start monitoring - missing IP or Port',
+      );
+      return;
+    }
+
+    // 初期接続直後は10秒待ってから監視開始（重複health checkを避ける）
+    console.log(
+      '🔍 [useConnection] Delaying monitoring start by 10 seconds to avoid duplicate health checks...',
+    );
+
+    monitoringTimeoutRef.current = setTimeout(() => {
+      const checkConnection = async () => {
+        console.log(
+          '🔍 [useConnection] Periodic health check - calling testConnection...',
+        );
+        const connected = await NetworkService.testConnection(
+          currentIP,
+          currentPort,
+        );
         setIsConnected(connected);
 
         if (!connected) {
-          console.log('🔌 Connection lost, attempting to reconnect...');
-          const foundIP = await NetworkService.scanForServer();
-          if (foundIP && foundIP !== macIP) {
-            setMacIP(foundIP);
-            setIsConnected(true);
-          }
+          console.log('🔌 [useConnection] Connection lost');
+          setIsConnected(false);
+          setIsAuthenticated(false);
+          setPassword('');
         }
-      }
-    };
+      };
 
-    connectionMonitorRef.current = setInterval(checkConnection, 5000);
-    console.log('🔍 Connection monitoring started');
-  }, [macIP]);
+      connectionMonitorRef.current = setInterval(checkConnection, 10000); // 10秒間隔に延長
+      console.log(
+        '🔍 [useConnection] Connection monitoring started with 10s interval (after delay)',
+      );
+    }, 10000);
+  }, [macIP, macPort]);
 
   const stopConnectionMonitoring = useCallback(() => {
+    console.log('🛑 [useConnection] Stopping connection monitoring...');
+
     if (connectionMonitorRef.current) {
       clearInterval(connectionMonitorRef.current);
       connectionMonitorRef.current = null;
-      console.log('🛑 Connection monitoring stopped');
+      console.log('🛑 [useConnection] Cleared monitoring interval');
     }
+
+    if (monitoringTimeoutRef.current) {
+      clearTimeout(monitoringTimeoutRef.current);
+      monitoringTimeoutRef.current = null;
+      console.log('🛑 [useConnection] Cleared monitoring timeout');
+    }
+
+    console.log('🛑 [useConnection] Connection monitoring stopped');
   }, []);
 
-  const scanForServer = useCallback(async () => {
-    setIsSearching(true);
-    setMacIP('Scanning network...');
-
-    try {
-      // 権限チェックを先に実行
-      const shouldShowGuide =
-        await NetworkPermissionService.shouldShowPermissionGuide();
-      if (shouldShowGuide) {
-        setShowPermissionGuide(true);
-        setMacIP('Network permission required');
-        setIsConnected(false);
-        setIsSearching(false);
-        return;
-      }
-
-      const foundIP = await NetworkService.scanForServer();
-
-      if (foundIP) {
-        setMacIP(foundIP);
-        setIsConnected(true);
-        setShowPermissionGuide(false);
-        console.log('✅ Found Mac server at:', foundIP);
-      } else {
-        setMacIP('No server found');
-        setIsConnected(false);
-        console.log('❌ No Mac server found on network');
-      }
-    } catch (error) {
-      console.error('Network scan error:', error);
-      setMacIP('Scan failed');
-      setIsConnected(false);
-
-      // エラーが権限関連の可能性をチェック
-      const shouldShowGuide =
-        await NetworkPermissionService.shouldShowPermissionGuide();
-      setShowPermissionGuide(shouldShowGuide);
-    } finally {
-      setIsSearching(false);
-    }
-  }, []);
-
-  const sendText = useCallback(
-    async (text: string): Promise<boolean> => {
-      if (!macIP || !isConnected) {
+  const authenticateWithPassword = useCallback(
+    async (inputPassword: string): Promise<boolean> => {
+      if (!macIP || !macPort || !isConnected) {
         return false;
       }
 
-      return await NetworkService.sendText(macIP, text);
+      const success = await NetworkService.authenticateWithPassword(
+        macIP,
+        macPort,
+        inputPassword,
+      );
+      if (success) {
+        setIsAuthenticated(true);
+        setPassword(inputPassword);
+        console.log('✅ Authentication successful');
+      } else {
+        setIsAuthenticated(false);
+        setPassword('');
+        console.log('❌ Authentication failed');
+      }
+      return success;
     },
-    [macIP, isConnected],
+    [macIP, macPort, isConnected],
   );
 
-  const dismissPermissionGuide = useCallback(() => {
-    setShowPermissionGuide(false);
-  }, []);
+  const sendText = useCallback(
+    async (text: string): Promise<boolean> => {
+      if (!macIP || !macPort || !isConnected || !isAuthenticated) {
+        return false;
+      }
+
+      return await NetworkService.sendText(macIP, macPort, text, password);
+    },
+    [macIP, macPort, isConnected, isAuthenticated, password],
+  );
+
+  const connectManually = useCallback(
+    async (ip: string, port: string, password: string): Promise<boolean> => {
+      try {
+        console.log(
+          '🔗 [useConnection] connectManually START - ip:',
+          ip,
+          'port:',
+          port,
+        );
+        console.log(
+          '🚨 [useConnection] This function should be called ONLY ONCE per connection attempt!',
+        );
+
+        // まず接続をテスト
+        console.log(
+          '🔗 [useConnection] Calling NetworkService.testConnection from connectManually...',
+        );
+        const connected = await NetworkService.testConnection(ip, port);
+        if (!connected) {
+          console.log(
+            '❌ [useConnection] Cannot reach server at:',
+            `${ip}:${port}`,
+          );
+          return false;
+        }
+
+        // 接続成功時にステートを更新
+        console.log(
+          '🔗 [useConnection] Setting connection state in connectManually...',
+        );
+        setMacIP(ip);
+        setMacPort(port);
+        setIsConnected(true);
+
+        console.log('✅ [useConnection] Connected to server:', `${ip}:${port}`);
+
+        // パスワードで認証を試行
+        console.log(
+          '🔗 [useConnection] Calling NetworkService.authenticateWithPassword from connectManually...',
+        );
+        const authSuccess = await NetworkService.authenticateWithPassword(
+          ip,
+          port,
+          password,
+        );
+        if (authSuccess) {
+          setIsAuthenticated(true);
+          setPassword(password);
+          console.log(
+            '🎉 [useConnection] Manual connection and authentication successful!',
+          );
+          console.log('🔗 [useConnection] connectManually END - SUCCESS');
+          return true;
+        } else {
+          console.log(
+            '❌ [useConnection] Authentication failed with provided password',
+          );
+          console.log('🔗 [useConnection] connectManually END - AUTH FAILED');
+          return false;
+        }
+      } catch (error) {
+        console.error('[useConnection] Manual connection error:', error);
+        console.log('🔗 [useConnection] connectManually END - ERROR');
+        return false;
+      }
+    },
+    [],
+  );
 
   return {
     isConnected,
     macIP,
-    isSearching,
-    showPermissionGuide,
+    macPort,
+    isAuthenticated,
+    password,
     startConnectionMonitoring,
     stopConnectionMonitoring,
-    scanForServer,
     sendText,
-    dismissPermissionGuide,
+    authenticateWithPassword,
+    connectManually,
   };
 };

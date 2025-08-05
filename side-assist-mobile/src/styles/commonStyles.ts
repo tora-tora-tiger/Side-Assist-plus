@@ -34,6 +34,47 @@ export const commonStyles = StyleSheet.create({
   connectionDotDisconnected: {
     backgroundColor: '#666',
   },
+  card: {
+    backgroundColor: '#111',
+    borderRadius: 12,
+    padding: 20,
+    margin: 20,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  title: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  subtitle: {
+    color: '#ccc',
+    fontSize: 16,
+    marginBottom: 15,
+  },
+  textInput: {
+    backgroundColor: '#222',
+    borderRadius: 8,
+    padding: 12,
+    color: '#fff',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#444',
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
 
 export const buttonStyles = StyleSheet.create({

@@ -39,9 +39,24 @@
 	<string>This app needs location access to discover Bluetooth devices.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>This app uses local network to discover and connect to companion apps on your Mac/PC.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>このアプリはQRコードをスキャンしてPCと安全に接続するためにカメラを使用します。</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>このアプリは動画機能でマイクを使用する場合があります。</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_sideassist._tcp</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.sideassist.deeplink</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>sideassist</string>
+			</array>
+		</dict>
 	</array>
 	<key>RCTNewArchEnabled</key>
 	<true/>

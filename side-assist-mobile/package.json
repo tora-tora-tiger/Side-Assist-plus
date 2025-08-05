@@ -15,7 +15,9 @@
   "dependencies": {
     "@react-native/new-app-screen": "0.80.1",
     "react": "19.1.0",
-    "react-native": "0.80.1"
+    "react-native": "0.80.1",
+    "react-native-vision-camera": "^4.7.1",
+    "react-native-worklets-core": "^1.6.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

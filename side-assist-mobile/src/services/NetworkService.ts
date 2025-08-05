@@ -1,45 +1,80 @@
 export class NetworkService {
   private static readonly TIMEOUT = 2500;
+  private static clientId: string = 'mobile-app-' + Date.now(); // 一度だけ生成
+  private static testConnectionCallCount = 0; // デバッグ用カウンター
 
-  static async getNetworkSubnet(): Promise<string> {
-    // Mock network subnet for React Native
-    // In production, you'd use react-native-network-info or similar
-    return '192.168.1';
-  }
+  static async testConnection(ip: string, port: string): Promise<boolean> {
+    this.testConnectionCallCount++;
+    console.log(
+      `🔗 [NetworkService] Testing connection to ${ip}:${port} - Call #${this.testConnectionCallCount}`,
+    );
 
-  static async testConnection(ip: string): Promise<boolean> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.TIMEOUT);
+      const timeoutId = setTimeout(() => {
+        console.log(
+          `⏰ [NetworkService] Connection timeout after ${this.TIMEOUT}ms`,
+        );
+        controller.abort();
+      }, this.TIMEOUT);
 
-      const response = await fetch(`http://${ip}:8080/health`, {
+      const url = `http://${ip}:${port}/health`;
+      console.log(`📡 [NetworkService] Fetching: ${url}`);
+
+      const response = await fetch(url, {
         method: 'GET',
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
+          'x-client-id': this.clientId,
         },
       });
 
       clearTimeout(timeoutId);
 
+      console.log(
+        `📊 [NetworkService] Response status: ${response.status} ${response.statusText}`,
+      );
+
       if (response.ok) {
         const data = await response.json();
-        return data.status === 'ok';
+        console.log(`✅ [NetworkService] Health check response:`, data);
+        const isHealthy = data.status === 'ok';
+        console.log(
+          `🏥 [NetworkService] Server health: ${
+            isHealthy ? 'HEALTHY' : 'UNHEALTHY'
+          }`,
+        );
+        return isHealthy;
+      } else {
+        console.log(
+          `❌ [NetworkService] HTTP error: ${response.status} ${response.statusText}`,
+        );
+        return false;
       }
-      return false;
     } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log(`⏱️ [NetworkService] Connection aborted (timeout)`);
+      } else {
+        console.log(`💥 [NetworkService] Connection error:`, error);
+      }
       return false;
     }
   }
 
-  static async sendText(ip: string, text: string): Promise<boolean> {
+  static async sendText(
+    ip: string,
+    port: string,
+    text: string,
+    password?: string,
+  ): Promise<boolean> {
     try {
-      const response = await fetch(`http://${ip}:8080/input`, {
+      const response = await fetch(`http://${ip}:${port}/input`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, password }),
       });
 
       return response.ok;
@@ -49,25 +84,41 @@ export class NetworkService {
     }
   }
 
-  static async scanForServer(): Promise<string | null> {
-    const subnet = await this.getNetworkSubnet();
-    console.log('🔍 Scanning subnet:', subnet);
+  static async authenticateWithPassword(
+    ip: string,
+    port: string,
+    password: string,
+  ): Promise<boolean> {
+    console.log(`🔐 [NetworkService] Authenticating with ${ip}:${port}`);
 
-    const promises = [];
-    for (let i = 1; i <= 254; i++) {
-      const testIP = `${subnet}.${i}`;
-      promises.push(this.testConnection(testIP));
+    try {
+      const url = `http://${ip}:${port}/auth`;
+      console.log(`📡 [NetworkService] Auth request to: ${url}`);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      console.log(
+        `📊 [NetworkService] Auth response: ${response.status} ${response.statusText}`,
+      );
+
+      if (response.ok) {
+        console.log(`✅ [NetworkService] Authentication successful`);
+        return true;
+      } else {
+        console.log(
+          `❌ [NetworkService] Authentication failed: ${response.status}`,
+        );
+        return false;
+      }
+    } catch (error) {
+      console.error('💥 [NetworkService] Authentication error:', error);
+      return false;
     }
-
-    const results = await Promise.allSettled(promises);
-    const successfulIPs = results
-      .map((result, index) => ({
-        ip: `${subnet}.${index + 1}`,
-        success: result.status === 'fulfilled' && result.value,
-      }))
-      .filter(result => result.success)
-      .map(result => result.ip);
-
-    return successfulIPs.length > 0 ? successfulIPs[0] : null;
   }
 }

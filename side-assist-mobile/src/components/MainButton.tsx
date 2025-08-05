@@ -1,6 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, Text, View, Animated, Alert } from 'react-native';
+import { TouchableOpacity, Text, View, Animated } from 'react-native';
 import { buttonStyles } from '../styles/commonStyles';
+import AlertManager from '../utils/AlertManager';
 
 interface MainButtonProps {
   isConnected: boolean;
@@ -15,7 +16,7 @@ export const MainButton: React.FC<MainButtonProps> = ({
 }) => {
   const handlePress = async () => {
     if (!isConnected) {
-      Alert.alert(
+      AlertManager.showAlert(
         'Not Connected',
         'Please connect to Mac server first. Tap the settings button to find your Mac.',
       );
