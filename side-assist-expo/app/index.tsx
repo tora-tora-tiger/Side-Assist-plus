@@ -8,12 +8,10 @@ import { HomeScreen } from '../components/HomeScreen';
 import { ExecutionScreen } from '../components/ExecutionScreen';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { PasswordInput } from '../components/PasswordInput';
-import { NetworkPermissionGuide } from '../components/NetworkPermissionGuide';
 import { DebugToast } from '../components/DebugToast';
 
 const App = () => {
   const [showSettings, setShowSettings] = useState(false);
-  const [showPermissionGuide, setShowPermissionGuide] = useState(false);
   const [debugMessage, setDebugMessage] = useState('');
   const [showDebugToast, setShowDebugToast] = useState(false);
 
@@ -126,13 +124,8 @@ const App = () => {
         isConnected={isConnected}
         macIP={macIP}
         onClose={() => setShowSettings(false)}
-        onShowPermissionGuide={() => setShowPermissionGuide(true)}
       />
 
-      <NetworkPermissionGuide
-        isVisible={showPermissionGuide}
-        onDismiss={() => setShowPermissionGuide(false)}
-      />
       
       <DebugToast
         message={debugMessage}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Modal, TouchableOpacity } from 'react-native';
+import { View, Text, Modal, Linking, Alert } from 'react-native';
 import { Header, Button } from './ui';
 
 interface SettingsPanelProps {
@@ -7,7 +7,6 @@ interface SettingsPanelProps {
   isConnected: boolean;
   macIP: string;
   onClose: () => void;
-  onShowPermissionGuide: () => void;
 }
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({
@@ -15,8 +14,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   isConnected,
   macIP,
   onClose,
-  onShowPermissionGuide,
 }) => {
+  const handleOpenSettings = async () => {
+    try {
+      await Linking.openSettings();
+    } catch (error) {
+      Alert.alert('エラー', '設定アプリを開けませんでした');
+    }
+  };
   if (!isVisible) return null;
 
   return (
@@ -41,11 +46,20 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </Text>
           </View>
           
-          <Button
-            title="ネットワーク権限ガイド"
-            onPress={onShowPermissionGuide}
-            variant="secondary"
-          />
+          <View className="mb-6">
+            <Text className="text-lg font-semibold mb-3">ネットワーク権限設定</Text>
+            <Text className="text-sm text-gray-700 mb-3 leading-5">
+              PCとの接続に問題がある場合、ローカルネットワーク権限を確認してください。
+            </Text>
+            <Text className="text-sm text-gray-600 mb-4 leading-5">
+              設定 → プライバシーとセキュリティ → ローカルネットワーク → Side Assist Plus をオン
+            </Text>
+            <Button
+              title="設定アプリを開く"
+              onPress={handleOpenSettings}
+              variant="primary"
+            />
+          </View>
         </View>
       </View>
     </Modal>

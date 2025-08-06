@@ -3,7 +3,6 @@ import { View, Text, Modal } from 'react-native';
 import { Header, Button, StatusIndicator } from './ui';
 import { QRScanner } from './QRScanner';
 import { ConnectionSetup } from './ConnectionSetup';
-import { NetworkPermissionGuide } from './NetworkPermissionGuide';
 import { DeepLinkService } from '../services/DeepLinkService';
 import { MaterialIcons } from '@expo/vector-icons';
 import AlertManager from '../utils/AlertManager';
@@ -21,7 +20,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 }) => {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
-  const [showPermissionGuide, setShowPermissionGuide] = useState(false);
 
   const handleOpenQRScanner = () => {
     setShowQRScanner(true);
@@ -238,11 +236,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         />
       </Modal>
 
-      {/* ネットワーク権限ガイド */}
-      <NetworkPermissionGuide
-        isVisible={showPermissionGuide}
-        onDismiss={() => setShowPermissionGuide(false)}
-      />
     </View>
   );
 };
