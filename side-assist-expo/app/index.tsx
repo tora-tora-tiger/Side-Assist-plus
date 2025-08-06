@@ -93,7 +93,6 @@ const App = () => {
 
   return (
     <View className="flex-1 bg-white">
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
       {(() => {
         console.log('🔍 [App] Rendering state - isConnected:', isConnected, 'isAuthenticated:', isAuthenticated);

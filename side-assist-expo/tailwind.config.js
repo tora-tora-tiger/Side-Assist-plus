@@ -19,8 +19,10 @@ module.exports = {
           // Status colors
           'warning': '#ffe8c8',
           'info': '#fffad0',
-          'primary': '#6db8ff',
-          'secondary': '#b4bec8',
+          'primary': '#3b82f6',     // より濃い青に変更（視認性向上）
+          'primary-hover': '#2563eb', // hover状態用
+          'secondary': '#e5e7eb',    // より軽やかなセカンダリ色
+          'secondary-text': '#374151', // セカンダリボタンのテキスト色
           'success': '#d9ffc8',
           'danger': '#ff6363',
           'success-bright': '#5aeb5a',

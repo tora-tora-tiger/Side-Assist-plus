@@ -11,11 +11,15 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
   showDot = true,
 }) => {
   const getStatusStyle = () => {
-    return isConnected ? 'bg-figma-success' : 'bg-figma-warning';
+    return isConnected ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200';
   };
 
   const getDotStyle = () => {
-    return isConnected ? 'bg-figma-success-bright' : 'bg-figma-danger';
+    return isConnected ? 'bg-green-500' : 'bg-red-500';
+  };
+
+  const getTextStyle = () => {
+    return isConnected ? 'text-green-800' : 'text-orange-800';
   };
 
   const getStatusText = () => {
@@ -23,12 +27,12 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
   };
 
   return (
-    <View className={`rounded-3xl px-6 py-4 ${getStatusStyle()}`}>
+    <View className={`rounded-3xl px-6 py-4 border ${getStatusStyle()}`}>
       <View className="flex-row items-center justify-center">
         {showDot && (
-          <View className={`w-4 h-4 rounded-full mr-3 ${getDotStyle()}`} />
+          <View className={`w-3 h-3 rounded-full mr-3 ${getDotStyle()}`} />
         )}
-        <Text className="text-black text-lg font-medium">
+        <Text className={`text-base font-semibold ${getTextStyle()}`}>
           {getStatusText()}
         </Text>
       </View>

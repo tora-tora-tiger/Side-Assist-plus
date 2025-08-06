@@ -112,70 +112,72 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       </View>
 
       {/* メインコンテンツ */}
-      <View className="flex-1 px-5">
+      <View className="flex-1 px-6">
         {!isConnected ? (
           <>
             {/* 接続前の画面 */}
-            <View className="flex-1 justify-center">
-              <View className="items-center mb-8">
-                <View className="mb-4">
-                  <MaterialIcons name="smartphone" size={64} color="#6b7280" />
-                </View>
-                <Text className="text-2xl font-bold text-gray-900 text-center">
-                  PCと接続
-                </Text>
-                <Text className="text-base text-gray-600 text-center mt-2 leading-6">
-                  QRコードをスキャンして{'\\n'}簡単に接続できます
-                </Text>
-              </View>
-
-              <View className="space-y-4">
-                {/* QRスキャンボタン */}
-                <Button
-                  title="Scan the QR Code"
-                  icon={
-                    <MaterialIcons name="qr-code" size={18} color="#ffffff" />
-                  }
-                  variant="primary"
-                  onPress={handleOpenQRScanner}
-                />
-
-                {/* 区切り線 */}
-                <View className="flex-row items-center my-6">
-                  <View className="flex-1 h-px bg-gray-300" />
-                  <Text className="mx-4 text-sm text-gray-500 font-medium">
-                    or
+            <View className="flex-1 justify-between py-4">
+              {/* 上部のメインコンテンツ */}
+              <View className="flex-1 justify-center">
+                <View className="items-center mb-10">
+                  <View className="mb-6 p-6 bg-blue-50 rounded-full shadow-lg">
+                    <MaterialIcons name="smartphone" size={64} color="#3b82f6" />
+                  </View>
+                  <Text className="text-2xl font-bold text-gray-900 text-center mb-3">
+                    PCと接続
                   </Text>
-                  <View className="flex-1 h-px bg-gray-300" />
+                  <Text className="text-base text-gray-600 text-center leading-relaxed px-4">
+                    QRコードをスキャンして{'\n'}簡単に接続できます
+                  </Text>
                 </View>
 
-                {/* 手動入力ボタン */}
-                <Button
-                  title="Input Manually"
-                  icon={
-                    <MaterialIcons name="keyboard" size={18} color="#374151" />
-                  }
-                  variant="secondary"
-                  onPress={handleOpenManualInput}
-                />
-              </View>
-            </View>
+                <View className="space-y-5">
+                  {/* QRスキャンボタン */}
+                  <Button
+                    title="Scan the QR Code"
+                    icon={
+                      <MaterialIcons name="qr-code" size={20} color="#ffffff" />
+                    }
+                    variant="primary"
+                    size="large"
+                    onPress={handleOpenQRScanner}
+                  />
 
-            {/* ネットワーク権限ガイド */}
-            <View className="mb-5">
-              <View className="bg-figma-yellow rounded-3xl p-6">
-                <Text className="text-black text-base leading-6 text-center">
-                  You must allow the "Network Permission" to use this app.
-                </Text>
+                  {/* 区切り線 */}
+                  <View className="flex-row items-center py-3">
+                    <View className="flex-1 h-px bg-gray-300" />
+                    <Text className="mx-6 text-sm text-gray-500 font-medium">
+                      or
+                    </Text>
+                    <View className="flex-1 h-px bg-gray-300" />
+                  </View>
+
+                  {/* 手動入力ボタン */}
+                  <Button
+                    title="Input Manually"
+                    icon={
+                      <MaterialIcons name="keyboard" size={20} color="#374151" />
+                    }
+                    variant="secondary"
+                    size="large"
+                    onPress={handleOpenManualInput}
+                  />
+                </View>
               </View>
-              <View className="mt-4">
+
+              {/* ネットワーク権限ガイド - 下部エリア */}
+              <View className="pb-2">
+                <View className="bg-amber-50 border border-amber-200 rounded-3xl p-4 mb-4">
+                  <Text className="text-amber-800 text-sm leading-5 text-center font-medium">
+                    You must allow the "Network Permission" to use this app.
+                  </Text>
+                </View>
                 <Button
                   title="Go to Setting"
                   icon={
-                    <MaterialIcons name="settings" size={16} color="#ffffff" />
+                    <MaterialIcons name="settings" size={18} color="#ffffff" />
                   }
                   variant="primary"
-                  size="small"
                   onPress={async () => {
                     try {
                       await Linking.openSettings();
