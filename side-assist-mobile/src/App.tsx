@@ -82,79 +82,22 @@ const App = () => {
     }
   };
 
-  const appStyles = {
-    container: {
-      flex: 1,
-      backgroundColor: '#f8f9fa',
-    },
-    header: {
-      backgroundColor: '#ffffff',
-      paddingTop: 60,
-      paddingBottom: 20,
-      paddingHorizontal: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 4,
-    },
-    headerContent: {
-      flexDirection: 'row' as const,
-      justifyContent: 'space-between' as const,
-      alignItems: 'center' as const,
-    },
-    logoSection: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
-    },
-    logoIcon: {
-      fontSize: 32,
-      marginRight: 12,
-    },
-    logoText: {
-      fontSize: 20,
-      fontWeight: '700' as const,
-      color: '#1a1a1a',
-    },
-    settingsButton: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      backgroundColor: '#f8f9fa',
-      justifyContent: 'center' as const,
-      alignItems: 'center' as const,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    settingsIcon: {
-      fontSize: 20,
-      color: '#666666',
-    },
-    content: {
-      flex: 1,
-      paddingTop: 20,
-    },
-  };
-
   return (
     <View className="flex-1 bg-gray-50">
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
-      <View style={appStyles.header}>
-        <View style={appStyles.headerContent}>
-          <View style={appStyles.logoSection}>
-            <Text style={appStyles.logoIcon}>🤝</Text>
-            <Text style={appStyles.logoText}>Side Assist</Text>
+      <View className="bg-white pt-15 pb-5 px-5 shadow-sm">
+        <View className="flex-row justify-between items-center">
+          <View className="flex-row items-center">
+            <Text className="text-3xl mr-3">🤝</Text>
+            <Text className="text-xl font-bold text-gray-900">Side Assist</Text>
           </View>
 
           <TouchableOpacity
-            style={appStyles.settingsButton}
+            className="w-11 h-11 bg-gray-50 rounded-full justify-center items-center shadow"
             onPress={() => setShowSettings(!showSettings)}
           >
-            <Text style={appStyles.settingsIcon}>⚙️</Text>
+            <Text className="text-xl text-gray-600">⚙️</Text>
           </TouchableOpacity>
         </View>
 

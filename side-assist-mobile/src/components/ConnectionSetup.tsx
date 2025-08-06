@@ -144,160 +144,14 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
     return null;
   }
 
-  const connectionSetupStyles = {
-    container: {
-      backgroundColor: '#ffffff',
-      borderRadius: 20,
-      padding: 24,
-      marginHorizontal: 20,
-      marginBottom: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 12,
-      elevation: 8,
-    },
-    header: {
-      alignItems: 'center' as const,
-      marginBottom: 24,
-    },
-    headerIcon: {
-      fontSize: 48,
-      marginBottom: 12,
-    },
-    headerTitle: {
-      fontSize: 24,
-      fontWeight: '700' as const,
-      color: '#1a1a1a',
-      textAlign: 'center' as const,
-    },
-    headerSubtitle: {
-      fontSize: 16,
-      color: '#666666',
-      textAlign: 'center' as const,
-      marginTop: 8,
-      lineHeight: 22,
-    },
-    primaryButton: {
-      backgroundColor: '#007AFF',
-      borderRadius: 16,
-      paddingVertical: 18,
-      paddingHorizontal: 24,
-      marginBottom: 16,
-      shadowColor: '#007AFF',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 6,
-    },
-    primaryButtonText: {
-      color: '#ffffff',
-      fontSize: 18,
-      fontWeight: '600' as const,
-      textAlign: 'center' as const,
-    },
-    divider: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
-      marginVertical: 20,
-    },
-    dividerLine: {
-      flex: 1,
-      height: 1,
-      backgroundColor: '#e0e0e0',
-    },
-    dividerText: {
-      marginHorizontal: 16,
-      fontSize: 14,
-      color: '#999999',
-      fontWeight: '500' as const,
-    },
-    secondaryButton: {
-      backgroundColor: '#f8f9fa',
-      borderRadius: 16,
-      paddingVertical: 14,
-      paddingHorizontal: 24,
-      borderWidth: 1,
-      borderColor: '#e9ecef',
-    },
-    secondaryButtonText: {
-      color: '#495057',
-      fontSize: 16,
-      fontWeight: '600' as const,
-      textAlign: 'center' as const,
-    },
-    formContainer: {
-      marginTop: 20,
-    },
-    formField: {
-      marginBottom: 16,
-    },
-    formLabel: {
-      fontSize: 16,
-      fontWeight: '600' as const,
-      color: '#333333',
-      marginBottom: 8,
-    },
-    textInput: {
-      borderWidth: 1,
-      borderColor: '#e0e0e0',
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      fontSize: 16,
-      backgroundColor: '#ffffff',
-    },
-    passwordInput: {
-      borderWidth: 1,
-      borderColor: '#e0e0e0',
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      fontSize: 18,
-      backgroundColor: '#ffffff',
-      textAlign: 'center' as const,
-      letterSpacing: 4,
-      fontFamily: 'monospace',
-    },
-    buttonRow: {
-      flexDirection: 'row' as const,
-      justifyContent: 'space-between' as const,
-      marginTop: 24,
-      gap: 12,
-    },
-    backButton: {
-      flex: 1,
-      backgroundColor: '#f8f9fa',
-      borderRadius: 12,
-      paddingVertical: 14,
-      paddingHorizontal: 16,
-      borderWidth: 1,
-      borderColor: '#e9ecef',
-    },
-    connectButton: {
-      flex: 1,
-      backgroundColor: '#007AFF',
-      borderRadius: 12,
-      paddingVertical: 14,
-      paddingHorizontal: 16,
-    },
-    disabledButton: {
-      backgroundColor: '#cccccc',
-    },
-    buttonText: {
-      fontSize: 16,
-      fontWeight: '600' as const,
-      textAlign: 'center' as const,
-      color: '#333333',
-    },
-  };
-
   return (
-    <View style={connectionSetupStyles.container}>
-      <View style={connectionSetupStyles.header}>
-        <Text style={connectionSetupStyles.headerIcon}>📱</Text>
-        <Text style={connectionSetupStyles.headerTitle}>PCと接続</Text>
-        <Text style={connectionSetupStyles.headerSubtitle}>
+    <View className="bg-white rounded-2xl p-6 mx-5 mb-5 shadow-lg">
+      <View className="items-center mb-6">
+        <Text className="text-5xl mb-3">📱</Text>
+        <Text className="text-2xl font-bold text-gray-900 text-center">
+          PCと接続
+        </Text>
+        <Text className="text-base text-gray-600 text-center mt-2 leading-6">
           QRコードをスキャンして{'{\n}'}簡単に接続できます
         </Text>
       </View>
@@ -306,27 +160,29 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
         // QRコード優先画面
         <>
           <TouchableOpacity
-            style={connectionSetupStyles.primaryButton}
+            className="bg-primary rounded-2xl py-4 px-6 mb-4 shadow-lg shadow-primary/30"
             onPress={handleOpenQRScanner}
             disabled={isConnecting}
           >
-            <Text style={connectionSetupStyles.primaryButtonText}>
+            <Text className="text-white text-lg font-semibold text-center">
               📷 QRコードをスキャン
             </Text>
           </TouchableOpacity>
 
-          <View style={connectionSetupStyles.divider}>
-            <View style={connectionSetupStyles.dividerLine} />
-            <Text style={connectionSetupStyles.dividerText}>または</Text>
-            <View style={connectionSetupStyles.dividerLine} />
+          <View className="flex-row items-center my-5">
+            <View className="flex-1 h-px bg-gray-300" />
+            <Text className="mx-4 text-sm text-gray-500 font-medium">
+              または
+            </Text>
+            <View className="flex-1 h-px bg-gray-300" />
           </View>
 
           <TouchableOpacity
-            style={connectionSetupStyles.secondaryButton}
+            className="bg-gray-50 rounded-2xl py-3 px-6 border border-gray-200"
             onPress={() => setShowManualInput(true)}
             disabled={isConnecting}
           >
-            <Text style={connectionSetupStyles.secondaryButtonText}>
+            <Text className="text-gray-600 text-base font-semibold text-center">
               ⌨️ 手動で入力
             </Text>
           </TouchableOpacity>
@@ -334,19 +190,23 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
       ) : (
         // 手動入力画面
         <>
-          <View style={connectionSetupStyles.header}>
-            <Text style={connectionSetupStyles.headerIcon}>⌨️</Text>
-            <Text style={connectionSetupStyles.headerTitle}>手動接続</Text>
-            <Text style={connectionSetupStyles.headerSubtitle}>
+          <View className="items-center mb-6">
+            <Text className="text-5xl mb-3">⌨️</Text>
+            <Text className="text-2xl font-bold text-gray-900 text-center">
+              手動接続
+            </Text>
+            <Text className="text-base text-gray-600 text-center mt-2 leading-6">
               PCの接続情報を入力してください
             </Text>
           </View>
 
-          <View style={connectionSetupStyles.formContainer}>
-            <View style={connectionSetupStyles.formField}>
-              <Text style={connectionSetupStyles.formLabel}>IPアドレス</Text>
+          <View className="mt-5">
+            <View className="mb-4">
+              <Text className="text-base font-semibold text-gray-800 mb-2">
+                IPアドレス
+              </Text>
               <TextInput
-                style={connectionSetupStyles.textInput}
+                className="border border-gray-300 rounded-xl px-4 py-3 text-base bg-white"
                 value={ip}
                 onChangeText={setIp}
                 placeholder="例: 192.168.1.100"
@@ -357,10 +217,12 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
               />
             </View>
 
-            <View style={connectionSetupStyles.formField}>
-              <Text style={connectionSetupStyles.formLabel}>ポート</Text>
+            <View className="mb-4">
+              <Text className="text-base font-semibold text-gray-800 mb-2">
+                ポート
+              </Text>
               <TextInput
-                style={connectionSetupStyles.textInput}
+                className="border border-gray-300 rounded-xl px-4 py-3 text-base bg-white"
                 value={port}
                 onChangeText={setPort}
                 placeholder="8080"
@@ -370,12 +232,13 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
               />
             </View>
 
-            <View style={connectionSetupStyles.formField}>
-              <Text style={connectionSetupStyles.formLabel}>
+            <View className="mb-4">
+              <Text className="text-base font-semibold text-gray-800 mb-2">
                 パスワード (5桁)
               </Text>
               <TextInput
-                style={connectionSetupStyles.passwordInput}
+                className="border border-gray-300 rounded-xl px-4 py-3 text-lg bg-white text-center font-mono"
+                style={{ letterSpacing: 4 }}
                 value={password}
                 onChangeText={setPassword}
                 placeholder="12345"
@@ -386,9 +249,9 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
               />
             </View>
 
-            <View style={connectionSetupStyles.buttonRow}>
+            <View className="flex-row justify-between mt-6 space-x-3">
               <TouchableOpacity
-                style={connectionSetupStyles.backButton}
+                className="flex-1 bg-gray-50 rounded-xl py-3 px-4 border border-gray-200"
                 onPress={() => {
                   setShowManualInput(false);
                   setIp('');
@@ -397,18 +260,20 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
                 }}
                 disabled={isConnecting}
               >
-                <Text style={connectionSetupStyles.buttonText}>戻る</Text>
+                <Text className="text-base font-semibold text-center text-gray-800">
+                  戻る
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[
-                  connectionSetupStyles.connectButton,
-                  (isConnecting ||
-                    !ip.trim() ||
-                    !port.trim() ||
-                    password.length !== 5) &&
-                    connectionSetupStyles.disabledButton,
-                ]}
+                className={`flex-1 rounded-xl py-3 px-4 ${
+                  isConnecting ||
+                  !ip.trim() ||
+                  !port.trim() ||
+                  password.length !== 5
+                    ? 'bg-gray-400'
+                    : 'bg-primary'
+                }`}
                 onPress={handleManualConnect}
                 disabled={
                   isConnecting ||
@@ -417,7 +282,7 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
                   password.length !== 5
                 }
               >
-                <Text style={connectionSetupStyles.buttonText}>
+                <Text className="text-base font-semibold text-center text-white">
                   {isConnecting ? '接続中...' : '接続'}
                 </Text>
               </TouchableOpacity>

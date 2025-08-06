@@ -16,6 +16,9 @@ end
 
 target 'SideAssist' do
   config = use_native_modules!
+  
+  # Fix Vision Camera iOS deployment target
+  $VCEnableFrameProcessors = true
 
   use_react_native!(
     :path => config[:reactNativePath],
@@ -31,5 +34,12 @@ target 'SideAssist' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+    
+    # Fix iOS deployment target for all pods
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+      end
+    end
   end
 end
