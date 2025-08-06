@@ -2,6 +2,81 @@
 
 **モバイルボタン → デスクトップ自動入力 (クロスプラットフォーム対応)**
 
+## 📦 自動インストールされる依存関係
+
+`./run.sh` を実行すると以下の依存関係が自動的にインストールされます：
+
+### 必要な前提条件とインストール方法
+
+#### 🍎 macOS
+```bash
+# Homebrew経由で一括インストール
+brew install node pnpm rust android-platform-tools
+brew install --cask android-studio
+
+# iOS開発用 (App Store経由)
+# Xcode をApp Storeからインストール
+sudo gem install cocoapods
+```
+
+#### 🪟 Windows
+```powershell
+# Chocolatey経由で一括インストール
+choco install nodejs pnpm rust android-sdk
+# または
+winget install OpenJS.NodeJS
+winget install pnpm.pnpm
+winget install Rustlang.Rustup
+```
+
+#### 🐧 Linux (Ubuntu/Debian)
+```bash
+# Node.js & pnpm
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+npm install -g pnpm
+
+# Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Android SDK
+sudo apt-get install android-sdk adb
+```
+
+#### 必須コンポーネント
+- **Node.js** (v18+): JavaScript/TypeScript実行環境
+- **pnpm**: 高速パッケージマネージャー
+- **Rust**: Tauri v2デスクトップアプリ用
+- **Android SDK & ADB**: Android開発・デバッグ用
+- **Xcode & CocoaPods**: iOS開発用 (macOSのみ)
+
+### 自動実行されるインストールコマンド
+
+#### デスクトップアプリ (`./run.sh desktop`)
+```bash
+cd side-assist-desktop && pnpm install    # Node.js依存関係
+```
+
+#### iOS アプリ (`./run.sh ios`)
+```bash
+cd side-assist-expo && pnpm install       # Node.js依存関係
+cd ios && pod install && cd ..            # CocoaPods依存関係
+```
+
+#### Android アプリ (`./run.sh android`)
+```bash
+cd side-assist-expo && pnpm install       # Node.js依存関係
+adb reverse tcp:8081 tcp:8081             # ADB ポート転送設定
+```
+
+### パッケージの詳細
+- **Tauri v2**: Rust + React デスクトップアプリフレームワーク
+- **Expo Router v5**: React Native + TypeScript モバイルフレームワーク
+- **TailwindCSS v3.4**: UI スタイリング
+- **NativeWind v4**: React Native用 Tailwind実装
+- **Expo Camera**: QRコードスキャン機能
+- **CocoaPods**: iOS ネイティブ依存関係管理
+
 ## 🎯 できること
 
 iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入力される
