@@ -9,7 +9,9 @@
 		"hooks:test": "lefthook run pre-commit"
 	},
 	"devDependencies": {
-		"lefthook": "^1.12.2"
+		"@playwright/test": "^1.54.2",
+		"lefthook": "^1.12.2",
+		"playwright": "^1.54.2"
 	},
 	"engines": {
 		"node": ">=18.0.0",
