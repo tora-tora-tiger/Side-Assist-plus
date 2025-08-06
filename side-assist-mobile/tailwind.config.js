@@ -6,12 +6,22 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#007AFF',
-          50: '#E5F3FF',
-          100: '#CCE7FF',
-          500: '#007AFF',
-          600: '#0056CC',
-          700: '#004499',
+          DEFAULT: '#6db8ff',
+          50: '#e6f3ff',
+          100: '#ccebff',
+          500: '#6db8ff',
+          600: '#3da3ff',
+          700: '#0d8eff',
+        },
+        figma: {
+          orange: '#ffe8c8',
+          yellow: '#fffad0',
+          blue: '#6db8ff',
+          gray: '#b4bec8',
+          lightGray: '#e8e8e8',
+          red: '#ff6363',
+          green: '#d9ffc8',
+          darkGreen: '#5aeb5a',
         },
         gray: {
           50: '#f8f9fa',
@@ -25,10 +35,11 @@ module.exports = {
           800: '#212529',
           900: '#1a1a1a',
         },
-        success: '#00ff88',
-        error: '#ff6b6b',
+        success: '#5aeb5a',
+        error: '#ff6363',
         warning: {
-          DEFAULT: '#ffd93d',
+          DEFAULT: '#ffe8c8',
+          light: '#fffad0',
           50: '#fff9e6',
           100: '#fff3cd',
           700: '#856404',

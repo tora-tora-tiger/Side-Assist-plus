@@ -1,26 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  StatusBar,
-  TouchableOpacity,
-  Text,
-  Animated,
-} from 'react-native';
+import { View, StatusBar } from 'react-native';
 import '../global.css';
 import AlertManager from './utils/AlertManager';
 
 import { useConnection } from './hooks/useConnection';
-import { StatusIndicator } from './components/StatusIndicator';
-import { StatusMessage } from './components/StatusMessage';
-import { MainButton } from './components/MainButton';
+import { HomeScreen } from './components/HomeScreen';
+import { ExecutionScreen } from './components/ExecutionScreen';
 import { SettingsPanel } from './components/SettingsPanel';
 import { PasswordInput } from './components/PasswordInput';
-import { ConnectionSetup } from './components/ConnectionSetup';
 import { NetworkPermissionGuide } from './components/NetworkPermissionGuide';
 
 const App = () => {
   const [showSettings, setShowSettings] = useState(false);
-  const [buttonScale] = useState(new Animated.Value(1));
   const [showPermissionGuide, setShowPermissionGuide] = useState(false);
 
   const {
@@ -83,43 +74,36 @@ const App = () => {
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
-      <View className="bg-white pt-15 pb-5 px-5 shadow-sm">
-        <View className="flex-row justify-between items-center">
-          <View className="flex-row items-center">
-            <Text className="text-3xl mr-3">🤝</Text>
-            <Text className="text-xl font-bold text-gray-900">Side Assist</Text>
-          </View>
-
-          <TouchableOpacity
-            className="w-11 h-11 bg-gray-50 rounded-full justify-center items-center shadow"
-            onPress={() => setShowSettings(!showSettings)}
-          >
-            <Text className="text-xl text-gray-600">⚙️</Text>
-          </TouchableOpacity>
+      {!isConnected ? (
+        // 接続前: HomeScreen表示
+        <HomeScreen
+          isConnected={isConnected}
+          onSettingsPress={() => setShowSettings(true)}
+          onConnect={connectManually}
+        />
+      ) : !isAuthenticated ? (
+        // 接続済み・認証前: パスワード入力表示
+        <View className="flex-1">
+          <HomeScreen
+            isConnected={isConnected}
+            onSettingsPress={() => setShowSettings(true)}
+            onConnect={connectManually}
+          />
+          <PasswordInput
+            onAuthenticate={authenticateWithPassword}
+            isVisible={true}
+          />
         </View>
-
-        <StatusIndicator isConnected={isConnected} />
-      </View>
-
-      <View className="flex-1 pt-5">
-        <StatusMessage isConnected={isConnected} />
-
-        <ConnectionSetup onConnect={connectManually} isVisible={!isConnected} />
-
-        <PasswordInput
-          onAuthenticate={authenticateWithPassword}
-          isVisible={isConnected && !isAuthenticated}
+      ) : (
+        // 接続済み・認証済み: ExecutionScreen表示
+        <ExecutionScreen
+          onSettingsPress={() => setShowSettings(true)}
+          onSendText={handleSendText}
         />
-
-        <MainButton
-          isConnected={isConnected && isAuthenticated}
-          buttonScale={buttonScale}
-          onPress={handleSendText}
-        />
-      </View>
+      )}
 
       <SettingsPanel
         isVisible={showSettings}

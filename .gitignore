@@ -75,3 +75,5 @@ android/app/build/
 *.log
 
 .build/
+
+.mcp.json

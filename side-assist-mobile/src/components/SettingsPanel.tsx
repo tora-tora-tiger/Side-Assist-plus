@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text } from 'react-native';
+import { Header, Button } from './ui';
+import { Settings } from 'lucide-react-native';
 
 interface SettingsPanelProps {
   isVisible: boolean;
@@ -11,7 +13,7 @@ interface SettingsPanelProps {
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   isVisible,
-  isConnected,
+  isConnected: _isConnected,
   macIP,
   onClose,
   onShowPermissionGuide,
@@ -19,78 +21,53 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   if (!isVisible) return null;
 
   return (
-    <View className="absolute inset-0 bg-black/95 p-5 pt-30 z-20">
-      <TouchableOpacity
-        className="absolute top-15 right-5 w-10 h-10 bg-white/10 rounded-full justify-center items-center"
-        onPress={onClose}
-      >
-        <Text className="text-white text-lg font-bold">✕</Text>
-      </TouchableOpacity>
+    <View className="absolute inset-0 bg-white z-20">
+      <Header
+        title="Setting"
+        showClose={true}
+        onClosePress={onClose}
+        showShadow={true}
+        backgroundColor="bg-white"
+      />
 
-      <Text className="text-white text-2xl font-bold mb-8 text-center">
-        接続情報
-      </Text>
-
-      <View className="flex-row justify-between items-center py-4 border-b border-gray-700">
-        <Text className="text-gray-300 text-base">接続状態</Text>
-        <Text
-          className={`text-base font-medium ${
-            isConnected ? 'text-success' : 'text-error'
-          }`}
-        >
-          {isConnected ? '接続済み' : '未接続'}
-        </Text>
-      </View>
-
-      {macIP && (
-        <View className="flex-row justify-between items-center py-4 border-b border-gray-700">
-          <Text className="text-gray-300 text-base">PC IP</Text>
-          <Text className="text-white text-base font-medium">{macIP}</Text>
-        </View>
-      )}
-
-      <View className="mt-8 p-4 bg-white/5 rounded-lg border border-gray-700">
-        <Text className="text-white text-base font-semibold mb-3">
-          📱 QRコード接続について
-        </Text>
-        <Text className="text-gray-300 text-sm leading-5 mb-1">
-          • PCで「新しいパスワード & QRコードを生成」をクリック
-        </Text>
-        <Text className="text-gray-300 text-sm leading-5 mb-1">
-          • 「📷 QRコードをスキャン」ボタンでカメラアプリを起動
-        </Text>
-        <Text className="text-gray-300 text-sm leading-5 mb-1">
-          • QRコードを読み取ると自動的にアプリに戻って接続完了
-        </Text>
-      </View>
-
-      <View className="mt-8 p-4 bg-white/5 rounded-lg border border-gray-700">
-        <Text className="text-white text-base font-semibold mb-3">
-          ⌨️ 手動接続について
-        </Text>
-        <Text className="text-gray-300 text-sm leading-5">
-          QRコードが使えない場合は「手動で入力」から接続できます
-        </Text>
-      </View>
-
-      {onShowPermissionGuide && (
-        <View className="mt-8 p-4 bg-white/5 rounded-lg border border-gray-700">
-          <Text className="text-white text-base font-semibold mb-3">
-            🔧 接続のトラブルシューティング
+      <View className="flex-1 px-5">
+        {/* PC IP */}
+        <View className="flex-row justify-between items-center py-4 border-b border-gray-300">
+          <Text className="text-gray-800 text-base">PC IP</Text>
+          <Text className="text-gray-800 text-base font-medium">
+            {macIP || '192.168.1.21'}
           </Text>
-          <Text className="text-gray-300 text-sm leading-5 mb-3">
-            手動入力でも接続できない場合：
-          </Text>
-          <TouchableOpacity
-            className="bg-orange-500 py-2 px-4 rounded-lg self-center mt-3"
-            onPress={onShowPermissionGuide}
-          >
-            <Text className="text-white text-sm font-semibold text-center">
-              📶 ネットワーク権限を確認
-            </Text>
-          </TouchableOpacity>
         </View>
-      )}
+
+        {/* Permission セクション */}
+        <View className="mt-6">
+          <Text className="text-gray-800 text-lg font-semibold mb-4">
+            Permission
+          </Text>
+
+          {/* Camera Permission */}
+          <View className="flex-row justify-between items-center py-3 border-b border-gray-300">
+            <Text className="text-gray-800 text-base">Camera</Text>
+            <Text className="text-gray-800 text-base">granted</Text>
+          </View>
+
+          {/* Network Permission */}
+          <View className="flex-row justify-between items-center py-3 border-b border-gray-300">
+            <Text className="text-gray-800 text-base">Network</Text>
+            <Text className="text-gray-800 text-base">not granted</Text>
+          </View>
+        </View>
+
+        {/* Go to Setting ボタン */}
+        <View className="mt-8">
+          <Button
+            title="Go to Setting"
+            variant="primary"
+            onPress={onShowPermissionGuide || (() => {})}
+            icon={<Settings size={18} color="#ffffff" />}
+          />
+        </View>
+      </View>
     </View>
   );
 };
