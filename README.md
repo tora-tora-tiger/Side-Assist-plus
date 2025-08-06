@@ -110,7 +110,9 @@ iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入
 
 - expoで、pnpmつかうと破壊される(n敗)https://github.com/expo/expo/issues/28703
 
-## ⚡ 超簡単！ワンコマンド実行
+## ⚡ デバッグ ⚡
+
+まず、スマホにExpo Goをインストールしてください。
 
 ```bash
 # ターミナル1: Tauri デスクトップアプリ (サーバー機能内蔵)
@@ -121,6 +123,8 @@ iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入
 # または
 ./run.sh android  # Android Expo Go (QRコードスキャン)
 ```
+
+QRコードをスキャンして、アプリを起動します。
 
 ### 🛑 全停止
 ```bash
