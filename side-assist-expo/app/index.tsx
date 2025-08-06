@@ -59,6 +59,21 @@ const App = () => {
     return unsubscribe;
   }, []);
 
+  // AlertManager状態の定期監視（デバッグ用）
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const status = AlertManager.getQueueStatus();
+      if (status.isVisible || status.queueLength > 0) {
+        console.log('🚨 [App] AlertManager Status Check:', status);
+        if (status.isVisible) {
+          DebugToastManager.show(`Alert Active: ${status.currentAlert?.substring(0, 30)}...`);
+        }
+      }
+    }, 5000); // 5秒間隔でチェック
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handleSendText = async (text: string) => {
     if (!isAuthenticated) {
       AlertManager.showAlert('認証が必要', 'まずパスワードで認証してください');

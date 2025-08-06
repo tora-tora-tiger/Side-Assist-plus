@@ -5,6 +5,7 @@ import * as Device from 'expo-device';
 import { Header } from './ui';
 import { MaterialIcons } from '@expo/vector-icons';
 import AlertManager from '../utils/AlertManager';
+import DebugToastManager from '../utils/DebugToastManager';
 
 interface QRScannerProps {
   onQRCodeScanned: (data: string) => void;
@@ -27,12 +28,16 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   useEffect(() => {
     if (isVisible) {
       // QRスキャナーが開かれた時に状態をリセット
+      console.log('📷 [QRScanner] Opening - Resetting all states');
+      DebugToastManager.show('QRScanner Opening - States Reset');
       setLastScannedCode(null);
       setIsProcessing(false);
       setScannerEnabled(true);
       setProcessingLock(false);
     } else {
       // QRスキャナーが閉じられた時に状態を完全リセット
+      console.log('📷 [QRScanner] Closing - Full state reset');
+      DebugToastManager.show('QRScanner Closed - Full Reset');
       setIsProcessing(false);
       setScannerEnabled(true);
       setProcessingLock(false);
@@ -75,8 +80,12 @@ export const QRScanner: React.FC<QRScannerProps> = ({
 
     // 少し遅延を入れてから処理
     setTimeout(() => {
+      console.log('📷 [QRScanner] About to call onQRCodeScanned');
+      DebugToastManager.show('QRScanner: Processing QR Code');
       onQRCodeScanned(data);
       // 処理完了後に状態をリセット
+      console.log('📷 [QRScanner] QR processing complete - resetting states');
+      DebugToastManager.show('QRScanner: QR Processing Complete');
       setIsProcessing(false);
       setScannerEnabled(true);
       setProcessingLock(false);

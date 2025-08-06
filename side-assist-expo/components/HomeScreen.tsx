@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, Modal } from 'react-native';
+import { View, Text, Modal, Linking } from 'react-native';
 import { Header, Button, StatusIndicator } from './ui';
 import { QRScanner } from './QRScanner';
 import { ConnectionSetup } from './ConnectionSetup';
 import { DeepLinkService } from '../services/DeepLinkService';
 import { MaterialIcons } from '@expo/vector-icons';
 import AlertManager from '../utils/AlertManager';
+import DebugToastManager from '../utils/DebugToastManager';
 
 interface HomeScreenProps {
   isConnected: boolean;
@@ -31,13 +32,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   const handleQRCodeScanned = async (data: string) => {
     console.log('🔄 [HomeScreen] handleQRCodeScanned called - START');
+    DebugToastManager.show('HomeScreen: QR Code Scanned');
 
     if (AlertManager.isShowing()) {
       console.log('📱 Alert already showing, ignoring QR scan');
+      DebugToastManager.show('HomeScreen: Alert Showing - Ignoring QR');
       return;
     }
 
     console.log('📱 [HomeScreen] QR Code data received:', data);
+    DebugToastManager.show('HomeScreen: Closing QR Scanner');
     setShowQRScanner(false);
 
     // QRコードからURL解析
@@ -76,12 +80,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       );
 
       if (success) {
+        DebugToastManager.show('HomeScreen: Connection SUCCESS');
         AlertManager.showAlert('接続成功', 'PCに正常に接続されました！', [
           {
             text: 'OK',
             onPress: () => {
               // アラート閉じた後にAlertManager状態をリセット
               console.log('🔄 [HomeScreen] Connection success alert dismissed');
+              DebugToastManager.show('HomeScreen: Success Alert Dismissed');
               AlertManager.logStatus();
             },
           },
@@ -195,7 +201,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   }
                   variant="primary"
                   size="small"
-                  onPress={() => setShowPermissionGuide(true)}
+                  onPress={async () => {
+                    try {
+                      await Linking.openSettings();
+                    } catch (error) {
+                      AlertManager.showAlert('エラー', '設定アプリを開けませんでした');
+                    }
+                  }}
                 />
               </View>
             </View>
