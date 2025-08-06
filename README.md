@@ -4,9 +4,26 @@
 
 **Expo Go開発では必ずnpmを使用してください。pnpmは依存関係の問題で破綻します。**
 
----
+## ⚡ デバッグ ⚡
 
-**モバイルボタン → デスクトップ自動入力 (クロスプラットフォーム対応)**
+まず、スマホにExpo Goをインストールしてください。
+
+```bash
+# ターミナル1: Tauri デスクトップアプリ (サーバー機能内蔵)
+./run.sh desktop
+
+# ターミナル2: Expo Go開発サーバー
+./run.sh ios      # iOS Expo Go (QRコードスキャン)
+# または
+./run.sh android  # Android Expo Go (QRコードスキャン)
+```
+
+QRコードをスキャンして、アプリを起動します。
+
+### 🛑 全停止
+```bash
+./stop.sh  # 全プロセス自動終了 (Tauri + Metro)
+```
 
 ## 📦 自動インストールされる依存関係
 
@@ -109,27 +126,6 @@ iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入
 
 
 - expoで、pnpmつかうと破壊される(n敗)https://github.com/expo/expo/issues/28703
-
-## ⚡ デバッグ ⚡
-
-まず、スマホにExpo Goをインストールしてください。
-
-```bash
-# ターミナル1: Tauri デスクトップアプリ (サーバー機能内蔵)
-./run.sh desktop
-
-# ターミナル2: Expo Go開発サーバー
-./run.sh ios      # iOS Expo Go (QRコードスキャン)
-# または
-./run.sh android  # Android Expo Go (QRコードスキャン)
-```
-
-QRコードをスキャンして、アプリを起動します。
-
-### 🛑 全停止
-```bash
-./stop.sh  # 全プロセス自動終了 (Tauri + Metro)
-```
 
 ## 🎮 使い方
 
