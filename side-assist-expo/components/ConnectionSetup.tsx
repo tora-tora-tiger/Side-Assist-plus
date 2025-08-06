@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Modal } from 'react-native';
+import { View, Text } from 'react-native';
 import { Header, Button, InputField } from './ui';
 
 interface ConnectionSetupProps {
@@ -35,12 +35,7 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
   if (!isVisible) return null;
 
   return (
-    <Modal
-      visible={isVisible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-    >
-      <View className="flex-1 bg-white">
+    <View className="flex-1 bg-white">
         <Header
           title="手動接続"
           showClose={true}
@@ -86,6 +81,5 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
           />
         </View>
       </View>
-    </Modal>
   );
 };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Modal, Linking, Alert } from 'react-native';
+import { View, Text, Linking, Alert } from 'react-native';
 import { Header, Button } from './ui';
 import { getDeviceConfig } from '../utils/DeviceConfig';
 
@@ -28,12 +28,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   if (!isVisible) return null;
 
   return (
-    <Modal
-      visible={isVisible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-    >
-      <View className="flex-1 bg-white">
+    <View className="absolute inset-0 z-50 bg-white">
         <Header
           title="設定"
           showClose={true}
@@ -78,6 +73,5 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           </View>
         </View>
       </View>
-    </Modal>
   );
 };

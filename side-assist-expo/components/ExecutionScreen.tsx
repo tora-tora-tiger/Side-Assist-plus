@@ -57,6 +57,8 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   ];
 
   const handleActionPress = async (action: (typeof actions)[0]) => {
+    console.log(`🔥 [ExecutionScreen] Button pressed: ${action.id} - "${action.text}"`);
+    
     // シンプルなアニメーション
     const scale = buttonScales[action.id as keyof typeof buttonScales];
     Animated.sequence([
@@ -73,10 +75,11 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
     ]).start();
 
     try {
-      console.log(`🚀 Sending text: "${action.text}"`);
+      console.log(`🚀 [ExecutionScreen] Sending text: "${action.text}"`);
       await onSendText(action.text);
+      console.log(`✅ [ExecutionScreen] Text sent successfully: "${action.text}"`);
     } catch (error) {
-      console.error('Action press error:', error);
+      console.error('🚨 [ExecutionScreen] Action press error:', error);
       AlertManager.showAlert(
         'エラー',
         'テキストの送信中にエラーが発生しました',

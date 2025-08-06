@@ -31,22 +31,26 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   }, [isVisible]);
 
   const handleBarcodeScanned = useCallback(({ data }: { data: string }) => {
+    console.log('📱 [QRScanner] QR Code scanned:', data, 'isProcessing:', isProcessing);
+    
     // 処理中または同じコードの場合は無視
     if (isProcessing || data === lastScannedCode) {
+      console.log('📱 [QRScanner] Ignoring scan - processing or duplicate');
       return;
     }
 
-    console.log('📱 [QRScanner] QR Code scanned:', data);
+    console.log('📱 [QRScanner] Processing QR code');
     setLastScannedCode(data);
     setIsProcessing(true);
 
     // 親コンポーネントに処理を委譲
     onQRCodeScanned(data);
 
-    // 処理完了後にリセット
+    // より長い時間で処理完了後にリセット
     setTimeout(() => {
+      console.log('📱 [QRScanner] Resetting processing state');
       setIsProcessing(false);
-    }, 1000);
+    }, 2000);
   }, [isProcessing, lastScannedCode, onQRCodeScanned]);
 
   if (!isVisible) {

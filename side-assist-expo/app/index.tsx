@@ -9,11 +9,13 @@ import { ExecutionScreen } from '../components/ExecutionScreen';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { PasswordInput } from '../components/PasswordInput';
 import { DebugToast } from '../components/DebugToast';
+import { CustomAlert } from '../components/CustomAlert';
 
 const App = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [debugMessage, setDebugMessage] = useState('');
   const [showDebugToast, setShowDebugToast] = useState(false);
+  const [alertData, setAlertData] = useState<any>(null);
 
   const {
     isConnected,
@@ -55,6 +57,15 @@ const App = () => {
     return unsubscribe;
   }, []);
 
+  // カスタムアラートマネージャーの購読
+  useEffect(() => {
+    const unsubscribe = AlertManager.subscribe((alert) => {
+      setAlertData(alert);
+    });
+
+    return unsubscribe;
+  }, []);
+
   const handleSendText = async (text: string) => {
     if (!isAuthenticated) {
       AlertManager.showAlert('認証が必要', 'まずパスワードで認証してください');
@@ -84,33 +95,43 @@ const App = () => {
     <View className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
-      {!isConnected ? (
-        // 接続前: HomeScreen表示
-        <HomeScreen
-          isConnected={isConnected}
-          onSettingsPress={() => setShowSettings(true)}
-          onConnect={connectManually}
-        />
-      ) : isAuthenticated ? (
-        // 接続済み・認証済み: ExecutionScreen表示
-        <ExecutionScreen
-          onSettingsPress={() => setShowSettings(true)}
-          onSendText={handleSendText}
-        />
-      ) : (
-        // 接続済み・認証前: パスワード入力表示
-        <View className="flex-1">
-          <HomeScreen
-            isConnected={isConnected}
-            onSettingsPress={() => setShowSettings(true)}
-            onConnect={connectManually}
-          />
-          <PasswordInput
-            onAuthenticate={authenticateWithPassword}
-            isVisible={true}
-          />
-        </View>
-      )}
+      {(() => {
+        console.log('🔍 [App] Rendering state - isConnected:', isConnected, 'isAuthenticated:', isAuthenticated);
+        
+        if (!isConnected) {
+          console.log('📱 [App] Rendering HomeScreen (not connected)');
+          return (
+            <HomeScreen
+              isConnected={isConnected}
+              onSettingsPress={() => setShowSettings(true)}
+              onConnect={connectManually}
+            />
+          );
+        } else if (isAuthenticated) {
+          console.log('🎯 [App] Rendering ExecutionScreen (connected & authenticated)');
+          return (
+            <ExecutionScreen
+              onSettingsPress={() => setShowSettings(true)}
+              onSendText={handleSendText}
+            />
+          );
+        } else {
+          console.log('🔒 [App] Rendering HomeScreen + PasswordInput (connected but not authenticated)');
+          return (
+            <View className="flex-1">
+              <HomeScreen
+                isConnected={isConnected}
+                onSettingsPress={() => setShowSettings(true)}
+                onConnect={connectManually}
+              />
+              <PasswordInput
+                onAuthenticate={authenticateWithPassword}
+                isVisible={true}
+              />
+            </View>
+          );
+        }
+      })()}
 
       <SettingsPanel
         isVisible={showSettings}
@@ -124,6 +145,14 @@ const App = () => {
         visible={showDebugToast}
         onHide={() => setShowDebugToast(false)}
         duration={3000}
+      />
+
+      <CustomAlert
+        visible={!!alertData}
+        title={alertData?.title || ''}
+        message={alertData?.message || ''}
+        buttons={alertData?.buttons}
+        onDismiss={() => AlertManager.hideAlert()}
       />
     </View>
   );

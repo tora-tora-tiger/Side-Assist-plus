@@ -1,50 +1,62 @@
-import { Alert } from 'react-native';
+interface Button {
+  text: string;
+  onPress?: () => void;
+  style?: 'default' | 'cancel' | 'destructive';
+}
 
 class AlertManager {
-  private static isAlertVisible = false;
+  private static listeners: Array<(alert: AlertData | null) => void> = [];
+  private static currentAlert: AlertData | null = null;
 
-  static showAlert(title: string, message: string, buttons?: any[]): void {
-    console.log('📱 [AlertManager] Showing alert:', title);
-
-    // 既にアラートが表示中の場合は無視
-    if (this.isAlertVisible) {
-      console.log('📱 [AlertManager] Alert already visible, ignoring');
-      return;
-    }
-
-    this.isAlertVisible = true;
-
-    const processedButtons = buttons?.map(button => ({
-      ...button,
-      onPress: () => {
-        if (button.onPress) {
-          button.onPress();
-        }
-        this.onAlertDismissed();
-      },
-    })) || [
-      {
-        text: 'OK',
-        onPress: () => this.onAlertDismissed(),
-      },
-    ];
-
-    Alert.alert(title, message, processedButtons);
+  static subscribe(listener: (alert: AlertData | null) => void): () => void {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener);
+    };
   }
 
-  private static onAlertDismissed(): void {
-    console.log('📱 [AlertManager] Alert dismissed');
-    this.isAlertVisible = false;
+  static showAlert(title: string, message: string, buttons?: Button[]): void {
+    console.log('📱 [AlertManager] Showing alert:', title);
+
+    const alertData: AlertData = {
+      title,
+      message,
+      buttons: buttons || [{ text: 'OK' }],
+    };
+
+    this.currentAlert = alertData;
+    this.notifyListeners();
+  }
+
+  static hideAlert(): void {
+    console.log('📱 [AlertManager] Hiding alert');
+    this.currentAlert = null;
+    this.notifyListeners();
+  }
+
+  private static notifyListeners(): void {
+    this.listeners.forEach(listener => listener(this.currentAlert));
+  }
+
+  static getCurrentAlert(): AlertData | null {
+    return this.currentAlert;
   }
 
   static clearQueue(): void {
     console.log('📱 [AlertManager] Clearing state');
-    this.isAlertVisible = false;
+    this.currentAlert = null;
+    this.notifyListeners();
   }
 
   static isShowing(): boolean {
-    return this.isAlertVisible;
+    return this.currentAlert !== null;
   }
+}
+
+interface AlertData {
+  title: string;
+  message: string;
+  buttons: Button[];
 }
 
 export default AlertManager;

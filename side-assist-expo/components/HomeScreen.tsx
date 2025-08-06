@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, Linking } from 'react-native';
+import { View, Text, Linking } from 'react-native';
 import { Header, Button, StatusIndicator } from './ui';
 import { QRScanner } from './QRScanner';
 import { ConnectionSetup } from './ConnectionSetup';
@@ -22,6 +22,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [showManualInput, setShowManualInput] = useState(false);
 
   const handleOpenQRScanner = () => {
+    console.log('📷 [HomeScreen] Opening QR scanner');
     setShowQRScanner(true);
   };
 
@@ -32,56 +33,59 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const handleQRCodeScanned = async (data: string) => {
     console.log('📱 [HomeScreen] QR Code scanned:', data);
     
-    // QRスキャナーを閉じる
-    setShowQRScanner(false);
-
     // QRコードからURL解析
     const connectionParams = DeepLinkService.parseConnectionURL(data);
     console.log('📱 Parsed connection params:', connectionParams);
 
-    if (!connectionParams) {
-      AlertManager.showAlert(
-        'QRコードエラー',
-        `無効なQRコードです。\n\n読み取ったデータ:\n${data.substring(0, 100)}${
-          data.length > 100 ? '...' : ''
-        }\n\nPCで生成された正しいQRコードをスキャンしてください。`,
-        [
-          {
-            text: '再試行',
-            onPress: () => {
-              setTimeout(() => {
-                setShowQRScanner(true);
-              }, 100);
-            },
-          },
-          {
-            text: 'キャンセル',
-          },
-        ],
-      );
-      return;
-    }
+    // まずQRスキャナーを閉じる
+    setShowQRScanner(false);
 
-    // 自動接続を試行
-    try {
-      const success = await onConnect(
-        connectionParams.ip,
-        connectionParams.port,
-        connectionParams.password,
-      );
-
-      if (success) {
-        AlertManager.showAlert('接続成功', 'PCに正常に接続されました！');
-      } else {
+    // Modalのアンマウント完了を待つ
+    setTimeout(async () => {
+      if (!connectionParams) {
         AlertManager.showAlert(
-          '接続失敗',
-          'PCに接続できませんでした。PCが起動していることとネットワーク接続を確認してください。',
+          'QRコードエラー',
+          `無効なQRコードです。\n\n読み取ったデータ:\n${data.substring(0, 100)}${
+            data.length > 100 ? '...' : ''
+          }\n\nPCで生成された正しいQRコードをスキャンしてください。`,
+          [
+            {
+              text: '再試行',
+              onPress: () => {
+                setTimeout(() => {
+                  setShowQRScanner(true);
+                }, 300);
+              },
+            },
+            {
+              text: 'キャンセル',
+            },
+          ],
         );
+        return;
       }
-    } catch (error) {
-      console.error('QR connection error:', error);
-      AlertManager.showAlert('エラー', '接続中にエラーが発生しました');
-    }
+
+      // 自動接続を試行
+      try {
+        const success = await onConnect(
+          connectionParams.ip,
+          connectionParams.port,
+          connectionParams.password,
+        );
+
+        if (success) {
+          AlertManager.showAlert('接続成功', 'PCに正常に接続されました！');
+        } else {
+          AlertManager.showAlert(
+            '接続失敗',
+            'PCに接続できませんでした。PCが起動していることとネットワーク接続を確認してください。',
+          );
+        }
+      } catch (error) {
+        console.error('QR connection error:', error);
+        AlertManager.showAlert('エラー', '接続中にエラーが発生しました');
+      }
+    }, 300);
   };
 
   const handleOpenManualInput = () => {
@@ -193,34 +197,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         )}
       </View>
 
-      {/* QRスキャナーモーダル */}
+      {/* QRスキャナーを直接レンダリング（Modalなし） */}
       {showQRScanner && (
-        <Modal
-          visible={showQRScanner}
-          animationType="slide"
-          presentationStyle="fullScreen"
-        >
+        <View className="absolute inset-0 z-50">
           <QRScanner
             onQRCodeScanned={handleQRCodeScanned}
             onClose={handleCloseQRScanner}
             isVisible={showQRScanner}
           />
-        </Modal>
+        </View>
       )}
 
-      {/* 手動入力モーダル */}
+      {/* 手動入力を直接レンダリング（Modalなし） */}
       {showManualInput && (
-        <Modal
-          visible={showManualInput}
-          animationType="slide"
-          presentationStyle="pageSheet"
-        >
+        <View className="absolute inset-0 z-50">
           <ConnectionSetup
             onConnect={onConnect}
             isVisible={showManualInput}
             onClose={handleCloseManualInput}
           />
-        </Modal>
+        </View>
       )}
     </View>
   );
