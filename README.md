@@ -103,6 +103,9 @@ iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入
   現在、NativeWind v4はTailwindCSS v3.4.xを使用しています。TailwindCSS 
   v4はまだNativeWindでは完全にサポートされていません。
 
+
+- expoで、pnpmつかうと破壊される(n敗)https://github.com/expo/expo/issues/28703
+
 ## ⚡ 超簡単！ワンコマンド実行
 
 ```bash
