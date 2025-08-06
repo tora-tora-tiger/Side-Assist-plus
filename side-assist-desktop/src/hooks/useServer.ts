@@ -10,9 +10,7 @@ interface LogEntry {
   id: string;
 }
 
-// パスワード期限設定 (デバッグ用: 10秒 | 本番用: 5分)
-const PASSWORD_EXPIRY_TIME = 10 * 1000; // 10秒でテスト
-// const PASSWORD_EXPIRY_TIME = 5 * 60 * 1000; // 5分
+const PASSWORD_EXPIRY_TIME = 5 * 60 * 1000; // 5分
 
 export const useServer = (onLog: (message: string, type: LogEntry['type']) => void) => {
   const [serverStatus, setServerStatus] = useState<ServerStatusType>({
