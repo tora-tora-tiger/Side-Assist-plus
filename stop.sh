@@ -55,15 +55,6 @@ else
     echo "   Metro は実行されていません"
 fi
 
-# 保存されたPIDファイルから終了
-if [ -f "side-assist-expo/.metro.pid" ]; then
-    SAVED_PID=$(cat side-assist-expo/.metro.pid)
-    kill $SAVED_PID 2>/dev/null
-    rm -f side-assist-expo/.metro.pid
-    echo "   PIDファイルから Metro終了: $SAVED_PID"
-fi
-
-
 # ADB転送削除
 echo "🔗 ADB転送削除中..."
 adb reverse --remove tcp:8081 2>/dev/null

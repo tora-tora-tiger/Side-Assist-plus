@@ -6,8 +6,6 @@ echo ""
 
 if [ "$1" == "desktop" ]; then
     ./scripts/desktop.sh
-elif [ "$1" == "metro" ]; then
-    ./scripts/metro.sh
 elif [ "$1" == "ios" ]; then
     ./scripts/ios.sh
 elif [ "$1" == "android" ]; then
@@ -16,7 +14,6 @@ elif [ "$1" == "android" ]; then
 else
     echo "使用方法:"
     echo "  ./run.sh desktop  # Tauri デスクトップアプリ起動"
-    echo "  ./run.sh metro    # Expo Metro Bundler起動"
     echo "  ./run.sh ios      # Expo iOS側アプリセットアップ"
     echo "  ./run.sh android  # Expo Android側アプリセットアップ"
     echo ""
