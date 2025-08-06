@@ -7,6 +7,7 @@ interface ActionButtonProps {
   disabled?: boolean;
   size?: number;
   animatedValue?: Animated.Value;
+  backgroundColor?: string;
 }
 
 export const ActionButton: React.FC<ActionButtonProps> = ({
@@ -15,6 +16,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
   disabled = false,
   size = 75,
   animatedValue,
+  backgroundColor = '#e5e7eb',
 }) => {
   const ButtonComponent = animatedValue ? Animated.View : View;
   const animatedStyle = animatedValue
@@ -27,13 +29,12 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
         style={{
           width: size,
           height: size,
+          backgroundColor: disabled ? '#a3a3a3' : backgroundColor,
         }}
-        className={`rounded-3xl drop-shadow-figma justify-center items-center ${
-          disabled ? 'bg-gray-400' : 'bg-figma-gray'
-        }`}
+        className="rounded-3xl shadow-soft justify-center items-center"
         onPress={onPress}
         disabled={disabled}
-        activeOpacity={0.7}
+        activeOpacity={0.8}
       >
         <View className="w-14 h-14 justify-center items-center">{icon}</View>
       </TouchableOpacity>

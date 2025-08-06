@@ -263,6 +263,23 @@ export const useConnection = () => {
     [],
   );
 
+  const disconnect = useCallback(() => {
+    console.log('🔌 [useConnection] disconnect START');
+    
+    // 監視を停止
+    stopConnectionMonitoring();
+    
+    // 接続状態をリセット
+    setIsConnected(false);
+    setIsAuthenticated(false);
+    setMacIP('');
+    setMacPort('');
+    setPassword('');
+    
+    console.log('🔌 [useConnection] Connection disconnected and state reset');
+    console.log('🔌 [useConnection] disconnect END');
+  }, [stopConnectionMonitoring]);
+
   return {
     isConnected,
     macIP,
@@ -274,5 +291,6 @@ export const useConnection = () => {
     sendText,
     authenticateWithPassword,
     connectManually,
+    disconnect,
   };
 };

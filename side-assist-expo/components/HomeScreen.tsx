@@ -11,12 +11,14 @@ interface HomeScreenProps {
   isConnected: boolean;
   onSettingsPress: () => void;
   onConnect: (ip: string, port: string, password: string) => Promise<boolean>;
+  onDisconnect: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
   isConnected,
   onSettingsPress,
   onConnect,
+  onDisconnect,
 }) => {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
@@ -220,9 +222,38 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <Text className="text-xl font-bold text-neutral-900 mb-2">
                   接続完了
                 </Text>
-                <Text className="text-neutral-600 text-center">
+                <Text className="text-neutral-600 text-center mb-6">
                   PCとの接続が確立されました
                 </Text>
+                
+                {/* 接続解除ボタン */}
+                <Button
+                  title="接続を解除"
+                  icon={<MaterialIcons name="link-off" size={20} />}
+                  variant="outline"
+                  size="md"
+                  onPress={() => {
+                    // 確認ダイアログを表示
+                    AlertManager.showAlert(
+                      '接続解除の確認',
+                      'PCとの接続を解除しますか？',
+                      [
+                        {
+                          text: 'キャンセル',
+                          style: 'cancel',
+                        },
+                        {
+                          text: '解除',
+                          style: 'destructive',
+                          onPress: () => {
+                            console.log('🔌 [HomeScreen] User confirmed disconnect');
+                            onDisconnect();
+                          },
+                        },
+                      ]
+                    );
+                  }}
+                />
               </View>
             </View>
           </View>

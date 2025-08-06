@@ -26,6 +26,7 @@ const App = () => {
     sendText,
     authenticateWithPassword,
     connectManually,
+    disconnect,
   } = useConnection();
 
   useEffect(() => {
@@ -104,6 +105,7 @@ const App = () => {
               isConnected={isConnected}
               onSettingsPress={() => setShowSettings(true)}
               onConnect={connectManually}
+              onDisconnect={disconnect}
             />
           );
         } else if (isAuthenticated) {
@@ -112,6 +114,7 @@ const App = () => {
             <ExecutionScreen
               onSettingsPress={() => setShowSettings(true)}
               onSendText={handleSendText}
+              onDisconnect={disconnect}
             />
           );
         } else {
@@ -122,6 +125,7 @@ const App = () => {
                 isConnected={isConnected}
                 onSettingsPress={() => setShowSettings(true)}
                 onConnect={connectManually}
+                onDisconnect={disconnect}
               />
               <PasswordInput
                 onAuthenticate={authenticateWithPassword}
