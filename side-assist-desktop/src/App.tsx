@@ -70,6 +70,7 @@ function App() {
     oneTimePassword,
     isGeneratingPassword,
     qrCodeImage,
+    passwordExpired,
     generateOneTimePassword,
     handlePortChange
   } = useServer(addLog);
@@ -182,6 +183,7 @@ function App() {
                 <ConnectionPanel
                   oneTimePassword={oneTimePassword}
                   qrCodeImage={qrCodeImage}
+                  passwordExpired={passwordExpired}
                 />
               </div>
             </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { serverService, ServerStatusType } from '../services/serverService';
 import { passwordService } from '../services/passwordService';
 
@@ -10,6 +10,10 @@ interface LogEntry {
   id: string;
 }
 
+// パスワード期限設定 (デバッグ用: 10秒 | 本番用: 5分)
+const PASSWORD_EXPIRY_TIME = 10 * 1000; // 10秒でテスト
+// const PASSWORD_EXPIRY_TIME = 5 * 60 * 1000; // 5分
+
 export const useServer = (onLog: (message: string, type: LogEntry['type']) => void) => {
   const [serverStatus, setServerStatus] = useState<ServerStatusType>({
     running: false,
@@ -20,6 +24,8 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
   const [oneTimePassword, setOneTimePassword] = useState<string | null>(null);
   const [isGeneratingPassword, setIsGeneratingPassword] = useState(false);
   const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
+  const [passwordExpired, setPasswordExpired] = useState(false);
+  const passwordTimerRef = useRef<number | null>(null);
 
   const refreshServerStatus = useCallback(async () => {
     try {
@@ -43,22 +49,44 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
     }
   }, [onLog]);
 
+  const clearPasswordTimer = useCallback(() => {
+    if (passwordTimerRef.current) {
+      clearTimeout(passwordTimerRef.current);
+      passwordTimerRef.current = null;
+    }
+  }, []);
+
+  const startPasswordTimer = useCallback(() => {
+    clearPasswordTimer();
+    passwordTimerRef.current = window.setTimeout(() => {
+      setPasswordExpired(true);
+      // QRコードは残してblur効果を適用するため、nullにしない
+      // setQrCodeImage(null);
+      // setOneTimePassword(null);
+      onLog('パスワードが期限切れになりました', 'warning');
+    }, PASSWORD_EXPIRY_TIME);
+  }, [clearPasswordTimer, onLog]);
+
   const generateOneTimePassword = useCallback(async () => {
     try {
       setIsGeneratingPassword(true);
       const password = await passwordService.generate();
       setOneTimePassword(password);
+      setPasswordExpired(false);
       onLog(`新しいワンタイムパスワードを生成しました: ${password}`, 'success');
       
       // パスワード生成後、自動的にQRコードも生成
       await generateQRCode();
+      
+      // タイマー開始
+      startPasswordTimer();
     } catch (error) {
       console.error("Failed to generate password:", error);
       onLog(`パスワード生成に失敗しました: ${error}`, 'error');
     } finally {
       setIsGeneratingPassword(false);
     }
-  }, [onLog, generateQRCode]);
+  }, [onLog, generateQRCode, startPasswordTimer]);
 
   const startServer = useCallback(async () => {
     try {
@@ -77,11 +105,26 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
   const checkCurrentPassword = useCallback(async () => {
     try {
       const password = await passwordService.getCurrent();
-      setOneTimePassword(password);
+      
+      // サーバーからパスワードがnullで返された場合の処理
+      if (!password && oneTimePassword && !passwordExpired) {
+        setPasswordExpired(true);
+        // QRコードは残してblur効果を適用するため、nullにしない
+        // setQrCodeImage(null);
+        // setOneTimePassword(null);
+        clearPasswordTimer();
+        onLog('サーバーからパスワードが期限切れと報告されました', 'warning');
+      } else if (password && !oneTimePassword) {
+        // 新しいパスワードが生成された場合（外部から）
+        setOneTimePassword(password);
+        setPasswordExpired(false);
+        await generateQRCode();
+        startPasswordTimer();
+      }
     } catch (error) {
       console.error("Failed to get current password:", error);
     }
-  }, []);
+  }, [oneTimePassword, passwordExpired, onLog, generateQRCode, clearPasswordTimer, startPasswordTimer]);
 
   const handlePortChange = useCallback(async (newPort: number) => {
     // 既に処理中の場合は拒否
@@ -113,6 +156,13 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
       setIsLoading(false);
     }
   }, [isLoading, onLog, refreshServerStatus]);
+
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      clearPasswordTimer();
+    };
+  }, [clearPasswordTimer]);
 
   // 初期化
   useEffect(() => {
@@ -148,7 +198,10 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
       checkCurrentPassword();
     }, 5000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      clearPasswordTimer();
+    };
     // 依存関係を削除して初期化を1回だけ実行
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -159,6 +212,7 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
     oneTimePassword,
     isGeneratingPassword,
     qrCodeImage,
+    passwordExpired,
     refreshServerStatus,
     startServer,
     generateOneTimePassword,

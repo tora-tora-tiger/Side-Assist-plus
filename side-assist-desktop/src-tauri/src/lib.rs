@@ -104,7 +104,8 @@ async fn generate_one_time_password(state: tauri::State<'_, AppState>) -> Result
         .map_err(|e| format!("システム時刻の取得に失敗しました: {}", e))?
         .as_secs();
     
-    let expiry = now + 300; // 5分間有効
+    let expiry = now + 10; // 10秒間有効（デバッグ用）
+    // let expiry = now + 300; // 5分間有効（本番用）
     
     let mut state = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
     state.one_time_password = Some(password.clone());
