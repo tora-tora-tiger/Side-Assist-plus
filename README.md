@@ -6,26 +6,10 @@
 
 iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入力される
 
-## 📁 プロジェクト構成
+## 教訓
+- androidのビルドで、node_modulesの構造の違いでpnpmではエラーがおきたから。
 
-```
-Side-Assist-plus/
-├── side-assist-desktop/    # Tauri v2 デスクトップアプリ
-│   ├── src/               # React + TypeScript UI
-│   ├── src-tauri/         # Rust バックエンド + HTTP サーバー
-│   └── locales/           # 国際化 (日本語/英語)
-├── side-assist-mobile/     # React Native モバイルアプリ
-│   ├── src/               # コンポーネント分割済み
-│   │   ├── components/    # UI コンポーネント
-│   │   ├── hooks/         # カスタムフック
-│   │   ├── services/      # ネットワーク通信
-│   │   └── styles/        # スタイル定義
-│   └── ios/android/       # ネイティブプラットフォーム
-└── docs/                  # ドキュメント
-```
-
-## なぜnpmなのか？
-androidのビルドで、node_modulesの構造の違いでpnpmではエラーがおきたから。
+- react nativeだとtabler-iconとか使えなかった。
 
 ## ⚡ 超簡単！ワンコマンド実行
 

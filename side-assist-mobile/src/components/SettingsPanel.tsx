@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { Header, Button } from './ui';
-import { Settings } from 'lucide-react-native';
+import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 
 interface SettingsPanelProps {
   isVisible: boolean;
@@ -64,7 +64,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             title="Go to Setting"
             variant="primary"
             onPress={onShowPermissionGuide || (() => {})}
-            icon={<Settings size={18} color="#ffffff" />}
+            icon={<MaterialIcons name="settings" size={18} color="#ffffff" />}
           />
         </View>
       </View>

@@ -5,7 +5,7 @@ import { QRScanner } from './QRScanner';
 import { ConnectionSetup } from './ConnectionSetup';
 import { NetworkPermissionGuide } from './NetworkPermissionGuide';
 import { DeepLinkService } from '../services/DeepLinkService';
-import { Smartphone, QrCode, Keyboard, Settings } from 'lucide-react-native';
+import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import AlertManager from '../utils/AlertManager';
 
 interface HomeScreenProps {
@@ -122,7 +122,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <View className="flex-1 justify-center">
               <View className="items-center mb-8">
                 <View className="mb-4">
-                  <Smartphone size={64} color="#6b7280" />
+                  <MaterialIcons name="smartphone" size={64} color="#6b7280" />
                 </View>
                 <Text className="text-2xl font-bold text-gray-900 text-center">
                   PCと接続
@@ -136,7 +136,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 {/* QRスキャンボタン */}
                 <Button
                   title="Scan the QR Code"
-                  icon={<QrCode size={18} color="#ffffff" />}
+                  icon={
+                    <MaterialIcons name="qr-code" size={18} color="#ffffff" />
+                  }
                   variant="primary"
                   onPress={handleOpenQRScanner}
                 />
@@ -153,7 +155,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 {/* 手動入力ボタン */}
                 <Button
                   title="Input Manually"
-                  icon={<Keyboard size={18} color="#374151" />}
+                  icon={
+                    <MaterialIcons name="keyboard" size={18} color="#374151" />
+                  }
                   variant="secondary"
                   onPress={handleOpenManualInput}
                 />
@@ -170,7 +174,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <View className="mt-4">
                 <Button
                   title="Go to Setting"
-                  icon={<Settings size={16} color="#ffffff" />}
+                  icon={
+                    <MaterialIcons name="settings" size={16} color="#ffffff" />
+                  }
                   variant="primary"
                   size="small"
                   onPress={() => setShowPermissionGuide(true)}

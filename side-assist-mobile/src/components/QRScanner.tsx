@@ -6,7 +6,7 @@ import {
   useCodeScanner,
 } from 'react-native-vision-camera';
 import { Header } from './ui';
-import { Smartphone, AlertCircle } from 'lucide-react-native';
+import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import AlertManager from '../utils/AlertManager';
 
 interface QRScannerProps {
@@ -217,7 +217,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           {isSimulator ? (
             <>
               <View className="mb-6">
-                <Smartphone size={80} color="#6b7280" />
+                <MaterialIcons name="smartphone" size={80} color="#6b7280" />
               </View>
               <Text className="text-gray-800 text-2xl font-bold mb-4 text-center">
                 シミュレーター環境
@@ -228,7 +228,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
               </Text>
               <View className="bg-gray-100 p-5 rounded-xl mb-8 w-full">
                 <View className="flex-row items-center mb-3">
-                  <Smartphone size={16} color="#374151" />
+                  <MaterialIcons name="smartphone" size={16} color="#374151" />
                   <Text className="text-gray-800 text-base font-bold ml-2">
                     テスト用のヒント:
                   </Text>
@@ -247,7 +247,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           ) : (
             <>
               <View className="mb-6">
-                <AlertCircle size={80} color="#ef4444" />
+                <MaterialIcons name="error-outline" size={80} color="#ef4444" />
               </View>
               <Text className="text-error text-2xl font-bold mb-4 text-center">
                 {isRealDevice

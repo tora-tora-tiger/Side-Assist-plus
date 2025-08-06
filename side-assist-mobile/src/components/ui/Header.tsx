@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Settings, X } from 'lucide-react-native';
+import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 
 interface HeaderProps {
   title: string;
@@ -38,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="w-11 h-11 bg-gray-50 rounded-full justify-center items-center shadow"
               onPress={onSettingsPress}
             >
-              <Settings size={20} color="#6b7280" />
+              <MaterialIcons name="settings" size={20} color="#6b7280" />
             </TouchableOpacity>
           )}
 
@@ -47,7 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="w-11 h-11 bg-gray-100 rounded-full justify-center items-center ml-2"
               onPress={onClosePress}
             >
-              <X size={18} color="#6b7280" />
+              <MaterialIcons name="close" size={18} color="#6b7280" />
             </TouchableOpacity>
           )}
         </View>

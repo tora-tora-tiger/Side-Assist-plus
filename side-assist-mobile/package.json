@@ -13,8 +13,8 @@
     "test": "jest"
   },
   "dependencies": {
+    "@react-native-vector-icons/material-icons": "^12.3.0",
     "@react-native/new-app-screen": "0.80.1",
-    "lucide-react-native": "^0.536.0",
     "nativewind": "^4.1.23",
     "react": "19.1.0",
     "react-native": "0.80.1",

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput } from 'react-native';
 import { Header, Button, InputField } from './ui';
-import { Keyboard } from 'lucide-react-native';
+import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import AlertManager from '../utils/AlertManager';
 
 interface ConnectionSetupProps {
@@ -73,7 +73,7 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
       <View className="flex-1 p-6">
         <View className="items-center mb-8">
           <View className="mb-4">
-            <Keyboard size={64} color="#6b7280" />
+            <MaterialIcons name="keyboard" size={64} color="#6b7280" />
           </View>
           <Text className="text-2xl font-bold text-gray-900 text-center">
             手動接続

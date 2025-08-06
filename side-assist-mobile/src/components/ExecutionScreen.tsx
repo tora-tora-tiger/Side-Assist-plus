@@ -1,14 +1,7 @@
 import React, { useState } from 'react';
 import { View, Animated } from 'react-native';
 import { Header, StatusIndicator, ActionButton } from './ui';
-import {
-  Brain,
-  Zap,
-  Target,
-  Rocket,
-  Wrench,
-  BarChart3,
-} from 'lucide-react-native';
+import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import AlertManager from '../utils/AlertManager';
 
 interface ExecutionScreenProps {
@@ -33,32 +26,32 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   const actions = [
     {
       id: 'ultradeepthink',
-      icon: <Brain size={32} color="#000000" />,
+      icon: <MaterialIcons name="psychology" size={32} color="#000000" />,
       text: 'ultradeepthink',
     },
     {
       id: 'action2',
-      icon: <Zap size={32} color="#000000" />,
+      icon: <MaterialIcons name="flash-on" size={32} color="#000000" />,
       text: 'action2',
     },
     {
       id: 'action3',
-      icon: <Target size={32} color="#000000" />,
+      icon: <MaterialIcons name="gps-fixed" size={32} color="#000000" />,
       text: 'action3',
     },
     {
       id: 'action4',
-      icon: <Rocket size={32} color="#000000" />,
+      icon: <MaterialIcons name="rocket-launch" size={32} color="#000000" />,
       text: 'action4',
     },
     {
       id: 'action5',
-      icon: <Wrench size={32} color="#000000" />,
+      icon: <MaterialIcons name="build" size={32} color="#000000" />,
       text: 'action5',
     },
     {
       id: 'action6',
-      icon: <BarChart3 size={32} color="#000000" />,
+      icon: <MaterialIcons name="bar-chart" size={32} color="#000000" />,
       text: 'action6',
     },
   ];
