@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Modal, Linking, Alert } from 'react-native';
 import { Header, Button } from './ui';
+import { getDeviceConfig } from '../utils/DeviceConfig';
 
 interface SettingsPanelProps {
   isVisible: boolean;
@@ -15,6 +16,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   macIP,
   onClose,
 }) => {
+  const deviceConfig = getDeviceConfig();
+  
   const handleOpenSettings = async () => {
     try {
       await Linking.openSettings();
@@ -43,6 +46,19 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <Text className="text-lg font-semibold mb-2">接続状態</Text>
             <Text className="text-gray-600">
               {isConnected ? `接続中: ${macIP}` : '未接続'}
+            </Text>
+          </View>
+          
+          <View className="mb-6">
+            <Text className="text-lg font-semibold mb-2">デバイス情報</Text>
+            <Text className="text-gray-600 text-sm mb-1">
+              デバイス名: {deviceConfig.deviceName}
+            </Text>
+            <Text className="text-gray-600 text-sm mb-1">
+              デバッグモード: {deviceConfig.debugMode ? 'ON' : 'OFF'}
+            </Text>
+            <Text className="text-gray-600 text-sm">
+              開発モード: {deviceConfig.developmentMode ? 'ON' : 'OFF'}
             </Text>
           </View>
           

@@ -1,32 +1,22 @@
 #!/bin/bash
 
-echo "Android アプリセットアップ..."
+echo "Expo Android アプリセットアップ..."
 
-if [ ! -d "side-assist-mobile" ]; then
-    echo "❌ side-assist-mobile ディレクトリが見つかりません"
+if [ ! -d "side-assist-expo" ]; then
+    echo "❌ side-assist-expo ディレクトリが見つかりません"
     exit 1
 fi
 
-cd side-assist-mobile
+cd side-assist-expo
 
 # 依存関係チェック
 if [ ! -d "node_modules" ]; then
     echo "📦 依存関係インストール中..."
-    npm install
+    pnpm install
 fi
 
-# Metro接続確認
-echo "🔗 Metro Bundler接続確認中..."
-if ! curl -s http://localhost:8081/status > /dev/null 2>&1; then
-    echo "⚠️  Metro Bundlerが起動していません"
-    echo "📋 先に以下を実行してください:"
-    echo "   ./run.sh metro"
-    echo ""
-    echo "❌ Android セットアップを中止します"
-    exit 1
-else
-    echo "✅ Metro Bundler接続OK"
-fi
+# Expo開発サーバーは自動起動されるため、Metro接続チェックは不要
+echo "🚀 Expo開発サーバーは自動で起動されます"
 
 # Android実機接続確認
 echo "📱 Android実機接続確認中..."
@@ -53,20 +43,20 @@ echo ""
 echo "🔗 ADB ポート転送設定中..."
 adb reverse tcp:8081 tcp:8081
 
-# Androidビルド&実行
-echo "🚀 Android実機でビルド&実行中..."
-npm run android
+# Expo Androidビルド&実行
+echo "🚀 Expo Android実機でビルド&実行中..."
+pnpm expo run:android
 
 echo ""
 echo "✅ Android セットアップ完了！"
 echo ""
 echo "📋 次のステップ:"
-echo "   1. ✅ Metro起動済み (http://localhost:8081)"
+echo "   1. 🚀 Expo開発サーバー自動起動"
 echo "   2. ✅ ADB転送設定済み (tcp:8081)"
-echo "   3. ✅ Android実機にアプリインストール済み"
+echo "   3. ✅ Android実機にExpoアプリインストール済み"
 echo "   4. アプリで権限許可を確認"
 echo "   5. デスクトップサーバーに接続してテスト"
 echo ""
-echo "🔧 Metro接続エラーの場合:"
+echo "🔧 ビルドエラーの場合:"
 echo "   - Android設定 → WiFi → 同じネットワーク確認"
-echo "   - ./stop.sh → ./run.sh metro → 再実行"
+echo "   - ./stop.sh → 再実行"

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Animated } from 'react-native';
+import { isDebugModeEnabled } from '../utils/DeviceConfig';
 
 interface DebugToastProps {
   message: string;
@@ -41,6 +42,11 @@ export const DebugToast: React.FC<DebugToastProps> = ({
   }, [visible, fadeAnim, duration, onHide]);
 
   if (!visible) return null;
+  
+  // デバッグモードが無効の場合は表示しない
+  if (!isDebugModeEnabled() && !__DEV__) {
+    return null;
+  }
 
   return (
     <Animated.View

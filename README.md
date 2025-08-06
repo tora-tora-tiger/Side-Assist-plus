@@ -7,9 +7,12 @@
 iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入力される
 
 ## 教訓
+
+~~旧時代の話~~
 - androidのビルドで、node_modulesの構造の違いでpnpmではエラーがおきたから。
 
 - react nativeだとtabler-iconとか使えなかった。
+---
 
 ⏺ TailwindCSS v4とNativeWind v4の最新情報（2025年）:
 
@@ -22,11 +25,8 @@ iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入
 # ターミナル1: Tauri デスクトップアプリ (サーバー機能内蔵)
 ./run.sh desktop
 
-# ターミナル2: Metro Bundler  
-./run.sh metro
-
-# ターミナル3: モバイルアプリ
-./run.sh ios      # iOS (Xcode)
+# ターミナル2: Expo モバイルアプリ
+./run.sh ios      # iOS (自動ビルド)
 # または
 ./run.sh android  # Android (完全自動)
 ```
@@ -68,13 +68,14 @@ iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入
 - **パッケージ管理**: pnpm
 - **コード品質**: ESLint + Prettier + Lefthook
 
-### モバイル (React Native)
-- **フレームワーク**: React Native 0.80.1
-- **言語**: TypeScript
-- **アーキテクチャ**: コンポーネント分割 + カスタムフック
-- **ネットワーク**: HTTP REST API + Service Discovery
-- **バンドラー**: Metro Bundler
-- **パッケージ管理**: npm
+### モバイル (Expo Router v5)
+- **フレームワーク**: Expo Router v5 + React Native
+- **言語**: TypeScript  
+- **スタイル**: TailwindCSS v3.4 + NativeWind v4
+- **カメラ**: Expo Camera API (QRスキャン)
+- **ナビゲーション**: Expo Router
+- **バンドラー**: Expo Metro Bundler
+- **パッケージ管理**: pnpm
 
 
 ## 🔧 最適化機能
@@ -124,7 +125,7 @@ iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入
 ## 📋 詳細ドキュメント
 
 - [Android実機デバッグガイド](docs/ANDROID_DEBUG.md)
-- [React Native セットアップ](side-assist-mobile/README.md)
+- [Expo Router セットアップ](side-assist-expo/README.md)
 
 ## 🚨 トラブルシューティング
 
@@ -147,7 +148,7 @@ A: システム環境設定でアクセシビリティ権限を再確認
 **Q: "ローカルネットワーク使用許可" ダイアログ**  
 A: 必ず「許可」を選択 (サーバー発見に必要)
 
-**Q: Metro接続エラー**  
+**Q: Expo Metro接続エラー**  
 A: iPhone設定 → WiFi → Mac と同じネットワーク確認
 
 **Q: Xcodeでビルドエラー**  
@@ -159,9 +160,9 @@ A: 1. 同じWiFi確認 2. アプリの「Find Mac」ボタン 3. ローカルネ
 ### 🤖 Android
 
 **Q: "InitializeCore.js" エラー**  
-A: `./stop.sh` → `./run.sh android` (自動修復済み)
+A: `./stop.sh` → `./run.sh android` (Expoで解決済み)
 
-**Q: Metro ポート競合**  
+**Q: Expo Metro ポート競合**  
 A: `./stop.sh` でプロセス自動終了
 
 **Q: 実機が認識されない**  
@@ -179,7 +180,7 @@ A: `./stop.sh` → 関連プロセス終了 → 再起動
 ```bash
 ./stop.sh              # 全プロセス強制終了
 ./run.sh desktop        # Tauri デスクトップ (推奨)
-./run.sh metro          # Metro Bundler
+./run.sh metro          # Expo Metro Bundler
 ./run.sh ios           # iOS または android
 ```
 

@@ -21,6 +21,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 }) => {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
+  const [isProcessingConnection, setIsProcessingConnection] = useState(false);
 
   const handleOpenQRScanner = () => {
     setShowQRScanner(true);
@@ -34,11 +35,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     console.log('🔄 [HomeScreen] handleQRCodeScanned called - START');
     DebugToastManager.show('HomeScreen: QR Code Scanned');
 
-    if (AlertManager.isShowing()) {
-      console.log('📱 Alert already showing, ignoring QR scan');
-      DebugToastManager.show('HomeScreen: Alert Showing - Ignoring QR');
+    // 既に処理中またはアラート表示中の場合は無視
+    if (isProcessingConnection || AlertManager.isShowing()) {
+      console.log('📱 Already processing connection or alert showing, ignoring QR scan');
+      DebugToastManager.show('HomeScreen: Connection Processing - Ignoring QR');
       return;
     }
+
+    // 処理開始フラグを設定
+    setIsProcessingConnection(true);
 
     console.log('📱 [HomeScreen] QR Code data received:', data);
     DebugToastManager.show('HomeScreen: Closing QR Scanner');
@@ -49,6 +54,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     console.log('📱 Parsed connection params:', connectionParams);
 
     if (!connectionParams) {
+      setIsProcessingConnection(false); // 処理完了フラグをリセット
       AlertManager.showAlert(
         'QRコードエラー',
         `無効なQRコードです。\n\n読み取ったデータ:\n${data.substring(0, 100)}${
@@ -89,10 +95,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               console.log('🔄 [HomeScreen] Connection success alert dismissed');
               DebugToastManager.show('HomeScreen: Success Alert Dismissed');
               AlertManager.logStatus();
+              setIsProcessingConnection(false); // 処理完了
             },
           },
         ]);
       } else {
+        setIsProcessingConnection(false); // 処理完了
         AlertManager.showAlert(
           '接続失敗',
           'PCに接続できませんでした。PCが起動していることとネットワーク接続を確認してください。',
@@ -109,6 +117,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       }
     } catch (error) {
       console.error('QR connection error:', error);
+      setIsProcessingConnection(false); // 処理完了
       AlertManager.showAlert('エラー', '接続中にエラーが発生しました');
     }
   };

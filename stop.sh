@@ -56,10 +56,10 @@ else
 fi
 
 # 保存されたPIDファイルから終了
-if [ -f "side-assist-mobile/.metro.pid" ]; then
-    SAVED_PID=$(cat side-assist-mobile/.metro.pid)
+if [ -f "side-assist-expo/.metro.pid" ]; then
+    SAVED_PID=$(cat side-assist-expo/.metro.pid)
     kill $SAVED_PID 2>/dev/null
-    rm -f side-assist-mobile/.metro.pid
+    rm -f side-assist-expo/.metro.pid
     echo "   PIDファイルから Metro終了: $SAVED_PID"
 fi
 
@@ -74,7 +74,7 @@ echo "✅ 全プロセス終了完了！"
 echo ""
 echo "📁 プロジェクト構造:"
 echo "  side-assist-desktop/   # Tauri v2 デスクトップアプリ"
-echo "  side-assist-mobile/    # React Native モバイルアプリ"
+echo "  side-assist-expo/      # Expo Router v5 モバイルアプリ"
 echo ""
 echo "🚀 再起動方法:"
 echo "  ./run.sh desktop   # Tauri デスクトップアプリ"

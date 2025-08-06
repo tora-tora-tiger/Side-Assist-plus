@@ -1,18 +1,18 @@
 #!/bin/bash
 
-echo "iPhone アプリセットアップ..."
+echo "Expo iPhone アプリセットアップ..."
 
-if [ ! -d "side-assist-mobile" ]; then
-    echo "❌ side-assist-mobile ディレクトリが見つかりません"
+if [ ! -d "side-assist-expo" ]; then
+    echo "❌ side-assist-expo ディレクトリが見つかりません"
     exit 1
 fi
 
-cd side-assist-mobile
+cd side-assist-expo
 
 # 依存関係チェック
 if [ ! -d "node_modules" ]; then
     echo "📦 依存関係インストール中..."
-    npm install
+    pnpm install
 fi
 
 if [ ! -d "ios/Pods" ]; then
@@ -29,33 +29,42 @@ echo ""
 echo "   ⚠️  権限を拒否すると、Macサーバーに接続できません"
 echo ""
 
-# Metro接続確認
-echo "🔗 Metro Bundler接続確認中..."
-if ! curl -s http://localhost:8081/status > /dev/null 2>&1; then
-    echo "⚠️  Metro Bundlerが起動していません"
-    echo "📋 先に以下を実行してください:"
-    echo "   ./run.sh metro"
-    echo ""
-    echo "❌ iOS セットアップを中止します"
-    exit 1
-else
-    echo "✅ Metro Bundler接続OK"
-fi
+# Expo開発サーバーは自動起動されるため、Metro接続チェックは不要
+echo "🚀 Expo開発サーバーは自動で起動されます"
 
-# Xcode開く
-echo "🚀 Xcode起動中..."
-open ios/SideAssist.xcworkspace
+# Expo iOSビルド実行 (実機指定)
+echo "🚀 Expo iOS ビルド実行中..."
+
+# 環境変数からデバイス名を取得
+if [ -f ".env" ]; then
+    DEVICE_NAME=$(grep "EXPO_PUBLIC_DEVICE_NAME" .env | cut -d '"' -f 2)
+    if [ ! -z "$DEVICE_NAME" ] && [ "$DEVICE_NAME" != "" ]; then
+        echo "📱 指定デバイス: $DEVICE_NAME"
+        pnpm expo run:ios --device "$DEVICE_NAME"
+    else
+        echo "📱 実機を自動検出中..."
+        pnpm expo run:ios --device
+    fi
+else
+    echo "📱 実機を自動検出中..."
+    pnpm expo run:ios --device
+fi
 
 echo ""
 echo "✅ セットアップ完了！"
 echo ""
 echo "📋 次のステップ:"
-echo "   1. ✅ Metro起動済み (http://localhost:8081)"
-echo "   2. Xcodeでデバイス選択 → iPhone実機"
-echo "   3. Bundle ID変更: com.yourname.sideassist"
-echo "   4. Team設定: 自分のApple ID"
-echo "   5. ▶️ でビルド&実行"
+echo "   1. 🚀 Expo開発サーバー自動起動"
+echo "   2. 自動的にXcodeでビルド&実機にインストール"
+echo "   3. iPhoneでアプリ確認"
+echo "   4. 権限許可: ローカルネットワーク → 許可"
+echo "   5. デスクトップアプリとの接続テスト"
 echo ""
-echo "🔧 Metro接続エラーの場合:"
+echo "🔧 ビルドエラーの場合:"
 echo "   - iPhone設定 → WiFi → 同じネットワーク確認"
-echo "   - ./stop.sh → ./run.sh metro → 再実行"
+echo "   - ./stop.sh → 再実行"
+echo ""
+echo "💡 手動でXcodeを使う場合:"
+echo "   - open ios/sideassistexpo.xcworkspace"
+echo "   - Bundle ID変更: com.yourname.sideassistexpo"
+echo "   - Team設定: 自分のApple ID"

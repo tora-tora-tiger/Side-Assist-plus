@@ -1,3 +1,5 @@
+import { isDebugModeEnabled } from './DeviceConfig';
+
 class DebugToastManager {
   private static listeners: Array<(message: string) => void> = [];
 
@@ -9,6 +11,11 @@ class DebugToastManager {
   }
 
   static show(message: string) {
+    // デバッグモードが無効の場合は何もしない
+    if (!isDebugModeEnabled() && !__DEV__) {
+      return;
+    }
+    
     console.log('🐛 [DebugToast]', message);
     this.listeners.forEach(listener => listener(message));
   }
