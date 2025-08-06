@@ -7,18 +7,22 @@ import AlertManager from '../utils/AlertManager';
 interface ExecutionScreenProps {
   onSettingsPress: () => void;
   onSendText: (text: string) => Promise<void>;
+  onSendCopy: () => Promise<boolean>;
+  onSendPaste: () => Promise<boolean>;
   onDisconnect: () => void;
 }
 
 export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   onSettingsPress,
   onSendText,
+  onSendCopy,
+  onSendPaste,
   onDisconnect,
 }) => {
   const [buttonScales] = useState(() => ({
     ultradeepthink: new Animated.Value(1),
-    action2: new Animated.Value(1),
-    action3: new Animated.Value(1),
+    copy: new Animated.Value(1),
+    paste: new Animated.Value(1),
     action4: new Animated.Value(1),
     action5: new Animated.Value(1),
     action6: new Animated.Value(1),
@@ -31,36 +35,42 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
       icon: <MaterialIcons name="psychology" size={32} color="#ffffff" />,
       text: 'ultradeepthink',
       backgroundColor: '#6366f1', // Indigo
+      type: 'text' as const,
     },
     {
-      id: 'action2',
-      icon: <MaterialIcons name="flash-on" size={32} color="#ffffff" />,
-      text: 'action2',
+      id: 'copy',
+      icon: <MaterialIcons name="content-copy" size={32} color="#ffffff" />,
+      text: 'copy',
       backgroundColor: '#f59e0b', // Amber
+      type: 'clipboard' as const,
     },
     {
-      id: 'action3',
-      icon: <MaterialIcons name="gps-fixed" size={32} color="#ffffff" />,
-      text: 'action3',
+      id: 'paste',
+      icon: <MaterialIcons name="content-paste" size={32} color="#ffffff" />,
+      text: 'paste',
       backgroundColor: '#10b981', // Emerald
+      type: 'clipboard' as const,
     },
     {
       id: 'action4',
       icon: <MaterialIcons name="rocket-launch" size={32} color="#ffffff" />,
       text: 'action4',
       backgroundColor: '#ef4444', // Red
+      type: 'text' as const,
     },
     {
       id: 'action5',
       icon: <MaterialIcons name="build" size={32} color="#ffffff" />,
       text: 'action5',
       backgroundColor: '#8b5cf6', // Violet
+      type: 'text' as const,
     },
     {
       id: 'action6',
       icon: <MaterialIcons name="bar-chart" size={32} color="#ffffff" />,
       text: 'action6',
       backgroundColor: '#06b6d4', // Cyan
+      type: 'text' as const,
     },
   ];
 
@@ -83,15 +93,35 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
     ]).start();
 
     try {
-      console.log(`🚀 [ExecutionScreen] Sending text: "${action.text}"`);
-      await onSendText(action.text);
-      console.log(`✅ [ExecutionScreen] Text sent successfully: "${action.text}"`);
+      if (action.type === 'clipboard') {
+        if (action.id === 'copy') {
+          console.log(`📋 [ExecutionScreen] Executing copy command`);
+          const success = await onSendCopy();
+          if (success) {
+            console.log(`✅ [ExecutionScreen] Copy command executed successfully`);
+          } else {
+            throw new Error('Copy command failed');
+          }
+        } else if (action.id === 'paste') {
+          console.log(`📋 [ExecutionScreen] Executing paste command`);
+          const success = await onSendPaste();
+          if (success) {
+            console.log(`✅ [ExecutionScreen] Paste command executed successfully`);
+          } else {
+            throw new Error('Paste command failed');
+          }
+        }
+      } else {
+        console.log(`🚀 [ExecutionScreen] Sending text: "${action.text}"`);
+        await onSendText(action.text);
+        console.log(`✅ [ExecutionScreen] Text sent successfully: "${action.text}"`);
+      }
     } catch (error) {
       console.error('🚨 [ExecutionScreen] Action press error:', error);
-      AlertManager.showAlert(
-        'エラー',
-        'テキストの送信中にエラーが発生しました',
-      );
+      const errorMessage = action.type === 'clipboard' 
+        ? `${action.text}コマンドの実行中にエラーが発生しました`
+        : 'テキストの送信中にエラーが発生しました';
+      AlertManager.showAlert('エラー', errorMessage);
     }
   };
 
@@ -165,7 +195,7 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
                   <ActionButton
                     icon={actions[1].icon}
                     onPress={() => handleActionPress(actions[1])}
-                    animatedValue={buttonScales.action2}
+                    animatedValue={buttonScales.copy}
                     backgroundColor={actions[1].backgroundColor}
                   />
                   <ActionButton
@@ -183,7 +213,7 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
                   <ActionButton
                     icon={actions[2].icon}
                     onPress={() => handleActionPress(actions[2])}
-                    animatedValue={buttonScales.action3}
+                    animatedValue={buttonScales.paste}
                     backgroundColor={actions[2].backgroundColor}
                   />
                   <ActionButton

@@ -121,4 +121,66 @@ export class NetworkService {
       return false;
     }
   }
+
+  static async sendCopyCommand(
+    ip: string,
+    port: string,
+    password?: string,
+  ): Promise<boolean> {
+    console.log(`📋 [NetworkService] Sending copy command to ${ip}:${port}`);
+
+    try {
+      const response = await fetch(`http://${ip}:${port}/copy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      if (response.ok) {
+        console.log(`✅ [NetworkService] Copy command sent successfully`);
+        return true;
+      } else {
+        console.log(
+          `❌ [NetworkService] Copy command failed: ${response.status}`,
+        );
+        return false;
+      }
+    } catch (error) {
+      console.error('💥 [NetworkService] Copy command error:', error);
+      return false;
+    }
+  }
+
+  static async sendPasteCommand(
+    ip: string,
+    port: string,
+    password?: string,
+  ): Promise<boolean> {
+    console.log(`📋 [NetworkService] Sending paste command to ${ip}:${port}`);
+
+    try {
+      const response = await fetch(`http://${ip}:${port}/paste`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      if (response.ok) {
+        console.log(`✅ [NetworkService] Paste command sent successfully`);
+        return true;
+      } else {
+        console.log(
+          `❌ [NetworkService] Paste command failed: ${response.status}`,
+        );
+        return false;
+      }
+    } catch (error) {
+      console.error('💥 [NetworkService] Paste command error:', error);
+      return false;
+    }
+  }
 }

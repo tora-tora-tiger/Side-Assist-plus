@@ -11,7 +11,8 @@ use axum::{
     Router,
 };
 use tower_http::cors::CorsLayer;
-use enigo::{Enigo, Keyboard, Settings};
+// ENIGOは完全に削除し、rdevを使用
+use rdev::Key;
 use qrcode::QrCode;
 use qrcode::render::svg;
 
@@ -65,6 +66,11 @@ struct InputRequest {
 #[derive(Deserialize)]  
 struct AuthRequest {
     password: String,
+}
+
+#[derive(Deserialize)]
+struct ClipboardRequest {
+    password: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -458,13 +464,180 @@ async fn open_system_preferences() -> Result<String, String> {
 
 #[tauri::command]
 async fn simulate_typing(text: String) -> Result<String, String> {
+    println!("⌨️ [simulate_typing] Starting text simulation using rdev: '{}'", text);
+    
     tokio::task::spawn_blocking(move || {
-        let mut enigo = Enigo::new(&Settings::default()).map_err(|e| format!("Failed to create Enigo: {}", e))?;
+        use rdev::{simulate, EventType, SimulateError};
+        use std::{thread, time};
         
-        // Use simple text input instead of individual key presses
-        enigo.text(&text).map_err(|e| format!("Failed to type text: {}", e))?;
+        fn send(event_type: &EventType) -> Result<(), SimulateError> {
+            let delay = time::Duration::from_millis(30);
+            let result = simulate(event_type);
+            thread::sleep(delay);
+            result
+        }
         
+        // 文字列を1文字ずつシミュレート
+        for ch in text.chars() {
+            if let Some(key) = char_to_key(ch) {
+                println!("🔑 [simulate_typing] Typing character: '{}'", ch);
+                send(&EventType::KeyPress(key))
+                    .map_err(|_| format!("Failed to press key for character: {}", ch))?;
+                send(&EventType::KeyRelease(key))
+                    .map_err(|_| format!("Failed to release key for character: {}", ch))?;
+            } else {
+                println!("⚠️ [simulate_typing] Unsupported character: '{}'", ch);
+            }
+        }
+        
+        println!("✅ [simulate_typing] Text simulation completed successfully");
         Ok(format!("Successfully typed: {}", text))
+    }).await.map_err(|e| format!("Task error: {}", e))?
+}
+
+// 文字をrdevのKeyに変換する関数
+fn char_to_key(ch: char) -> Option<Key> {
+    match ch.to_ascii_lowercase() {
+        'a' => Some(Key::KeyA),
+        'b' => Some(Key::KeyB),
+        'c' => Some(Key::KeyC),
+        'd' => Some(Key::KeyD),
+        'e' => Some(Key::KeyE),
+        'f' => Some(Key::KeyF),
+        'g' => Some(Key::KeyG),
+        'h' => Some(Key::KeyH),
+        'i' => Some(Key::KeyI),
+        'j' => Some(Key::KeyJ),
+        'k' => Some(Key::KeyK),
+        'l' => Some(Key::KeyL),
+        'm' => Some(Key::KeyM),
+        'n' => Some(Key::KeyN),
+        'o' => Some(Key::KeyO),
+        'p' => Some(Key::KeyP),
+        'q' => Some(Key::KeyQ),
+        'r' => Some(Key::KeyR),
+        's' => Some(Key::KeyS),
+        't' => Some(Key::KeyT),
+        'u' => Some(Key::KeyU),
+        'v' => Some(Key::KeyV),
+        'w' => Some(Key::KeyW),
+        'x' => Some(Key::KeyX),
+        'y' => Some(Key::KeyY),
+        'z' => Some(Key::KeyZ),
+        '0' => Some(Key::Num0),
+        '1' => Some(Key::Num1),
+        '2' => Some(Key::Num2),
+        '3' => Some(Key::Num3),
+        '4' => Some(Key::Num4),
+        '5' => Some(Key::Num5),
+        '6' => Some(Key::Num6),
+        '7' => Some(Key::Num7),
+        '8' => Some(Key::Num8),
+        '9' => Some(Key::Num9),
+        ' ' => Some(Key::Space),
+        _ => None, // サポートされていない文字
+    }
+}
+
+#[tauri::command]
+async fn simulate_copy() -> Result<String, String> {
+    println!("📋 [simulate_copy] Starting copy command simulation using rdev");
+    
+    tokio::task::spawn_blocking(|| {
+        use rdev::{simulate, EventType, SimulateError};
+        use std::{thread, time};
+        
+        fn send(event_type: &EventType) -> Result<(), SimulateError> {
+            let delay = time::Duration::from_millis(50);
+            let result = simulate(event_type);
+            // OS同期のための待機（特にmacOS）
+            thread::sleep(delay);
+            result
+        }
+        
+        println!("🔧 [simulate_copy] Using rdev for cross-platform key simulation");
+        
+        // プラットフォーム別のModifier key
+        #[cfg(target_os = "macos")]
+        let modifier = Key::MetaLeft; // macOS: Command key
+        
+        #[cfg(not(target_os = "macos"))]
+        let modifier = Key::ControlLeft; // Windows/Linux: Ctrl key
+        
+        println!("🔑 [simulate_copy] Pressing modifier key");
+        send(&EventType::KeyPress(modifier))
+            .map_err(|_| "Failed to press modifier key".to_string())?;
+        
+        println!("🔑 [simulate_copy] Pressing C key");
+        send(&EventType::KeyPress(Key::KeyC))
+            .map_err(|_| "Failed to press C key".to_string())?;
+        
+        println!("🔑 [simulate_copy] Releasing C key");
+        send(&EventType::KeyRelease(Key::KeyC))
+            .map_err(|_| "Failed to release C key".to_string())?;
+        
+        println!("🔑 [simulate_copy] Releasing modifier key");
+        send(&EventType::KeyRelease(modifier))
+            .map_err(|_| "Failed to release modifier key".to_string())?;
+        
+        println!("✅ [simulate_copy] Copy command executed successfully");
+        
+        #[cfg(target_os = "macos")]
+        return Ok("Successfully executed copy command (Cmd+C) via rdev".to_string());
+        
+        #[cfg(not(target_os = "macos"))]
+        return Ok("Successfully executed copy command (Ctrl+C) via rdev".to_string());
+    }).await.map_err(|e| format!("Task error: {}", e))?
+}
+
+#[tauri::command]
+async fn simulate_paste() -> Result<String, String> {
+    println!("📋 [simulate_paste] Starting paste command simulation using rdev");
+    
+    tokio::task::spawn_blocking(|| {
+        use rdev::{simulate, EventType, SimulateError};
+        use std::{thread, time};
+        
+        fn send(event_type: &EventType) -> Result<(), SimulateError> {
+            let delay = time::Duration::from_millis(50);
+            let result = simulate(event_type);
+            // OS同期のための待機（特にmacOS）
+            thread::sleep(delay);
+            result
+        }
+        
+        println!("🔧 [simulate_paste] Using rdev for cross-platform key simulation");
+        
+        // プラットフォーム別のModifier key
+        #[cfg(target_os = "macos")]
+        let modifier = Key::MetaLeft; // macOS: Command key
+        
+        #[cfg(not(target_os = "macos"))]
+        let modifier = Key::ControlLeft; // Windows/Linux: Ctrl key
+        
+        println!("🔑 [simulate_paste] Pressing modifier key");
+        send(&EventType::KeyPress(modifier))
+            .map_err(|_| "Failed to press modifier key".to_string())?;
+        
+        println!("🔑 [simulate_paste] Pressing V key");
+        send(&EventType::KeyPress(Key::KeyV))
+            .map_err(|_| "Failed to press V key".to_string())?;
+        
+        println!("🔑 [simulate_paste] Releasing V key");
+        send(&EventType::KeyRelease(Key::KeyV))
+            .map_err(|_| "Failed to release V key".to_string())?;
+        
+        println!("🔑 [simulate_paste] Releasing modifier key");
+        send(&EventType::KeyRelease(modifier))
+            .map_err(|_| "Failed to release modifier key".to_string())?;
+        
+        println!("✅ [simulate_paste] Paste command executed successfully");
+        
+        #[cfg(target_os = "macos")]
+        return Ok("Successfully executed paste command (Cmd+V) via rdev".to_string());
+        
+        #[cfg(not(target_os = "macos"))]
+        return Ok("Successfully executed paste command (Ctrl+V) via rdev".to_string());
     }).await.map_err(|e| format!("Task error: {}", e))?
 }
 
@@ -479,6 +652,8 @@ async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Erro
         .route("/input", post(handle_input))
         .route("/type", post(handle_input))  // モバイルアプリとの互換性のため
         .route("/auth", post(handle_auth))
+        .route("/copy", post(handle_copy))
+        .route("/paste", post(handle_paste))
         .layer(CorsLayer::permissive())
         .with_state(Arc::clone(&state));
 
@@ -493,6 +668,8 @@ async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Erro
     println!("  - POST /input  - Keyboard input simulation (requires password)");
     println!("  - POST /type   - Keyboard input simulation (mobile compatibility, requires password)");
     println!("  - POST /auth   - Authentication endpoint");
+    println!("  - POST /copy   - OS-specific copy command (requires password)");
+    println!("  - POST /paste  - OS-specific paste command (requires password)");
     
     // サーバーの実行中に定期的にstateをチェックして停止する
     let server_task = tokio::spawn(async move {
@@ -663,6 +840,100 @@ async fn handle_auth(
     }
 }
 
+async fn handle_copy(
+    State(state): State<AppState>,
+    Json(payload): Json<ClipboardRequest>,
+) -> Result<JsonResponse<ApiResponse>, StatusCode> {
+    // パスワード認証チェック
+    if let Some(provided_password) = &payload.password {
+        let is_valid = {
+            let state = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            
+            if let (Some(stored_password), Some(expiry)) = (&state.one_time_password, state.password_expiry) {
+                let now = match SystemTime::now().duration_since(UNIX_EPOCH) {
+                    Ok(duration) => duration.as_secs(),
+                    Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR),
+                };
+                
+                provided_password == stored_password && now < expiry
+            } else {
+                false
+            }
+        };
+        
+        if !is_valid {
+            println!("❌ Invalid or expired password provided for copy command");
+            return Err(StatusCode::UNAUTHORIZED);
+        }
+    } else {
+        println!("❌ No password provided for copy command");
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+    
+    println!("📋 Processing authenticated copy command");
+    
+    match simulate_copy().await {
+        Ok(message) => {
+            println!("✅ Copy command complete");
+            Ok(JsonResponse(ApiResponse {
+                success: true,
+                message,
+            }))
+        }
+        Err(e) => {
+            eprintln!("❌ Copy command failed: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+async fn handle_paste(
+    State(state): State<AppState>,
+    Json(payload): Json<ClipboardRequest>,
+) -> Result<JsonResponse<ApiResponse>, StatusCode> {
+    // パスワード認証チェック
+    if let Some(provided_password) = &payload.password {
+        let is_valid = {
+            let state = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            
+            if let (Some(stored_password), Some(expiry)) = (&state.one_time_password, state.password_expiry) {
+                let now = match SystemTime::now().duration_since(UNIX_EPOCH) {
+                    Ok(duration) => duration.as_secs(),
+                    Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR),
+                };
+                
+                provided_password == stored_password && now < expiry
+            } else {
+                false
+            }
+        };
+        
+        if !is_valid {
+            println!("❌ Invalid or expired password provided for paste command");
+            return Err(StatusCode::UNAUTHORIZED);
+        }
+    } else {
+        println!("❌ No password provided for paste command");
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+    
+    println!("📋 Processing authenticated paste command");
+    
+    match simulate_paste().await {
+        Ok(message) => {
+            println!("✅ Paste command complete");
+            Ok(JsonResponse(ApiResponse {
+                success: true,
+                message,
+            }))
+        }
+        Err(e) => {
+            eprintln!("❌ Paste command failed: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
 async fn cleanup_inactive_clients(state: AppState) {
     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(30));
     
@@ -722,6 +993,8 @@ pub fn run() {
             stop_server,
             start_server,
             simulate_typing,
+            simulate_copy,
+            simulate_paste,
             check_accessibility_permission,
             open_system_preferences,
             generate_one_time_password,

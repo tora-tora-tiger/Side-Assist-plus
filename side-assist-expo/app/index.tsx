@@ -24,6 +24,8 @@ const App = () => {
     startConnectionMonitoring,
     stopConnectionMonitoring,
     sendText,
+    sendCopy,
+    sendPaste,
     authenticateWithPassword,
     connectManually,
     disconnect,
@@ -114,6 +116,8 @@ const App = () => {
             <ExecutionScreen
               onSettingsPress={() => setShowSettings(true)}
               onSendText={handleSendText}
+              onSendCopy={sendCopy}
+              onSendPaste={sendPaste}
               onDisconnect={disconnect}
             />
           );

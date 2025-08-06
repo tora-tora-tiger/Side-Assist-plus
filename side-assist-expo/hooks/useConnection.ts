@@ -194,6 +194,28 @@ export const useConnection = () => {
     [macIP, macPort, isConnected, isAuthenticated, password],
   );
 
+  const sendCopy = useCallback(
+    async (): Promise<boolean> => {
+      if (!macIP || !macPort || !isConnected || !isAuthenticated) {
+        return false;
+      }
+
+      return await NetworkService.sendCopyCommand(macIP, macPort, password);
+    },
+    [macIP, macPort, isConnected, isAuthenticated, password],
+  );
+
+  const sendPaste = useCallback(
+    async (): Promise<boolean> => {
+      if (!macIP || !macPort || !isConnected || !isAuthenticated) {
+        return false;
+      }
+
+      return await NetworkService.sendPasteCommand(macIP, macPort, password);
+    },
+    [macIP, macPort, isConnected, isAuthenticated, password],
+  );
+
   const connectManually = useCallback(
     async (ip: string, port: string, password: string): Promise<boolean> => {
       try {
@@ -289,6 +311,8 @@ export const useConnection = () => {
     startConnectionMonitoring,
     stopConnectionMonitoring,
     sendText,
+    sendCopy,
+    sendPaste,
     authenticateWithPassword,
     connectManually,
     disconnect,
