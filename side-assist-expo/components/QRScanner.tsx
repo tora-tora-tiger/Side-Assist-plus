@@ -5,7 +5,6 @@ import * as Device from 'expo-device';
 import { Header } from './ui';
 import { MaterialIcons } from '@expo/vector-icons';
 import AlertManager from '../utils/AlertManager';
-import DebugToastManager from '../utils/DebugToastManager';
 
 interface QRScannerProps {
   onQRCodeScanned: (data: string) => void;
@@ -21,76 +20,34 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   const [permission, requestPermission] = useCameraPermissions();
   const [lastScannedCode, setLastScannedCode] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [scannerEnabled, setScannerEnabled] = useState(true);
-  const [processingLock, setProcessingLock] = useState(false);
 
   // スキャナー開始時にリセット
   useEffect(() => {
     if (isVisible) {
-      // QRスキャナーが開かれた時に状態をリセット
-      console.log('📷 [QRScanner] Opening - Resetting all states');
-      DebugToastManager.show('QRScanner Opening - States Reset');
+      console.log('📷 [QRScanner] Opening - resetting state');
       setLastScannedCode(null);
       setIsProcessing(false);
-      setScannerEnabled(true);
-      setProcessingLock(false);
-    } else {
-      // QRスキャナーが閉じられた時に状態を完全リセット
-      console.log('📷 [QRScanner] Closing - Full state reset');
-      DebugToastManager.show('QRScanner Closed - Full Reset');
-      setIsProcessing(false);
-      setScannerEnabled(true);
-      setProcessingLock(false);
-      setLastScannedCode(null);
     }
   }, [isVisible]);
 
   const handleBarcodeScanned = useCallback(({ data }: { data: string }) => {
-    // 複数の条件でスキャン処理をブロック
-    if (
-      !data ||
-      isProcessing ||
-      !scannerEnabled ||
-      processingLock ||
-      AlertManager.isShowing()
-    ) {
+    // 処理中または同じコードの場合は無視
+    if (isProcessing || data === lastScannedCode) {
       return;
     }
 
-    // 同じコードの連続スキャンを防ぐ
-    if (data === lastScannedCode) {
-      console.log('📱 Same QR code scanned, ignoring');
-      return;
-    }
-
-    console.log('📱 [QRScanner] QR Code scanned - SINGLE SCAN EVENT');
-    console.log('  Raw value:', JSON.stringify(data));
-    console.log('  Length:', data.length);
-    console.log('  Scanner state before processing:', {
-      isProcessing,
-      scannerEnabled,
-      processingLock,
-    });
-    console.log('  ⚠️ This log should appear ONLY ONCE per QR scan!');
-
+    console.log('📱 [QRScanner] QR Code scanned:', data);
     setLastScannedCode(data);
     setIsProcessing(true);
-    setScannerEnabled(false);
-    setProcessingLock(true);
 
-    // 少し遅延を入れてから処理
+    // 親コンポーネントに処理を委譲
+    onQRCodeScanned(data);
+
+    // 処理完了後にリセット
     setTimeout(() => {
-      console.log('📷 [QRScanner] About to call onQRCodeScanned');
-      DebugToastManager.show('QRScanner: Processing QR Code');
-      onQRCodeScanned(data);
-      // 処理完了後に状態をリセット
-      console.log('📷 [QRScanner] QR processing complete - resetting states');
-      DebugToastManager.show('QRScanner: QR Processing Complete');
       setIsProcessing(false);
-      setScannerEnabled(true);
-      setProcessingLock(false);
-    }, 100);
-  }, [isProcessing, scannerEnabled, processingLock, lastScannedCode, onQRCodeScanned]);
+    }, 1000);
+  }, [isProcessing, lastScannedCode, onQRCodeScanned]);
 
   if (!isVisible) {
     return null;
@@ -160,18 +117,9 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           <MaterialIcons name="smartphone" size={80} color="#6b7280" />
           <Text style={styles.title}>シミュレーター環境</Text>
           <Text style={styles.description}>
-            iOSシミュレーターではカメラ機能を使用できません。{'\n'}
+            iOSシミュレーターではカメラ機能を使用できません。{'\\n'}
             実際のiOS端末でテストしてください。
           </Text>
-          <View style={styles.testSection}>
-            <View style={styles.infoBox}>
-              <MaterialIcons name="info" size={16} color="#374151" />
-              <Text style={styles.infoTitle}>テスト機能:</Text>
-            </View>
-            <Text style={styles.infoText}>
-              下のボタンでテスト用QRコードをシミュレート
-            </Text>
-          </View>
           <TouchableOpacity style={styles.button} onPress={handleTestScan}>
             <Text style={styles.buttonText}>テスト接続をシミュレート</Text>
           </TouchableOpacity>
@@ -197,25 +145,19 @@ export const QRScanner: React.FC<QRScannerProps> = ({
         <CameraView
           style={styles.camera}
           facing="back"
-          onBarcodeScanned={scannerEnabled ? handleBarcodeScanned : undefined}
+          onBarcodeScanned={!isProcessing ? handleBarcodeScanned : undefined}
           barcodeScannerSettings={{
             barcodeTypes: ['qr'],
           }}
         />
 
         <View style={styles.overlay}>
-          {/* Figmaデザインに合わせた青い枠 */}
           <View style={styles.scanFrame} />
           <Text style={styles.scanText}>
             {isProcessing
               ? 'QRコードを処理中...'
               : 'PCのQRコードを枠内に合わせてください'}
           </Text>
-          {isProcessing && (
-            <View style={styles.processingOverlay}>
-              <Text style={styles.processingText}>処理中...</Text>
-            </View>
-          )}
         </View>
       </View>
     </View>
@@ -268,21 +210,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 4,
   },
-  processingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  processingText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
   message: {
     color: '#374151',
     fontSize: 16,
@@ -302,28 +229,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
-  },
-  testSection: {
-    backgroundColor: '#fffad0',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 32,
-    width: '100%',
-  },
-  infoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  infoTitle: {
-    color: '#374151',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  infoText: {
-    color: '#6b7280',
-    fontSize: 14,
   },
   button: {
     backgroundColor: '#6db8ff',

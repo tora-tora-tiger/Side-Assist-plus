@@ -6,7 +6,6 @@ import { ConnectionSetup } from './ConnectionSetup';
 import { DeepLinkService } from '../services/DeepLinkService';
 import { MaterialIcons } from '@expo/vector-icons';
 import AlertManager from '../utils/AlertManager';
-import DebugToastManager from '../utils/DebugToastManager';
 
 interface HomeScreenProps {
   isConnected: boolean;
@@ -21,7 +20,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 }) => {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
-  const [isProcessingConnection, setIsProcessingConnection] = useState(false);
 
   const handleOpenQRScanner = () => {
     setShowQRScanner(true);
@@ -32,21 +30,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   const handleQRCodeScanned = async (data: string) => {
-    console.log('🔄 [HomeScreen] handleQRCodeScanned called - START');
-    DebugToastManager.show('HomeScreen: QR Code Scanned');
-
-    // 既に処理中またはアラート表示中の場合は無視
-    if (isProcessingConnection || AlertManager.isShowing()) {
-      console.log('📱 Already processing connection or alert showing, ignoring QR scan');
-      DebugToastManager.show('HomeScreen: Connection Processing - Ignoring QR');
-      return;
-    }
-
-    // 処理開始フラグを設定
-    setIsProcessingConnection(true);
-
-    console.log('📱 [HomeScreen] QR Code data received:', data);
-    DebugToastManager.show('HomeScreen: Closing QR Scanner');
+    console.log('📱 [HomeScreen] QR Code scanned:', data);
+    
+    // QRスキャナーを閉じる
     setShowQRScanner(false);
 
     // QRコードからURL解析
@@ -54,7 +40,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     console.log('📱 Parsed connection params:', connectionParams);
 
     if (!connectionParams) {
-      setIsProcessingConnection(false); // 処理完了フラグをリセット
       AlertManager.showAlert(
         'QRコードエラー',
         `無効なQRコードです。\n\n読み取ったデータ:\n${data.substring(0, 100)}${
@@ -86,38 +71,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       );
 
       if (success) {
-        DebugToastManager.show('HomeScreen: Connection SUCCESS');
-        AlertManager.showAlert('接続成功', 'PCに正常に接続されました！', [
-          {
-            text: 'OK',
-            onPress: () => {
-              // アラート閉じた後にAlertManager状態をリセット
-              console.log('🔄 [HomeScreen] Connection success alert dismissed');
-              DebugToastManager.show('HomeScreen: Success Alert Dismissed');
-              AlertManager.logStatus();
-              setIsProcessingConnection(false); // 処理完了
-            },
-          },
-        ]);
+        AlertManager.showAlert('接続成功', 'PCに正常に接続されました！');
       } else {
-        setIsProcessingConnection(false); // 処理完了
         AlertManager.showAlert(
           '接続失敗',
           'PCに接続できませんでした。PCが起動していることとネットワーク接続を確認してください。',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                console.log('🔄 [HomeScreen] Connection failed alert dismissed');
-                AlertManager.logStatus();
-              },
-            },
-          ],
         );
       }
     } catch (error) {
       console.error('QR connection error:', error);
-      setIsProcessingConnection(false); // 処理完了
       AlertManager.showAlert('エラー', '接続中にエラーが発生しました');
     }
   };
@@ -159,7 +121,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   PCと接続
                 </Text>
                 <Text className="text-base text-gray-600 text-center mt-2 leading-6">
-                  QRコードをスキャンして{'\n'}簡単に接続できます
+                  QRコードをスキャンして{'\\n'}簡単に接続できます
                 </Text>
               </View>
 
@@ -232,31 +194,34 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       </View>
 
       {/* QRスキャナーモーダル */}
-      <Modal
-        visible={showQRScanner}
-        animationType="slide"
-        presentationStyle="fullScreen"
-      >
-        <QRScanner
-          onQRCodeScanned={handleQRCodeScanned}
-          onClose={handleCloseQRScanner}
-          isVisible={showQRScanner}
-        />
-      </Modal>
+      {showQRScanner && (
+        <Modal
+          visible={showQRScanner}
+          animationType="slide"
+          presentationStyle="fullScreen"
+        >
+          <QRScanner
+            onQRCodeScanned={handleQRCodeScanned}
+            onClose={handleCloseQRScanner}
+            isVisible={showQRScanner}
+          />
+        </Modal>
+      )}
 
       {/* 手動入力モーダル */}
-      <Modal
-        visible={showManualInput}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <ConnectionSetup
-          onConnect={onConnect}
-          isVisible={showManualInput}
-          onClose={handleCloseManualInput}
-        />
-      </Modal>
-
+      {showManualInput && (
+        <Modal
+          visible={showManualInput}
+          animationType="slide"
+          presentationStyle="pageSheet"
+        >
+          <ConnectionSetup
+            onConnect={onConnect}
+            isVisible={showManualInput}
+            onClose={handleCloseManualInput}
+          />
+        </Modal>
+      )}
     </View>
   );
 };

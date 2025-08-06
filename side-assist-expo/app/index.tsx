@@ -27,23 +27,19 @@ const App = () => {
   } = useConnection();
 
   useEffect(() => {
-    console.log('🚀 [App] useEffect triggered - isConnected:', isConnected);
+    console.log('🚀 [App] Connection status changed - isConnected:', isConnected);
 
     // 接続が確立されたら監視を開始
     if (isConnected) {
-      console.log(
-        '📊 [App] Starting connection monitoring because isConnected=true',
-      );
+      console.log('📊 [App] Starting connection monitoring');
       startConnectionMonitoring();
     } else {
-      console.log(
-        '📊 [App] Stopping connection monitoring because isConnected=false',
-      );
+      console.log('📊 [App] Stopping connection monitoring');
       stopConnectionMonitoring();
     }
 
     return () => {
-      console.log('🛑 [App] useEffect cleanup - stopping monitoring');
+      console.log('🛑 [App] Cleanup - stopping monitoring');
       stopConnectionMonitoring();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -57,21 +53,6 @@ const App = () => {
     });
 
     return unsubscribe;
-  }, []);
-
-  // AlertManager状態の定期監視（デバッグ用）
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const status = AlertManager.getQueueStatus();
-      if (status.isVisible || status.queueLength > 0) {
-        console.log('🚨 [App] AlertManager Status Check:', status);
-        if (status.isVisible) {
-          DebugToastManager.show(`Alert Active: ${status.currentAlert?.substring(0, 30)}...`);
-        }
-      }
-    }, 5000); // 5秒間隔でチェック
-
-    return () => clearInterval(interval);
   }, []);
 
   const handleSendText = async (text: string) => {
@@ -113,10 +94,7 @@ const App = () => {
       ) : isAuthenticated ? (
         // 接続済み・認証済み: ExecutionScreen表示
         <ExecutionScreen
-          onSettingsPress={() => {
-            DebugToastManager.showTouchEvent('Settings Button (ExecutionScreen)', 'Press');
-            setShowSettings(true);
-          }}
+          onSettingsPress={() => setShowSettings(true)}
           onSendText={handleSendText}
         />
       ) : (
@@ -141,7 +119,6 @@ const App = () => {
         onClose={() => setShowSettings(false)}
       />
 
-      
       <DebugToast
         message={debugMessage}
         visible={showDebugToast}
