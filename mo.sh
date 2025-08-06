@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Expo Go開発サーバー起動 (Android)..."
+echo "Expo Go開発サーバー起動..."
 
 if [ ! -d "side-assist-expo" ]; then
     echo "❌ side-assist-expo ディレクトリが見つかりません"
@@ -15,13 +15,13 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-echo "📱 Android Expo Go接続手順:"
-echo "   1. ✅ Google PlayからExpo Goアプリをインストール"
-echo "   2. 📶 PCとAndroidが同じWiFiネットワークに接続"
+echo "📱 スマホ Expo Go接続手順:"
+echo "   1. ✅ App Store/Google PlayからExpo Goアプリをインストール済み"
+echo "   2. 📶 Macとスマホが同じWiFiネットワークに接続"
 echo "   3. 🔄 以下QRコードをExpo Goアプリでスキャン"
 echo "   4. ⚡ リアルタイム更新でデバッグ可能"
 echo ""
-echo "   💡 Side Assistデスクトップアプリは別ターミナルで ./run.sh desktop で起動"
+echo "   💡 Side Assistデスクトップアプリは別ターミナルで ./pc.sh で起動"
 echo ""
 
 # Expo開発サーバー起動
@@ -32,4 +32,4 @@ echo ""
 echo "✅ 開発サーバー終了！"
 echo ""
 echo "💡 再起動する場合:"
-echo "   ./run.sh android"
+echo "   ./mo.sh"

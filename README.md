@@ -10,26 +10,15 @@
 
 ```bash
 # ターミナル1: Tauri デスクトップアプリ (サーバー機能内蔵)
-./run.sh desktop
+./pc.sh
 
 # ターミナル2: Expo Go開発サーバー
-./run.sh ios      # iOS Expo Go (QRコードスキャン)
-# または
-./run.sh android  # Android Expo Go (QRコードスキャン)
+./mo.sh # Expo Go (QRコードスキャン)
 ```
 
 QRコードをスキャンして、アプリを起動します。
 
-### 🛑 全停止
-```bash
-./stop.sh  # 全プロセス自動終了 (Tauri + Metro)
-```
-
-## 📦 自動インストールされる依存関係
-
-`./run.sh` を実行すると以下の依存関係が自動的にインストールされます：
-
-### 必要な前提条件とインストール方法
+## 必要な前提条件とインストール方法
 
 #### 🍎 macOS
 ```bash
@@ -80,18 +69,12 @@ sudo apt-get install android-sdk adb
 
 ### 自動実行されるインストールコマンド
 
-#### デスクトップアプリ (`./run.sh desktop`)
+#### デスクトップアプリ
 ```bash
 cd side-assist-desktop && pnpm install    # Node.js依存関係
 ```
 
-#### iOS アプリ (`./run.sh ios`)
-```bash
-cd side-assist-expo && npm install        # Node.js依存関係（npmを使用）
-npx expo start                            # Expo Go開発サーバー起動
-```
-
-#### Android アプリ (`./run.sh android`)
+#### iOS / Android アプリ
 ```bash
 cd side-assist-expo && npm install        # Node.js依存関係（npmを使用）
 npx expo start                            # Expo Go開発サーバー起動
@@ -126,28 +109,6 @@ iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入
 
 
 - expoで、pnpmつかうと破壊される(n敗)https://github.com/expo/expo/issues/28703
-
-## 🎮 使い方
-
-1. **Android実機**: USBデバッグ有効 + USB接続
-2. **コマンド実行**: `./run.sh android` 
-3. **自動完了**: アプリが実機に自動インストール&起動
-4. **ボタンタップ**: 「ultradeepthink」→ Mac で自動入力！
-
-## 📱 対応プラットフォーム
-
-### デスクトップ (サーバー側)
-| プラットフォーム | 実装状況 | 実行コマンド | 備考 |
-|-------------|---------|------------|------|
-| **macOS** | ✅ 完成 | `./run.sh desktop` | Tauri v2 |
-| **Windows** | ✅ 完成 | `./run.sh desktop` | Tauri v2 クロスプラットフォーム |
-| **Linux** | ✅ 完成 | `./run.sh desktop` | Tauri v2 クロスプラットフォーム |
-
-### モバイル (クライアント側)
-| プラットフォーム | 実装状況 | 実行コマンド | 自動化レベル |
-|-------------|---------|------------|------------|
-| **Android** | ✅ 完成 | `./run.sh android` | 🤖 完全自動 |
-| **iOS** | ✅ 完成 | `./run.sh ios` + `./run.sh metro` | ⚡ 半自動 |
 
 ## 🛠️ 技術スタック
 
@@ -225,9 +186,6 @@ iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入
 **Q: "アクセシビリティ権限が必要" エラー**  
 A: システム環境設定 → プライバシーとセキュリティ → アクセシビリティ → ターミナル追加
 
-**Q: "ポート1420使用中" エラー**  
-A: `./stop.sh` → `./run.sh desktop` (自動解決)
-
 **Q: ネットワーク接続許可ダイアログが表示されない**  
 A: 起動後10-15秒待機。表示されたら「許可」を選択
 
@@ -250,9 +208,6 @@ A: 1. 同じWiFi確認 2. アプリの「Find Mac」ボタン 3. ローカルネ
 
 ### 🤖 Android
 
-**Q: "InitializeCore.js" エラー**  
-A: `./stop.sh` → `./run.sh android` (Expoで解決済み)
-
 **Q: Expo Metro ポート競合**  
 A: `./stop.sh` でプロセス自動終了
 
@@ -266,14 +221,6 @@ A: 自動で5秒以内に再接続試行 (ハートビート監視)
 
 **Q: サーバーが起動しない**  
 A: `./stop.sh` → 関連プロセス終了 → 再起動
-
-### 🛑 緊急時完全リセット
-```bash
-./stop.sh              # 全プロセス強制終了
-./run.sh desktop        # Tauri デスクトップ (推奨)
-./run.sh metro          # Expo Metro Bundler
-./run.sh ios           # iOS または android
-```
 
 ## 📄 ライセンス
 

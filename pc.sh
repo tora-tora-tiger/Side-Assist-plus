@@ -6,7 +6,7 @@ cd side-assist-desktop
 # 依存関係チェック
 if [ ! -d "node_modules" ]; then
     echo "📦 依存関係インストール中..."
-    pnpm install
+    npm install
     if [ $? -ne 0 ]; then
         echo "❌ 依存関係のインストールに失敗しました"
         exit 1
@@ -65,16 +65,15 @@ echo "⏳ 起動完了まで10-15秒お待ちください..."
 echo ""
 
 # Tauri起動
-pnpm tauri dev
+npm tauri dev
 
 if [ $? -ne 0 ]; then
     echo ""
     echo "❌ Tauri起動に失敗しました"
     echo ""
     echo "🔧 トラブルシューティング:"
-    echo "   1. 依存関係を再インストール: cd side-assist-desktop && pnpm install"
-    echo "   2. キャッシュクリア: pnpm tauri clean"
+    echo "   1. 依存関係を再インストール: cd side-assist-desktop && npm install"
+    echo "   2. キャッシュクリア: npm tauri clean"
     echo "   3. Rustツールチェーン確認: rustc --version"
-    echo "   4. ./stop.sh で全プロセス終了後に再試行"
     exit 1
 fi
