@@ -11,6 +11,11 @@ iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入
 
 - react nativeだとtabler-iconとか使えなかった。
 
+⏺ TailwindCSS v4とNativeWind v4の最新情報（2025年）:
+
+  現在、NativeWind v4はTailwindCSS v3.4.xを使用しています。TailwindCSS 
+  v4はまだNativeWindでは完全にサポートされていません。
+
 ## ⚡ 超簡単！ワンコマンド実行
 
 ```bash
