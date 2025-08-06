@@ -11,6 +11,7 @@ interface HeaderProps {
   showClose?: boolean;
   backgroundColor?: string;
   showShadow?: boolean;
+  shadowDirection?: 'down' | 'up';
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -21,11 +22,16 @@ export const Header: React.FC<HeaderProps> = ({
   showClose = false,
   backgroundColor = 'bg-white',
   showShadow = true,
+  shadowDirection = 'down',
 }) => {
   return (
     <View
       className={`${backgroundColor} pt-15 pb-5 px-5 ${
-        showShadow ? 'shadow-md' : ''
+        showShadow 
+          ? shadowDirection === 'up' 
+            ? 'drop-shadow-figma-up' 
+            : 'drop-shadow-figma' 
+          : ''
       }`}
     >
       <View className="flex-row justify-between items-center">

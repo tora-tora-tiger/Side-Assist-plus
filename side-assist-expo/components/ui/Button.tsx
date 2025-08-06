@@ -21,7 +21,7 @@ export const Button: React.FC<ButtonProps> = ({
   size = 'medium',
 }) => {
   const getButtonStyle = () => {
-    let baseStyle = 'rounded-3xl shadow-md ';
+    let baseStyle = 'rounded-3xl drop-shadow-figma ';
 
     // サイズ設定
     switch (size) {
@@ -42,13 +42,13 @@ export const Button: React.FC<ButtonProps> = ({
 
     switch (variant) {
       case 'primary':
-        return baseStyle + 'bg-figma-blue';
+        return baseStyle + 'bg-figma-primary';
       case 'secondary':
-        return baseStyle + 'bg-figma-gray';
+        return baseStyle + 'bg-figma-secondary';
       case 'danger':
-        return baseStyle + 'bg-figma-red';
+        return baseStyle + 'bg-figma-danger';
       default:
-        return baseStyle + 'bg-figma-blue';
+        return baseStyle + 'bg-figma-primary';
     }
   };
 

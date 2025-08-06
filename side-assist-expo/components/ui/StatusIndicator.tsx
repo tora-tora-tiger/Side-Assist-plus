@@ -11,11 +11,11 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
   showDot = true,
 }) => {
   const getStatusStyle = () => {
-    return isConnected ? 'bg-figma-green' : 'bg-figma-orange';
+    return isConnected ? 'bg-figma-success' : 'bg-figma-warning';
   };
 
   const getDotStyle = () => {
-    return isConnected ? 'bg-figma-darkGreen' : 'bg-figma-red';
+    return isConnected ? 'bg-figma-success-bright' : 'bg-figma-danger';
   };
 
   const getStatusText = () => {

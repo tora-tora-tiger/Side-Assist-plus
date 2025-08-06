@@ -34,6 +34,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           showClose={true}
           onClosePress={onClose}
           showShadow={true}
+          shadowDirection="up"
         />
         
         <View className="flex-1 p-5">

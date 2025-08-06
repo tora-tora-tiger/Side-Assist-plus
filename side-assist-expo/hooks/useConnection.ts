@@ -8,8 +8,8 @@ export const useConnection = () => {
   const [macPort, setMacPort] = useState<string>('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState<string>('');
-  const connectionMonitorRef = useRef<NodeJS.Timeout | null>(null);
-  const monitoringTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const connectionMonitorRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const monitoringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // DeepLink処理のハンドラー
   const handleDeepLink = useCallback(async (params: ConnectionParams) => {

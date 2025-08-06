@@ -28,8 +28,8 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
           width: size,
           height: size,
         }}
-        className={`rounded-3xl shadow-md justify-center items-center ${
-          disabled ? 'bg-gray-400' : 'bg-figma-lightGray'
+        className={`rounded-3xl drop-shadow-figma justify-center items-center ${
+          disabled ? 'bg-gray-400' : 'bg-figma-gray'
         }`}
         onPress={onPress}
         disabled={disabled}
