@@ -1,6 +1,8 @@
 # 🚀 Side Assist Plus
 
-# pnpmを使うな！！！壊れる！！！
+# ⚠️ 重要：npmを使用すること！pnpm使用禁止！
+
+**Expo Go開発では必ずnpmを使用してください。pnpmは依存関係の問題で破綻します。**
 
 ---
 
@@ -15,7 +17,7 @@
 #### 🍎 macOS
 ```bash
 # Homebrew経由で一括インストール
-brew install node pnpm rust android-platform-tools
+brew install node rust android-platform-tools
 brew install --cask android-studio
 
 # iOS開発用 (App Store経由)
@@ -33,19 +35,17 @@ sudo gem install cocoapods
 #### 🪟 Windows
 ```powershell
 # Chocolatey経由で一括インストール
-choco install nodejs pnpm rust android-sdk
+choco install nodejs rust android-sdk
 # または
 winget install OpenJS.NodeJS
-winget install pnpm.pnpm
 winget install Rustlang.Rustup
 ```
 
 #### 🐧 Linux (Ubuntu/Debian)
 ```bash
-# Node.js & pnpm
+# Node.js
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt-get install -y nodejs
-npm install -g pnpm
 
 # Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -56,7 +56,7 @@ sudo apt-get install android-sdk adb
 
 #### 必須コンポーネント
 - **Node.js** (v18+): JavaScript/TypeScript実行環境
-- **pnpm**: 高速パッケージマネージャー
+- **npm**: パッケージマネージャー（pnpm使用禁止）
 - **Rust**: Tauri v2デスクトップアプリ用
 - **Android SDK & ADB**: Android開発・デバッグ用
 - **Xcode & CocoaPods**: iOS開発用 (macOSのみ)
@@ -70,17 +70,17 @@ cd side-assist-desktop && pnpm install    # Node.js依存関係
 
 #### iOS アプリ (`./run.sh ios`)
 ```bash
-cd side-assist-expo && pnpm install       # Node.js依存関係
-cd ios && pod install && cd ..            # CocoaPods依存関係
+cd side-assist-expo && npm install        # Node.js依存関係（npmを使用）
+npx expo start                            # Expo Go開発サーバー起動
 ```
-
-⚠️ **初回実行前に必須**: CocoaPodsを手動でインストールしてください（上記macOSセクション参照）
 
 #### Android アプリ (`./run.sh android`)
 ```bash
-cd side-assist-expo && pnpm install       # Node.js依存関係
-adb reverse tcp:8081 tcp:8081             # ADB ポート転送設定
+cd side-assist-expo && npm install        # Node.js依存関係（npmを使用）
+npx expo start                            # Expo Go開発サーバー起動
 ```
+
+⚠️ **重要**: モバイルアプリは**Expo Go**を使用します。ネイティブビルドは不要です。
 
 ### パッケージの詳細
 - **Tauri v2**: Rust + React デスクトップアプリフレームワーク
@@ -116,10 +116,10 @@ iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入
 # ターミナル1: Tauri デスクトップアプリ (サーバー機能内蔵)
 ./run.sh desktop
 
-# ターミナル2: Expo モバイルアプリ
-./run.sh ios      # iOS (自動ビルド)
+# ターミナル2: Expo Go開発サーバー
+./run.sh ios      # iOS Expo Go (QRコードスキャン)
 # または
-./run.sh android  # Android (完全自動)
+./run.sh android  # Android Expo Go (QRコードスキャン)
 ```
 
 ### 🛑 全停止
@@ -159,14 +159,14 @@ iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入
 - **パッケージ管理**: pnpm
 - **コード品質**: ESLint + Prettier + Lefthook
 
-### モバイル (Expo Router v5)
-- **フレームワーク**: Expo Router v5 + React Native
+### モバイル (Expo Go + Router v5)
+- **フレームワーク**: Expo Go + Expo Router v5 + React Native
 - **言語**: TypeScript  
 - **スタイル**: TailwindCSS v3.4 + NativeWind v4
 - **カメラ**: Expo Camera API (QRスキャン)
 - **ナビゲーション**: Expo Router
 - **バンドラー**: Expo Metro Bundler
-- **パッケージ管理**: pnpm
+- **パッケージ管理**: npm（pnpm使用禁止）
 
 
 ## 🔧 最適化機能
