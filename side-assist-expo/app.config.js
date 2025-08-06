@@ -8,11 +8,9 @@ export default {
     scheme: "sideassistexpo",
     userInterfaceStyle: "automatic",
     extra: {
-      deviceName: process.env.EXPO_PUBLIC_DEVICE_NAME || null,
       debugMode: process.env.EXPO_PUBLIC_DEBUG_MODE === "true",
       developmentMode: process.env.EXPO_PUBLIC_DEVELOPMENT_MODE === "true"
     },
-    newArchEnabled: true,
     splash: {
       image: "./assets/images/splash-icon.png",
       resizeMode: "contain",

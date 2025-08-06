@@ -12,7 +12,7 @@ cd side-assist-expo
 # 依存関係チェック
 if [ ! -d "node_modules" ]; then
     echo "📦 依存関係インストール中..."
-    pnpm install
+    npm install
 fi
 
 echo "📱 Android Expo Go接続手順:"
