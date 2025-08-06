@@ -12,38 +12,75 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        'inter': ['Inter', 'system-ui', 'sans-serif'],
+        'inter': ['Inter', 'SF Pro Display', 'system-ui', 'sans-serif'],
       },
       colors: {
-        'figma': {
-          // Status colors
-          'warning': '#ffe8c8',
-          'info': '#fffad0',
-          'primary': '#3b82f6',     // より濃い青に変更（視認性向上）
-          'primary-hover': '#2563eb', // hover状態用
-          'secondary': '#e5e7eb',    // より軽やかなセカンダリ色
-          'secondary-text': '#374151', // セカンダリボタンのテキスト色
-          'success': '#d9ffc8',
-          'danger': '#ff6363',
-          'success-bright': '#5aeb5a',
-          
-          // UI colors
-          'gray': '#e8e8e8',
-          'yellow': '#fffad0',
-          'orange': '#ffe8c8',
-          'blue': '#6db8ff',
-          'light-gray': '#b4bec8',
-          'light-green': '#d9ffc8',
-          'green': '#5aeb5a',
-          'red': '#ff6363',
+        // Modern design system colors
+        'primary': {
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          200: '#bae6fd',
+          300: '#7dd3fc',
+          400: '#38bdf8',
+          500: '#0ea5e9',  // Main primary
+          600: '#0284c7',
+          700: '#0369a1',
+          800: '#075985',
+          900: '#0c4a6e',
+          950: '#082f49',
+        },
+        'neutral': {
+          50: '#fafafa',
+          100: '#f5f5f5',
+          200: '#e5e5e5',
+          300: '#d4d4d4',
+          400: '#a3a3a3',
+          500: '#737373',
+          600: '#525252',
+          700: '#404040',
+          800: '#262626',
+          900: '#171717',
+          950: '#0a0a0a',
+        },
+        'success': {
+          50: '#f0fdf4',
+          100: '#dcfce7',
+          200: '#bbf7d0',
+          500: '#22c55e',
+          600: '#16a34a',
+          700: '#15803d',
+        },
+        'warning': {
+          50: '#fefce8',
+          100: '#fef9c3',
+          200: '#fef08a',
+          500: '#eab308',
+          600: '#ca8a04',
+        },
+        'danger': {
+          50: '#fef2f2',
+          100: '#fee2e2',
+          200: '#fecaca',
+          500: '#ef4444',
+          600: '#dc2626',
+          700: '#b91c1c',
         }
       },
-      dropShadow: {
-        'figma': '0 4px 10px rgba(0, 0, 0, 0.25)',
-        'figma-up': '0 -4px 10px rgba(0, 0, 0, 0.25)',
+      boxShadow: {
+        'soft': '0 2px 8px rgba(0, 0, 0, 0.08)',
+        'medium': '0 4px 16px rgba(0, 0, 0, 0.12)',
+        'strong': '0 8px 24px rgba(0, 0, 0, 0.16)',
+        'glow': '0 0 20px rgba(14, 165, 233, 0.3)',
       },
       borderRadius: {
-        '3xl': '24px',
+        'xl': '12px',
+        '2xl': '16px',
+        '3xl': '20px',
+        '4xl': '24px',
+      },
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
       }
     }
   },

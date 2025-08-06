@@ -65,7 +65,7 @@ echo "⏳ 起動完了まで10-15秒お待ちください..."
 echo ""
 
 # Tauri起動
-npm tauri dev
+npm run tauri dev
 
 if [ $? -ne 0 ]; then
     echo ""
@@ -73,7 +73,7 @@ if [ $? -ne 0 ]; then
     echo ""
     echo "🔧 トラブルシューティング:"
     echo "   1. 依存関係を再インストール: cd side-assist-desktop && npm install"
-    echo "   2. キャッシュクリア: npm tauri clean"
+    echo "   2. キャッシュクリア: npm run tauri clean"
     echo "   3. Rustツールチェーン確認: rustc --version"
     exit 1
 fi

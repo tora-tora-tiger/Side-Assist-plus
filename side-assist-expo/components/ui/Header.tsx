@@ -1,66 +1,107 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import DebugToastManager from '../../utils/DebugToastManager';
 
 interface HeaderProps {
   title: string;
+  subtitle?: string;
   onSettingsPress?: () => void;
   onClosePress?: () => void;
+  onBackPress?: () => void;
   showSettings?: boolean;
   showClose?: boolean;
-  backgroundColor?: string;
-  showShadow?: boolean;
-  shadowDirection?: 'down' | 'up';
+  showBack?: boolean;
+  transparent?: boolean;
+  centerTitle?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   title,
+  subtitle,
   onSettingsPress,
   onClosePress,
+  onBackPress,
   showSettings = false,
   showClose = false,
-  backgroundColor = 'bg-white',
-  showShadow = true,
-  shadowDirection = 'down',
+  showBack = false,
+  transparent = false,
+  centerTitle = false,
 }) => {
   return (
     <>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      <SafeAreaView className={backgroundColor}>
+      <StatusBar 
+        barStyle="dark-content" 
+        backgroundColor={transparent ? 'transparent' : '#ffffff'} 
+        translucent={transparent}
+      />
+      <SafeAreaView className={transparent ? 'bg-transparent' : 'bg-white'}>
         <View 
-          className={`${backgroundColor} px-5 py-4 ${
-            showShadow 
-              ? shadowDirection === 'up' 
-                ? 'drop-shadow-figma-up' 
-                : 'drop-shadow-figma' 
-              : ''
+          className={`px-6 py-4 ${
+            transparent 
+              ? 'bg-transparent' 
+              : 'bg-white border-b border-neutral-100'
           }`}
         >
-          <View className="flex-row justify-between items-center">
-            <View className="flex-row items-center flex-1">
-              <Text className="text-xl font-bold text-gray-900">{title}</Text>
+          <View className="flex-row items-center justify-between min-h-[44px]">
+            {/* Left Section */}
+            <View className="flex-1 flex-row items-center">
+              {showBack && onBackPress && (
+                <TouchableOpacity
+                  className="w-10 h-10 rounded-xl bg-neutral-100 items-center justify-center mr-3"
+                  onPress={onBackPress}
+                  activeOpacity={0.7}
+                >
+                  <MaterialIcons name="arrow-back" size={20} color="#404040" />
+                </TouchableOpacity>
+              )}
+              
+              {!centerTitle && (
+                <View className="flex-1">
+                  <Text className="text-xl font-bold text-neutral-900 leading-tight">
+                    {title}
+                  </Text>
+                  {subtitle && (
+                    <Text className="text-sm text-neutral-500 mt-0.5">
+                      {subtitle}
+                    </Text>
+                  )}
+                </View>
+              )}
             </View>
 
-            <View className="flex-row items-center">
+            {/* Center Section (when centerTitle is true) */}
+            {centerTitle && (
+              <View className="flex-2 items-center">
+                <Text className="text-xl font-bold text-neutral-900 leading-tight">
+                  {title}
+                </Text>
+                {subtitle && (
+                  <Text className="text-sm text-neutral-500 mt-0.5">
+                    {subtitle}
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {/* Right Section */}
+            <View className="flex-1 flex-row items-center justify-end space-x-2">
               {showSettings && onSettingsPress && (
                 <TouchableOpacity
-                  className="w-11 h-11 bg-gray-50 rounded-full justify-center items-center shadow"
-                  onPress={() => {
-                    DebugToastManager.showTouchEvent('Settings Button', 'Press');
-                    onSettingsPress();
-                  }}
+                  className="w-10 h-10 rounded-xl bg-neutral-100 items-center justify-center"
+                  onPress={onSettingsPress}
+                  activeOpacity={0.7}
                 >
-                  <MaterialIcons name="settings" size={20} color="#6b7280" />
+                  <MaterialIcons name="settings" size={20} color="#404040" />
                 </TouchableOpacity>
               )}
 
               {showClose && onClosePress && (
                 <TouchableOpacity
-                  className="w-11 h-11 bg-gray-100 rounded-full justify-center items-center ml-2"
+                  className="w-10 h-10 rounded-xl bg-neutral-100 items-center justify-center"
                   onPress={onClosePress}
+                  activeOpacity={0.7}
                 >
-                  <MaterialIcons name="close" size={18} color="#6b7280" />
+                  <MaterialIcons name="close" size={20} color="#404040" />
                 </TouchableOpacity>
               )}
             </View>
