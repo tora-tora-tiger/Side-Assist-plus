@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import DebugToastManager from '../../utils/DebugToastManager';
 
 interface HeaderProps {
   title: string;
@@ -36,7 +37,10 @@ export const Header: React.FC<HeaderProps> = ({
           {showSettings && onSettingsPress && (
             <TouchableOpacity
               className="w-11 h-11 bg-gray-50 rounded-full justify-center items-center shadow"
-              onPress={onSettingsPress}
+              onPress={() => {
+                DebugToastManager.showTouchEvent('Settings Button', 'Press');
+                onSettingsPress();
+              }}
             >
               <MaterialIcons name="settings" size={20} color="#6b7280" />
             </TouchableOpacity>

@@ -78,11 +78,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       );
 
       if (success) {
-        AlertManager.showAlert('接続成功', 'PCに正常に接続されました！');
+        AlertManager.showAlert('接続成功', 'PCに正常に接続されました！', [
+          {
+            text: 'OK',
+            onPress: () => {
+              // アラート閉じた後にAlertManager状態をリセット
+              console.log('🔄 [HomeScreen] Connection success alert dismissed');
+              AlertManager.logStatus();
+            },
+          },
+        ]);
       } else {
         AlertManager.showAlert(
           '接続失敗',
           'PCに接続できませんでした。PCが起動していることとネットワーク接続を確認してください。',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                console.log('🔄 [HomeScreen] Connection failed alert dismissed');
+                AlertManager.logStatus();
+              },
+            },
+          ],
         );
       }
     } catch (error) {

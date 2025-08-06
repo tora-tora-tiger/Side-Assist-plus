@@ -26,10 +26,17 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   // スキャナー開始時にリセット
   useEffect(() => {
     if (isVisible) {
+      // QRスキャナーが開かれた時に状態をリセット
       setLastScannedCode(null);
       setIsProcessing(false);
       setScannerEnabled(true);
       setProcessingLock(false);
+    } else {
+      // QRスキャナーが閉じられた時に状態を完全リセット
+      setIsProcessing(false);
+      setScannerEnabled(true);
+      setProcessingLock(false);
+      setLastScannedCode(null);
     }
   }, [isVisible]);
 
@@ -69,7 +76,10 @@ export const QRScanner: React.FC<QRScannerProps> = ({
     // 少し遅延を入れてから処理
     setTimeout(() => {
       onQRCodeScanned(data);
+      // 処理完了後に状態をリセット
       setIsProcessing(false);
+      setScannerEnabled(true);
+      setProcessingLock(false);
     }, 100);
   }, [isProcessing, scannerEnabled, processingLock, lastScannedCode, onQRCodeScanned]);
 

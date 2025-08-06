@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StatusBar } from 'react-native';
 import AlertManager from '../utils/AlertManager';
+import DebugToastManager from '../utils/DebugToastManager';
 
 import { useConnection } from '../hooks/useConnection';
 import { HomeScreen } from '../components/HomeScreen';
@@ -8,10 +9,13 @@ import { ExecutionScreen } from '../components/ExecutionScreen';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { PasswordInput } from '../components/PasswordInput';
 import { NetworkPermissionGuide } from '../components/NetworkPermissionGuide';
+import { DebugToast } from '../components/DebugToast';
 
 const App = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showPermissionGuide, setShowPermissionGuide] = useState(false);
+  const [debugMessage, setDebugMessage] = useState('');
+  const [showDebugToast, setShowDebugToast] = useState(false);
 
   const {
     isConnected,
@@ -46,6 +50,16 @@ const App = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected]);
+
+  // デバッグトーストマネージャーの購読
+  useEffect(() => {
+    const unsubscribe = DebugToastManager.subscribe((message: string) => {
+      setDebugMessage(message);
+      setShowDebugToast(true);
+    });
+
+    return unsubscribe;
+  }, []);
 
   const handleSendText = async (text: string) => {
     if (!isAuthenticated) {
@@ -83,7 +97,16 @@ const App = () => {
           onSettingsPress={() => setShowSettings(true)}
           onConnect={connectManually}
         />
-      ) : !isAuthenticated ? (
+      ) : isAuthenticated ? (
+        // 接続済み・認証済み: ExecutionScreen表示
+        <ExecutionScreen
+          onSettingsPress={() => {
+            DebugToastManager.showTouchEvent('Settings Button (ExecutionScreen)', 'Press');
+            setShowSettings(true);
+          }}
+          onSendText={handleSendText}
+        />
+      ) : (
         // 接続済み・認証前: パスワード入力表示
         <View className="flex-1">
           <HomeScreen
@@ -96,12 +119,6 @@ const App = () => {
             isVisible={true}
           />
         </View>
-      ) : (
-        // 接続済み・認証済み: ExecutionScreen表示
-        <ExecutionScreen
-          onSettingsPress={() => setShowSettings(true)}
-          onSendText={handleSendText}
-        />
       )}
 
       <SettingsPanel
@@ -115,6 +132,13 @@ const App = () => {
       <NetworkPermissionGuide
         isVisible={showPermissionGuide}
         onDismiss={() => setShowPermissionGuide(false)}
+      />
+      
+      <DebugToast
+        message={debugMessage}
+        visible={showDebugToast}
+        onHide={() => setShowDebugToast(false)}
+        duration={3000}
       />
     </View>
   );

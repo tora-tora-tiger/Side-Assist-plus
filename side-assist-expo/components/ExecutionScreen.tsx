@@ -3,6 +3,7 @@ import { View, Animated } from 'react-native';
 import { Header, StatusIndicator, ActionButton } from './ui';
 import { MaterialIcons } from '@expo/vector-icons';
 import AlertManager from '../utils/AlertManager';
+import DebugToastManager from '../utils/DebugToastManager';
 
 interface ExecutionScreenProps {
   onSettingsPress: () => void;
@@ -57,6 +58,8 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   ];
 
   const handleActionPress = async (action: (typeof actions)[0]) => {
+    DebugToastManager.showTouchEvent(`ActionButton:${action.id}`, 'Press');
+    
     // MainButtonと同じアニメーション
     const scale = buttonScales[action.id as keyof typeof buttonScales];
     Animated.sequence([
@@ -73,9 +76,12 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
     ]).start();
 
     try {
+      DebugToastManager.show(`Sending text: "${action.text}"`);
       await onSendText(action.text);
+      DebugToastManager.show(`Text sent successfully: "${action.text}"`);
     } catch (error) {
       console.error('Send text error:', error);
+      DebugToastManager.show(`Send text failed: ${error}`);
       AlertManager.showAlert(
         'エラー',
         'テキストの送信中にエラーが発生しました',
@@ -83,13 +89,20 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
     }
   };
 
+  // コンポーネント描画時の状態をログ出力
+  console.log('🖥️ [ExecutionScreen] Rendering - AlertManager status:', AlertManager.isShowing());
+
   return (
     <View className="flex-1 bg-white">
       {/* ヘッダー */}
       <Header
         title="Side Assist Plus"
         showSettings={true}
-        onSettingsPress={onSettingsPress}
+        onSettingsPress={() => {
+          DebugToastManager.showTouchEvent('Settings Button (Header)', 'Press');
+          DebugToastManager.show(`AlertManager showing: ${AlertManager.isShowing()}`);
+          onSettingsPress();
+        }}
         showShadow={true}
       />
 
