@@ -16,7 +16,14 @@ brew install --cask android-studio
 
 # iOS開発用 (App Store経由)
 # Xcode をApp Storeからインストール
+
+# ⚠️ CocoaPods手動インストール (重要: sudo失敗時の対処)
 sudo gem install cocoapods
+# sudoでエラーが出る場合は以下の手順で手動インストール:
+# 1. Homebrew経由でインストール
+# brew install cocoapods
+# 2. またはrbenv経由
+# gem install cocoapods --user-install
 ```
 
 #### 🪟 Windows
@@ -62,6 +69,8 @@ cd side-assist-desktop && pnpm install    # Node.js依存関係
 cd side-assist-expo && pnpm install       # Node.js依存関係
 cd ios && pod install && cd ..            # CocoaPods依存関係
 ```
+
+⚠️ **初回実行前に必須**: CocoaPodsを手動でインストールしてください（上記macOSセクション参照）
 
 #### Android アプリ (`./run.sh android`)
 ```bash

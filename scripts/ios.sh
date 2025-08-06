@@ -15,6 +15,17 @@ if [ ! -d "node_modules" ]; then
     pnpm install
 fi
 
+# CocoaPods事前チェック
+if ! command -v pod &> /dev/null; then
+    echo "❌ CocoaPodsがインストールされていません"
+    echo "📋 以下のコマンドでインストールしてください:"
+    echo "   brew install cocoapods"
+    echo "   または"
+    echo "   sudo gem install cocoapods"
+    echo ""
+    exit 1
+fi
+
 if [ ! -d "ios/Pods" ]; then
     echo "🍎 iOS Pods インストール中..."
     cd ios && pod install && cd ..
