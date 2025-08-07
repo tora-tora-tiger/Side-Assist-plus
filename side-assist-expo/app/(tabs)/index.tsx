@@ -16,7 +16,6 @@ export default function SideAssistScreen() {
         title="Side Assist Plus"
         showSettings={true}
         onSettingsPress={() => console.log("Settings pressed")}
-        showShadow={true}
       />
 
       <View className="px-5 pb-5">

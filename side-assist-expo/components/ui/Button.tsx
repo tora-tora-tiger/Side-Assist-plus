@@ -157,7 +157,7 @@ export const Button: React.FC<ButtonProps> = ({
                 {
                   ...((icon as React.ReactElement).props || {}),
                   color: getIconColor(),
-                } as React.ComponentProps<typeof icon>,
+                } as Record<string, unknown>,
               )}
             </View>
           )}
@@ -169,7 +169,7 @@ export const Button: React.FC<ButtonProps> = ({
                 {
                   ...((icon as React.ReactElement).props || {}),
                   color: getIconColor(),
-                } as React.ComponentProps<typeof icon>,
+                } as Record<string, unknown>,
               )}
             </View>
           )}

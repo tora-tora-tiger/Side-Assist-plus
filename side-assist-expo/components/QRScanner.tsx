@@ -78,7 +78,6 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           title="QRコードスキャン"
           showClose={true}
           onClosePress={onClose}
-          showShadow={true}
         />
         <View style={styles.centerContent}>
           <Text style={styles.message}>カメラ権限を確認中...</Text>
@@ -95,7 +94,6 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           title="QRコードスキャン"
           showClose={true}
           onClosePress={onClose}
-          showShadow={true}
         />
         <View style={styles.centerContent}>
           <MaterialIcons name="camera-alt" size={80} color="#6b7280" />
@@ -129,7 +127,6 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           title="QRコードスキャン"
           showClose={true}
           onClosePress={onClose}
-          showShadow={true}
         />
         <View style={styles.centerContent}>
           <MaterialIcons name="smartphone" size={80} color="#6b7280" />
@@ -156,7 +153,6 @@ export const QRScanner: React.FC<QRScannerProps> = ({
         title="QRコードスキャン"
         showClose={true}
         onClosePress={onClose}
-        showShadow={true}
       />
 
       <View style={styles.cameraContainer}>

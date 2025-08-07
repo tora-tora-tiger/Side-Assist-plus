@@ -60,6 +60,11 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   }));
 
   const [isRecordingPrepared, setIsRecordingPrepared] = useState(false);
+  const [recordingActionId, setRecordingActionId] = useState<string | null>(
+    null,
+  );
+  // recordingActionIdを実際に使用
+  console.log("Current recording action ID:", recordingActionId);
 
   // 録画状態リセット関数の実装
   const handleResetRecordingState = React.useCallback(() => {

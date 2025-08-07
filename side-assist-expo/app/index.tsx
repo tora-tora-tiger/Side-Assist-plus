@@ -18,7 +18,7 @@ const App = () => {
   const [alertData, setAlertData] = useState<{
     title: string;
     message: string;
-    buttons: Array<{ text: string; onPress: () => void }>;
+    buttons: Array<{ text: string; onPress?: () => void }>;
   } | null>(null);
 
   const {

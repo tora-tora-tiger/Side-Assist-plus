@@ -10,6 +10,12 @@ export const useConnection = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState<string>("");
   const [customActions, setCustomActions] = useState<CustomAction[]>([]);
+  const [recordingStatus, setRecordingStatus] = useState<
+    "idle" | "recording" | "completed"
+  >("idle");
+  // recordingStatusを使用してログに出力
+  console.log("Current recording status:", recordingStatus);
+  const hasStartedRecording = useRef(false);
   const connectionMonitorRef = useRef<ReturnType<typeof setInterval> | null>(
     null,
   );
@@ -86,6 +92,58 @@ export const useConnection = () => {
       subscription?.remove();
     };
   }, [handleDeepLink]);
+
+  const loadCustomActions = useCallback(async (): Promise<void> => {
+    if (!macIP || !macPort || !isConnected || !isAuthenticated) {
+      console.log("⚠️ Cannot load custom actions - missing connection info:", {
+        macIP: !!macIP,
+        macPort: !!macPort,
+        isConnected,
+        isAuthenticated,
+      });
+      return;
+    }
+
+    try {
+      console.log(`📋 Loading custom actions from ${macIP}:${macPort}...`);
+      const actions = await NetworkService.getCustomActions(macIP, macPort);
+      console.log(
+        `📦 Received ${actions.length} custom actions:`,
+        actions.map(a => ({
+          id: a.id,
+          name: a.name,
+          keys: a.key_sequence.length,
+        })),
+      );
+      setCustomActions(actions);
+    } catch (error) {
+      console.error("Failed to load custom actions:", error);
+      setCustomActions([]);
+    }
+  }, [macIP, macPort, isConnected, isAuthenticated]);
+
+  const resetRecordingState = useCallback(() => {
+    console.log("🔄 Resetting recording UI state for next recording");
+    // ExecutionScreenのグローバル関数を呼び出してリセット
+    if (
+      typeof (window as { resetExecutionScreenRecordingState?: () => void })
+        .resetExecutionScreenRecordingState === "function"
+    ) {
+      console.log("🎯 Calling ExecutionScreen reset function...");
+      (window as { resetExecutionScreenRecordingState?: () => void })
+        .resetExecutionScreenRecordingState!();
+    } else {
+      console.log("⚠️ ExecutionScreen reset function not found");
+    }
+  }, []);
+
+  const stopRecordingMonitoring = useCallback(() => {
+    if (recordingMonitorRef.current) {
+      clearInterval(recordingMonitorRef.current);
+      recordingMonitorRef.current = null;
+      console.log("🎥 Recording status monitoring stopped");
+    }
+  }, []);
 
   // 認証成功時にカスタムアクションを読み込み
   useEffect(() => {
@@ -278,14 +336,8 @@ export const useConnection = () => {
 
       return result;
     },
-    [
-      macIP,
-      macPort,
-      isConnected,
-      isAuthenticated,
-      password,
-      startRecordingMonitoring,
-    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [macIP, macPort, isConnected, isAuthenticated, password],
   );
 
   const startRecordingMonitoring = useCallback(() => {
@@ -351,124 +403,36 @@ export const useConnection = () => {
     stopRecordingMonitoring,
   ]);
 
-  const stopRecordingMonitoring = useCallback(() => {
-    if (recordingMonitorRef.current) {
-      clearInterval(recordingMonitorRef.current);
-      recordingMonitorRef.current = null;
-      console.log("🎥 Recording status monitoring stopped");
-    }
-  }, []);
-
-  const loadCustomActions = useCallback(async (): Promise<void> => {
-    if (!macIP || !macPort || !isConnected || !isAuthenticated) {
-      console.log("⚠️ Cannot load custom actions - missing connection info:", {
-        macIP: !!macIP,
-        macPort: !!macPort,
-        isConnected,
-        isAuthenticated,
-      });
-      return;
-    }
-
-    try {
-      console.log(`📋 Loading custom actions from ${macIP}:${macPort}...`);
-      const actions = await NetworkService.getCustomActions(macIP, macPort);
-      console.log(
-        `📦 Received ${actions.length} custom actions:`,
-        actions.map(a => ({
-          id: a.id,
-          name: a.name,
-          keys: a.key_sequence.length,
-        })),
-      );
-      setCustomActions(actions);
-      console.log(
-        `✅ Successfully updated local state with ${actions.length} custom actions`,
-      );
-    } catch (error) {
-      console.error("❌ Failed to load custom actions:", error);
-      setCustomActions([]);
-    }
-  }, [macIP, macPort, isConnected, isAuthenticated]);
-
-  const resetRecordingState = useCallback(() => {
-    console.log("🔄 Resetting recording UI state for next recording");
-    // ExecutionScreenのグローバル関数を呼び出してリセット
-    if (
-      typeof (window as { resetExecutionScreenRecordingState?: () => void })
-        .resetExecutionScreenRecordingState === "function"
-    ) {
-      console.log("🎯 Calling ExecutionScreen reset function...");
-      (window as { resetExecutionScreenRecordingState?: () => void })
-        .resetExecutionScreenRecordingState!();
-    } else {
-      console.log("⚠️ ExecutionScreen reset function not found");
-    }
-  }, []);
-
   const connectManually = useCallback(
     async (ip: string, port: string, password: string): Promise<boolean> => {
       try {
-        console.log(
-          "🔗 [useConnection] connectManually START - ip:",
-          ip,
-          "port:",
-          port,
-        );
-        console.log(
-          "🚨 [useConnection] This function should be called ONLY ONCE per connection attempt!",
-        );
+        console.log("🔗 [useConnection] connectManually START");
 
-        // まず接続をテスト
-        console.log(
-          "🔗 [useConnection] Calling NetworkService.testConnection from connectManually...",
-        );
         const connected = await NetworkService.testConnection(ip, port);
         if (!connected) {
-          console.log(
-            "❌ [useConnection] Cannot reach server at:",
-            `${ip}:${port}`,
-          );
+          console.log("❌ [useConnection] Cannot reach server");
           return false;
         }
 
-        // 接続成功時にステートを更新
-        console.log(
-          "🔗 [useConnection] Setting connection state in connectManually...",
-        );
-        setMacIP(ip);
-        setMacPort(port);
-        setIsConnected(true);
-
-        console.log("✅ [useConnection] Connected to server:", `${ip}:${port}`);
-
-        // パスワードで認証を試行
-        console.log(
-          "🔗 [useConnection] Calling NetworkService.authenticateWithPassword from connectManually...",
-        );
         const authSuccess = await NetworkService.authenticateWithPassword(
           ip,
           port,
           password,
         );
         if (authSuccess) {
-          setIsAuthenticated(true);
+          setMacIP(ip);
+          setMacPort(port);
           setPassword(password);
-          console.log(
-            "🎉 [useConnection] Manual connection and authentication successful!",
-          );
-          console.log("🔗 [useConnection] connectManually END - SUCCESS");
+          setIsConnected(true);
+          setIsAuthenticated(true);
+          console.log("✅ [useConnection] Manual connection successful");
           return true;
         } else {
-          console.log(
-            "❌ [useConnection] Authentication failed with provided password",
-          );
-          console.log("🔗 [useConnection] connectManually END - AUTH FAILED");
+          console.log("❌ [useConnection] Authentication failed");
           return false;
         }
       } catch (error) {
         console.error("[useConnection] Manual connection error:", error);
-        console.log("🔗 [useConnection] connectManually END - ERROR");
         return false;
       }
     },

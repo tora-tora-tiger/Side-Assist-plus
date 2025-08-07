@@ -29,13 +29,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   return (
     <View className="absolute inset-0 z-50 bg-white">
-      <Header
-        title="設定"
-        showClose={true}
-        onClosePress={onClose}
-        showShadow={true}
-        shadowDirection="up"
-      />
+      <Header title="設定" showClose={true} onClosePress={onClose} />
 
       <View className="flex-1 p-5">
         <View className="mb-6">
