@@ -195,11 +195,11 @@ export class NetworkService {
         console.error(
           `❌ [NetworkService] Recording status failed: ${response.status}`,
         );
-        return null;
+        return { isRecording: false };
       }
     } catch (error) {
       console.error("Failed to get recording status:", error);
-      return null;
+      return { isRecording: false };
     }
   }
 

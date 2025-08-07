@@ -95,7 +95,7 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
       >
         <ScrollView
           className="flex-1"
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerClassName="flex-grow"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >

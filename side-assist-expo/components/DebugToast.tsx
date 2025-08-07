@@ -51,14 +51,9 @@ export const DebugToast: React.FC<DebugToastProps> = ({
   return (
     <Animated.View
       style={{
-        position: "absolute",
-        top: 100,
-        left: 20,
-        right: 20,
-        zIndex: 9999,
         opacity: fadeAnim,
       }}
-      className="bg-blue-500 px-4 py-2 rounded-lg shadow-lg"
+      className="absolute top-24 left-5 right-5 z-[9999] bg-blue-500 px-4 py-2 rounded-lg shadow-lg"
     >
       <Text className="text-white text-sm font-bold text-center">
         🐛 DEBUG: {message}

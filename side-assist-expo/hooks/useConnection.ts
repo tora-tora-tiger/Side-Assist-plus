@@ -302,40 +302,21 @@ export const useConnection = () => {
         const status = await NetworkService.getRecordingStatus(macIP, macPort);
         console.log("🎥 Recording status check:", status);
 
-        if (status?.status === "completed") {
-          console.log("🎉 Recording completed! Showing alert...", status);
+        if (!status.isRecording && hasStartedRecording.current) {
+          console.log("🎉 Recording completed!");
 
-          // アラート表示（完了確認付き）
-          if (status.message) {
-            console.log(
-              "📱 Calling AlertManager.showAlert with:",
-              status.message,
-            );
-            AlertManager.showAlert("録画完了", status.message, [
-              {
-                text: "OK",
-                onPress: async () => {
-                  console.log("✅ User acknowledged recording completion");
-                  // このresetRecordingStateは外部から提供される関数への参照として機能
-                  resetRecordingState();
-                },
+          hasStartedRecording.current = false;
+          setRecordingStatus("completed");
+
+          AlertManager.showAlert("録画完了", "録画が完了しました", [
+            {
+              text: "OK",
+              onPress: async () => {
+                console.log("✅ User acknowledged recording completion");
+                resetRecordingState();
               },
-            ]);
-          } else {
-            console.log(
-              "📱 Calling AlertManager.showAlert with default message",
-            );
-            AlertManager.showAlert("録画完了", "録画が完了しました", [
-              {
-                text: "OK",
-                onPress: async () => {
-                  console.log("✅ User acknowledged recording completion");
-                  // このresetRecordingStateは外部から提供される関数への参照として機能
-                  resetRecordingState();
-                },
-              },
-            ]);
-          }
+            },
+          ]);
 
           // 完了確認を送信
           console.log("✅ Sending acknowledgment...");
@@ -349,21 +330,26 @@ export const useConnection = () => {
 
           // 監視停止
           stopRecordingMonitoring();
-        } else if (status?.status === "recording") {
-          console.log(
-            "🔴 Still recording... keys:",
-            status.recorded_keys_count || 0,
-          );
-        } else if (status?.status === "preparing") {
-          console.log("🟡 Recording prepared, waiting for start...");
+        } else if (status.isRecording && !hasStartedRecording.current) {
+          console.log("🔴 Recording started!");
+          hasStartedRecording.current = true;
+          setRecordingStatus("recording");
+        } else if (status.isRecording) {
+          console.log("🔴 Still recording...");
         } else {
-          console.log("⚪ Recording status:", status?.status || "unknown");
+          console.log("⚪ Recording idle");
         }
       } catch (error) {
         console.error("Recording status monitoring error:", error);
       }
     }, 1000); // 1秒ごとにチェック
-  }, [macIP, macPort]);
+  }, [
+    macIP,
+    macPort,
+    loadCustomActions,
+    resetRecordingState,
+    stopRecordingMonitoring,
+  ]);
 
   const stopRecordingMonitoring = useCallback(() => {
     if (recordingMonitorRef.current) {

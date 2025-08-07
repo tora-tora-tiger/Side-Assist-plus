@@ -71,12 +71,14 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   // グローバルなリセット関数を作成（useConnectionで呼び出される）
   useEffect(() => {
     // グローバルなwindowオブジェクトに関数を追加
-    (window as any).resetExecutionScreenRecordingState =
-      handleResetRecordingState;
+    (
+      window as { resetExecutionScreenRecordingState?: () => void }
+    ).resetExecutionScreenRecordingState = handleResetRecordingState;
 
     return () => {
       // クリーンアップ
-      delete (window as any).resetExecutionScreenRecordingState;
+      delete (window as { resetExecutionScreenRecordingState?: () => void })
+        .resetExecutionScreenRecordingState;
     };
   }, [handleResetRecordingState]);
 
@@ -295,7 +297,7 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerClassName="flex-grow"
         showsVerticalScrollIndicator={false}
       >
         {/* ステータス表示 */}
@@ -444,7 +446,10 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
                     <View className="flex-1 flex-row items-center">
                       <View className="w-8 h-8 bg-blue-500 rounded-full items-center justify-center mr-3">
                         <MaterialIcons
-                          name={action.icon ? (action.icon as any) : "build"}
+                          name={
+                            (action.icon as keyof typeof MaterialIcons.glyphMap) ||
+                            "build"
+                          }
                           size={18}
                           color="#ffffff"
                         />

@@ -15,7 +15,11 @@ const App = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [debugMessage, setDebugMessage] = useState("");
   const [showDebugToast, setShowDebugToast] = useState(false);
-  const [alertData, setAlertData] = useState<any>(null);
+  const [alertData, setAlertData] = useState<{
+    title: string;
+    message: string;
+    buttons: Array<{ text: string; onPress: () => void }>;
+  } | null>(null);
 
   const {
     isConnected,
