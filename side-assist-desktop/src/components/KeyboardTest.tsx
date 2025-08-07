@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardActions, Button, Icon } from './ui';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardActions,
+  Button,
+  Icon,
+} from './ui';
 
 interface KeyboardTestProps {
   isLoading: boolean;
@@ -25,12 +33,16 @@ export const KeyboardTest: React.FC<KeyboardTestProps> = ({
     }
   };
 
-  const isDisabled = !testText.trim() || 
-    isLoading || 
+  const isDisabled =
+    !testText.trim() ||
+    isLoading ||
     (disableKeyboardWhenDenied && hasAccessibilityPermission === false);
 
   const getResultVariant = () => {
-    if (testResult.includes('Failed') || testResult.includes('アクセシビリティ権限')) {
+    if (
+      testResult.includes('Failed') ||
+      testResult.includes('アクセシビリティ権限')
+    ) {
       return 'text-red-600';
     }
     return 'text-green-600';
@@ -39,26 +51,29 @@ export const KeyboardTest: React.FC<KeyboardTestProps> = ({
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-3">
-          <Icon name="keyboard" size="lg" />
+        <div className='flex items-center gap-3'>
+          <Icon name='keyboard' size='lg' />
           <CardTitle>Keyboard Test</CardTitle>
         </div>
       </CardHeader>
-      
+
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className='space-y-4'>
           <div>
-            <label htmlFor="test-input" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor='test-input'
+              className='block text-sm font-medium text-gray-700 mb-2'
+            >
               Test Text
             </label>
             <input
-              id="test-input"
-              type="text"
+              id='test-input'
+              type='text'
               value={testText}
-              onChange={(e) => setTestText(e.target.value)}
-              placeholder="Type something to test keyboard simulation..."
+              onChange={e => setTestText(e.target.value)}
+              placeholder='Type something to test keyboard simulation...'
               maxLength={100}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'
               disabled={isLoading}
             />
           </div>
@@ -69,25 +84,27 @@ export const KeyboardTest: React.FC<KeyboardTestProps> = ({
             </div>
           )}
 
-          {disableKeyboardWhenDenied && hasAccessibilityPermission === false && (
-            <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <Icon name="warning" className="text-yellow-600 mt-0.5" />
-              <p className="text-sm text-yellow-700">
-                Accessibility permission is required. Please grant permission in the System Permissions section.
-              </p>
-            </div>
-          )}
+          {disableKeyboardWhenDenied &&
+            hasAccessibilityPermission === false && (
+              <div className='flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg'>
+                <Icon name='warning' className='text-yellow-600 mt-0.5' />
+                <p className='text-sm text-yellow-700'>
+                  Accessibility permission is required. Please grant permission
+                  in the System Permissions section.
+                </p>
+              </div>
+            )}
         </form>
       </CardContent>
 
       <CardActions>
         <Button
-          variant="primary"
+          variant='primary'
           onClick={() => handleSubmit()}
           loading={isLoading}
           disabled={isDisabled}
         >
-          <Icon name="play" className="mr-2" />
+          <Icon name='play' className='mr-2' />
           {isLoading ? 'Testing...' : 'Test Typing'}
         </Button>
       </CardActions>

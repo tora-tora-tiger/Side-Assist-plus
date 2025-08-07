@@ -10,6 +10,20 @@ pre-commit:
     #   run: "./check-i18n.sh"
     #   fail_text: "❌ Desktop i18n check failed. Fix internationalization issues before committing."
     #   glob: "side-assist-desktop/**/*.{ts,tsx,json}"
+    
+    desktop-format:
+      root: "side-assist-desktop/"
+      run: "npm run format"
+      fail_text: "❌ Desktop format check failed. Run 'npm run format' to fix formatting issues."
+      glob: "side-assist-desktop/**/*.{js,jsx,ts,tsx,json}"
+      stage_fixed: true
+      
+    desktop-lint:
+      root: "side-assist-desktop/"
+      run: "npm run lint:fix"
+      fail_text: "❌ Desktop lint check failed. Fix code issues before committing."
+      glob: "side-assist-desktop/**/*.{js,jsx,ts,tsx}"
+      stage_fixed: true
       
     mobile-format:
       root: "side-assist-expo/"

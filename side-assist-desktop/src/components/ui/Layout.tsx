@@ -32,7 +32,14 @@ export const Stack: React.FC<StackProps> = ({
   };
 
   return (
-    <div className={cn('flex flex-col', gapClasses[gap], alignClasses[align], className)}>
+    <div
+      className={cn(
+        'flex flex-col',
+        gapClasses[gap],
+        alignClasses[align],
+        className
+      )}
+    >
       {children}
     </div>
   );

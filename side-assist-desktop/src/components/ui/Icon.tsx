@@ -15,7 +15,7 @@ import {
   Shield,
   Activity,
   X,
-  type LucideIcon
+  type LucideIcon,
 } from 'lucide-react';
 
 interface IconProps {
@@ -59,10 +59,5 @@ export const Icon: React.FC<IconProps> = ({
 
   const IconComponent = iconMap[name] || AlertTriangle;
 
-  return (
-    <IconComponent 
-      size={iconSize} 
-      className={className}
-    />
-  );
+  return <IconComponent size={iconSize} className={className} />;
 };

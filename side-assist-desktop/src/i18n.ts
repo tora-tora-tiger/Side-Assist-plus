@@ -7,11 +7,11 @@ import jaTranslations from './locales/ja.json';
 
 const resources = {
   en: {
-    translation: enTranslations
+    translation: enTranslations,
   },
   ja: {
-    translation: jaTranslations
-  }
+    translation: jaTranslations,
+  },
 };
 
 i18n
@@ -21,17 +21,17 @@ i18n
     resources,
     fallbackLng: 'en',
     debug: false,
-    
+
     interpolation: {
-      escapeValue: false // React already does escaping
+      escapeValue: false, // React already does escaping
     },
-    
+
     detection: {
       order: ['navigator', 'localStorage', 'sessionStorage'],
       lookupLocalStorage: 'i18nextLng',
       lookupSessionStorage: 'i18nextLng',
-      caches: ['localStorage', 'sessionStorage']
-    }
+      caches: ['localStorage', 'sessionStorage'],
+    },
   });
 
 export default i18n;

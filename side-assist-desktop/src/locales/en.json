@@ -5,7 +5,7 @@
   },
   "status": {
     "online": "Online",
-    "offline": "Offline", 
+    "offline": "Offline",
     "connected": "Connected",
     "waiting": "Waiting",
     "running": "Running",

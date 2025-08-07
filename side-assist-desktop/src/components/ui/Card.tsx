@@ -76,11 +76,7 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
   children,
   className = '',
 }) => {
-  return (
-    <div className={`mb-6 ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={`mb-6 ${className}`}>{children}</div>;
 };
 
 interface CardTitleProps {
@@ -95,7 +91,7 @@ export const CardTitle: React.FC<CardTitleProps> = ({
   level = 2,
 }) => {
   const baseClasses = 'font-semibold text-white leading-tight';
-  
+
   const levelClasses = {
     1: 'text-2xl',
     2: 'text-xl',

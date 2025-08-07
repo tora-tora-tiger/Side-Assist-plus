@@ -7,9 +7,13 @@ interface HeadingProps {
   className?: string;
 }
 
-export const Heading: React.FC<HeadingProps> = ({ level, children, className }) => {
+export const Heading: React.FC<HeadingProps> = ({
+  level,
+  children,
+  className,
+}) => {
   const baseClasses = 'font-semibold text-gray-900 tracking-tight';
-  
+
   const levelClasses = {
     1: 'text-4xl lg:text-5xl',
     2: 'text-3xl lg:text-4xl',
@@ -61,19 +65,28 @@ interface CodeProps {
   block?: boolean;
 }
 
-export const Code: React.FC<CodeProps> = ({ children, className, block = false }) => {
-  const baseClasses = 'font-mono bg-gray-100 text-gray-800 border border-gray-200';
-  
+export const Code: React.FC<CodeProps> = ({
+  children,
+  className,
+  block = false,
+}) => {
+  const baseClasses =
+    'font-mono bg-gray-100 text-gray-800 border border-gray-200';
+
   if (block) {
     return (
-      <pre className={cn(baseClasses, 'p-4 rounded-lg overflow-x-auto', className)}>
+      <pre
+        className={cn(baseClasses, 'p-4 rounded-lg overflow-x-auto', className)}
+      >
         <code>{children}</code>
       </pre>
     );
   }
 
   return (
-    <code className={cn(baseClasses, 'px-1.5 py-0.5 rounded text-sm', className)}>
+    <code
+      className={cn(baseClasses, 'px-1.5 py-0.5 rounded text-sm', className)}
+    >
       {children}
     </code>
   );

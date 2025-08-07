@@ -12,11 +12,13 @@ interface LogEntry {
 
 const PASSWORD_EXPIRY_TIME = 5 * 60 * 1000; // 5分
 
-export const useServer = (onLog: (message: string, type: LogEntry['type']) => void) => {
+export const useServer = (
+  onLog: (message: string, type: LogEntry['type']) => void
+) => {
   const [serverStatus, setServerStatus] = useState<ServerStatusType>({
     running: false,
     connected_clients: 0,
-    port: 8080
+    port: 8080,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [oneTimePassword, setOneTimePassword] = useState<string | null>(null);
@@ -30,7 +32,7 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
       const status = await serverService.getStatus();
       setServerStatus(status);
     } catch (error) {
-      console.error("Failed to get server status:", error);
+      console.error('Failed to get server status:', error);
       onLog('サーバーステータスの取得に失敗しました', 'error');
     }
   }, [onLog]);
@@ -41,7 +43,7 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
       setQrCodeImage(qrCode);
       onLog('QRコードを生成しました', 'success');
     } catch (error) {
-      console.error("Failed to generate QR code:", error);
+      console.error('Failed to generate QR code:', error);
       onLog(`QRコード生成に失敗しました: ${error}`, 'error');
       setQrCodeImage(null);
     }
@@ -72,14 +74,14 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
       setOneTimePassword(password);
       setPasswordExpired(false);
       onLog(`新しいワンタイムパスワードを生成しました: ${password}`, 'success');
-      
+
       // パスワード生成後、自動的にQRコードも生成
       await generateQRCode();
-      
+
       // タイマー開始
       startPasswordTimer();
     } catch (error) {
-      console.error("Failed to generate password:", error);
+      console.error('Failed to generate password:', error);
       onLog(`パスワード生成に失敗しました: ${error}`, 'error');
     } finally {
       setIsGeneratingPassword(false);
@@ -93,7 +95,7 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
       onLog(result, 'success');
       await refreshServerStatus();
     } catch (error) {
-      console.error("Failed to start server:", error);
+      console.error('Failed to start server:', error);
       onLog(`サーバー開始に失敗しました: ${error}`, 'error');
     } finally {
       setIsLoading(false);
@@ -103,7 +105,7 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
   const checkCurrentPassword = useCallback(async () => {
     try {
       const password = await passwordService.getCurrent();
-      
+
       // サーバーからパスワードがnullで返された場合の処理
       if (!password && oneTimePassword && !passwordExpired) {
         setPasswordExpired(true);
@@ -120,40 +122,50 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
         startPasswordTimer();
       }
     } catch (error) {
-      console.error("Failed to get current password:", error);
+      console.error('Failed to get current password:', error);
     }
-  }, [oneTimePassword, passwordExpired, onLog, generateQRCode, clearPasswordTimer, startPasswordTimer]);
+  }, [
+    oneTimePassword,
+    passwordExpired,
+    onLog,
+    generateQRCode,
+    clearPasswordTimer,
+    startPasswordTimer,
+  ]);
 
-  const handlePortChange = useCallback(async (newPort: number) => {
-    // 既に処理中の場合は拒否
-    if (isLoading) {
-      onLog('サーバー操作が実行中です。しばらくお待ちください。', 'warning');
-      return;
-    }
+  const handlePortChange = useCallback(
+    async (newPort: number) => {
+      // 既に処理中の場合は拒否
+      if (isLoading) {
+        onLog('サーバー操作が実行中です。しばらくお待ちください。', 'warning');
+        return;
+      }
 
-    try {
-      setIsLoading(true);
-      onLog(`ポートを${newPort}に変更中...`, 'info');
-      
-      const result = await serverService.changePort(newPort);
-      onLog(result, 'success');
-      
-      // サーバーステータスを更新
-      setServerStatus(prev => ({ ...prev, port: newPort }));
-      
-      // 少し待機してからステータスを確認
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await refreshServerStatus();
-    } catch (error) {
-      console.error("Failed to change port:", error);
-      onLog(`ポート変更に失敗しました: ${error}`, 'error');
-      
-      // エラー時はステータスを再取得して正しい状態に戻す
-      await refreshServerStatus();
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isLoading, onLog, refreshServerStatus]);
+      try {
+        setIsLoading(true);
+        onLog(`ポートを${newPort}に変更中...`, 'info');
+
+        const result = await serverService.changePort(newPort);
+        onLog(result, 'success');
+
+        // サーバーステータスを更新
+        setServerStatus(prev => ({ ...prev, port: newPort }));
+
+        // 少し待機してからステータスを確認
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await refreshServerStatus();
+      } catch (error) {
+        console.error('Failed to change port:', error);
+        onLog(`ポート変更に失敗しました: ${error}`, 'error');
+
+        // エラー時はステータスを再取得して正しい状態に戻す
+        await refreshServerStatus();
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [isLoading, onLog, refreshServerStatus]
+  );
 
   // クリーンアップ
   useEffect(() => {
@@ -167,10 +179,10 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
     const initializeServer = async () => {
       try {
         onLog('サーバー状態を確認中...', 'info');
-        
+
         // まずサーバーの状態を確認
         await refreshServerStatus();
-        
+
         // サーバーが実行中でない場合のみ起動
         const currentStatus = await serverService.getStatus();
         if (!currentStatus.running) {
@@ -179,23 +191,23 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
         } else {
           onLog('サーバーは既に実行中です', 'success');
         }
-        
+
         // パスワードをチェック
         await checkCurrentPassword();
       } catch (error) {
-        console.error("Server initialization failed:", error);
+        console.error('Server initialization failed:', error);
         onLog(`サーバー初期化に失敗しました: ${error}`, 'error');
       }
     };
-    
+
     initializeServer();
-    
+
     // 定期的にステータスとパスワードを更新
     const interval = setInterval(() => {
       refreshServerStatus();
       checkCurrentPassword();
     }, 5000);
-    
+
     return () => {
       clearInterval(interval);
       clearPasswordTimer();
@@ -215,6 +227,6 @@ export const useServer = (onLog: (message: string, type: LogEntry['type']) => vo
     startServer,
     generateOneTimePassword,
     generateQRCode,
-    handlePortChange
+    handlePortChange,
   };
 };

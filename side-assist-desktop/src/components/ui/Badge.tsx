@@ -28,31 +28,11 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   const variantClasses = {
-    default: [
-      'bg-stone-700/50',
-      'text-stone-300',
-      'border-stone-600/50',
-    ],
-    success: [
-      'bg-stone-600/50',
-      'text-stone-200',
-      'border-stone-500/50',
-    ],
-    warning: [
-      'bg-stone-600/50',
-      'text-stone-300',
-      'border-stone-500/50',
-    ],
-    error: [
-      'bg-stone-700/50',
-      'text-stone-400',
-      'border-stone-600/50',
-    ],
-    info: [
-      'bg-stone-600/50',
-      'text-stone-200',
-      'border-stone-500/50',
-    ],
+    default: ['bg-stone-700/50', 'text-stone-300', 'border-stone-600/50'],
+    success: ['bg-stone-600/50', 'text-stone-200', 'border-stone-500/50'],
+    warning: ['bg-stone-600/50', 'text-stone-300', 'border-stone-500/50'],
+    error: ['bg-stone-700/50', 'text-stone-400', 'border-stone-600/50'],
+    info: ['bg-stone-600/50', 'text-stone-200', 'border-stone-500/50'],
   };
 
   const classes = [

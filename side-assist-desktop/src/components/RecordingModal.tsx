@@ -29,7 +29,9 @@ export const RecordingModal: React.FC = () => {
   useEffect(() => {
     const checkModalInfo = async () => {
       try {
-        const info = await invoke<RecordingModalInfo | null>('get_recording_modal_info');
+        const info = await invoke<RecordingModalInfo | null>(
+          'get_recording_modal_info'
+        );
         setModalInfo(info);
       } catch (error) {
         console.error('Failed to get recording modal info:', error);
@@ -41,13 +43,13 @@ export const RecordingModal: React.FC = () => {
 
     // 500msごとにポーリング
     const interval = setInterval(checkModalInfo, 500);
-    
+
     return () => clearInterval(interval);
   }, []);
 
   const handleStartRecording = async () => {
     if (!modalInfo) return;
-    
+
     setIsStarting(true);
     try {
       await invoke('start_actual_recording');
@@ -61,7 +63,7 @@ export const RecordingModal: React.FC = () => {
 
   const handleStopRecording = async () => {
     if (!modalInfo) return;
-    
+
     setIsStopping(true);
     try {
       const result = await invoke<string>('stop_actual_recording');
@@ -89,25 +91,25 @@ export const RecordingModal: React.FC = () => {
     <Modal
       isOpen={true}
       onClose={handleCancel}
-      title="カスタムアクション録画"
-      size="md"
+      title='カスタムアクション録画'
+      size='md'
     >
-      <div className="p-6">
-        <Card className="mb-6">
-          <div className="flex items-center space-x-4 p-4">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Icon 
-                  name={modalInfo.icon || 'keyboard'} 
-                  className="w-6 h-6 text-blue-600" 
+      <div className='p-6'>
+        <Card className='mb-6'>
+          <div className='flex items-center space-x-4 p-4'>
+            <div className='flex-shrink-0'>
+              <div className='w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center'>
+                <Icon
+                  name={modalInfo.icon || 'keyboard'}
+                  className='w-6 h-6 text-blue-600'
                 />
               </div>
             </div>
-            <div className="flex-1">
-              <Heading level={3} className="font-semibold text-gray-900">
+            <div className='flex-1'>
+              <Heading level={3} className='font-semibold text-gray-900'>
                 {modalInfo.name}
               </Heading>
-              <Text variant="small" className="text-gray-600">
+              <Text variant='small' className='text-gray-600'>
                 ID: {modalInfo.action_id}
               </Text>
             </div>
@@ -115,83 +117,89 @@ export const RecordingModal: React.FC = () => {
         </Card>
 
         {!modalInfo.is_recording ? (
-          <div className="text-center space-y-4">
-            <div className="p-6 bg-amber-50 rounded-lg border border-amber-200">
-              <Icon name="info" className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-              <Text variant="body" className="text-amber-800 mb-2">
+          <div className='text-center space-y-4'>
+            <div className='p-6 bg-amber-50 rounded-lg border border-amber-200'>
+              <Icon
+                name='info'
+                className='w-8 h-8 text-amber-600 mx-auto mb-2'
+              />
+              <Text variant='body' className='text-amber-800 mb-2'>
                 キーボード操作を録画する準備ができました
               </Text>
-              <Text variant="small" className="text-amber-700">
+              <Text variant='small' className='text-amber-700'>
                 「録画開始」をクリックした後、録画したいキーボード操作を行ってください
               </Text>
             </div>
-            
-            <div className="flex space-x-3">
+
+            <div className='flex space-x-3'>
               <Button
-                variant="primary"
-                size="lg"
+                variant='primary'
+                size='lg'
                 onClick={handleStartRecording}
                 disabled={isStarting}
-                className="flex-1"
+                className='flex-1'
               >
                 {isStarting ? (
                   <>
-                    <Icon name="loading" className="w-4 h-4 mr-2 animate-spin" />
+                    <Icon
+                      name='loading'
+                      className='w-4 h-4 mr-2 animate-spin'
+                    />
                     開始中...
                   </>
                 ) : (
                   <>
-                    <Icon name="play" className="w-4 h-4 mr-2" />
+                    <Icon name='play' className='w-4 h-4 mr-2' />
                     録画開始
                   </>
                 )}
               </Button>
-              
+
               <Button
-                variant="secondary"
-                size="lg"
+                variant='secondary'
+                size='lg'
                 onClick={handleCancel}
                 disabled={isStarting}
-                className="flex-1"
+                className='flex-1'
               >
-                <Icon name="x" className="w-4 h-4 mr-2" />
+                <Icon name='x' className='w-4 h-4 mr-2' />
                 キャンセル
               </Button>
             </div>
           </div>
         ) : (
-          <div className="text-center space-y-4">
-            <div className="p-6 bg-red-50 rounded-lg border border-red-200">
-              <div className="flex items-center justify-center mb-3">
-                <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse mr-2"></div>
-                <Icon name="record" className="w-8 h-8 text-red-600" />
+          <div className='text-center space-y-4'>
+            <div className='p-6 bg-red-50 rounded-lg border border-red-200'>
+              <div className='flex items-center justify-center mb-3'>
+                <div className='w-4 h-4 bg-red-500 rounded-full animate-pulse mr-2'></div>
+                <Icon name='record' className='w-8 h-8 text-red-600' />
               </div>
-              <Heading level={3} className="text-red-800 mb-2">
+              <Heading level={3} className='text-red-800 mb-2'>
                 録画中...
               </Heading>
-              <Text variant="small" className="text-red-700 mb-3">
+              <Text variant='small' className='text-red-700 mb-3'>
                 キーボード操作を行ってください
               </Text>
-              <Text variant="small" className="text-red-600">
+              <Text variant='small' className='text-red-600'>
                 録画されたキー: {modalInfo.recorded_keys.length}個
               </Text>
             </div>
-            
+
             <Button
-              variant="danger"
-              size="lg"
+              variant='danger'
+              size='lg'
               onClick={handleStopRecording}
               disabled={isStopping}
-              className="w-full"
+              className='w-full'
             >
               {isStopping ? (
                 <>
-                  <Icon name="loading" className="w-4 h-4 mr-2 animate-spin" />
+                  <Icon name='loading' className='w-4 h-4 mr-2 animate-spin' />
                   停止中...
                 </>
               ) : (
                 <>
-                  <Icon name="stop" className="w-4 h-4 mr-2" />
+                  <Icon name='stop' className='w-4 h-4 mr-2' />
                   録画停止
                 </>
               )}

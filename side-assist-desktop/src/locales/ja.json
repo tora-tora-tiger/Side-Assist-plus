@@ -6,7 +6,7 @@
   "status": {
     "online": "オンライン",
     "offline": "オフライン",
-    "connected": "接続中", 
+    "connected": "接続中",
     "waiting": "待機中",
     "running": "実行中",
     "stopped": "停止中"

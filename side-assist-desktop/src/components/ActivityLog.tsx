@@ -1,5 +1,15 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Badge, Icon, Stack, Inline, Text } from './ui';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Badge,
+  Icon,
+  Stack,
+  Inline,
+  Text,
+} from './ui';
 
 interface LogEntry {
   time: string;
@@ -16,58 +26,71 @@ interface ActivityLogProps {
 export const ActivityLog: React.FC<ActivityLogProps> = ({ logs }) => {
   const getLogIcon = (type: LogEntry['type']) => {
     switch (type) {
-      case 'success': return 'play';
-      case 'warning': return 'warning';
-      case 'error': return 'warning';
-      default: return 'activity';
+      case 'success':
+        return 'play';
+      case 'warning':
+        return 'warning';
+      case 'error':
+        return 'warning';
+      default:
+        return 'activity';
     }
   };
 
   return (
-    <Card className="h-full">
+    <Card className='h-full'>
       <CardHeader>
-        <Inline gap="sm" align="center">
-          <Icon name="activity" className="text-stone-400" />
-          <CardTitle className="text-stone-200">Activity Log</CardTitle>
-          <Badge variant="default" size="sm">
+        <Inline gap='sm' align='center'>
+          <Icon name='activity' className='text-stone-400' />
+          <CardTitle className='text-stone-200'>Activity Log</CardTitle>
+          <Badge variant='default' size='sm'>
             {logs.length} entries
           </Badge>
         </Inline>
       </CardHeader>
-      
+
       <CardContent>
-        <Stack gap="sm" className="h-full max-h-[300px] overflow-y-auto">
+        <Stack gap='sm' className='h-full max-h-[300px] overflow-y-auto'>
           {logs.length === 0 ? (
-            <Stack gap="sm" align="center" className="py-8">
-              <Icon name="activity" size="xl" className="text-stone-500" />
-              <Text variant="muted" className="text-stone-400">No activity yet</Text>
+            <Stack gap='sm' align='center' className='py-8'>
+              <Icon name='activity' size='xl' className='text-stone-500' />
+              <Text variant='muted' className='text-stone-400'>
+                No activity yet
+              </Text>
             </Stack>
           ) : (
-            logs.map((log) => (
+            logs.map(log => (
               <div
                 key={log.id}
-                className="flex items-start gap-2 p-2 bg-gray-900/30 rounded-lg hover:bg-gray-900/40 transition-colors"
+                className='flex items-start gap-2 p-2 bg-gray-900/30 rounded-lg hover:bg-gray-900/40 transition-colors'
               >
-                <Icon name={getLogIcon(log.type)} className="text-stone-400 mt-0.5" size="sm" />
-                
-                <Stack gap="xs" className="flex-1 min-w-0">
-                  <Inline justify="between" align="start" className="gap-2">
-                    <Text variant="small" className="text-stone-300 break-words">
+                <Icon
+                  name={getLogIcon(log.type)}
+                  className='text-stone-400 mt-0.5'
+                  size='sm'
+                />
+
+                <Stack gap='xs' className='flex-1 min-w-0'>
+                  <Inline justify='between' align='start' className='gap-2'>
+                    <Text
+                      variant='small'
+                      className='text-stone-300 break-words'
+                    >
                       {log.message}
                       {log.count > 1 && (
-                        <span className="ml-2 px-1.5 py-0.5 bg-stone-600 text-stone-200 text-xs rounded-full font-mono">
+                        <span className='ml-2 px-1.5 py-0.5 bg-stone-600 text-stone-200 text-xs rounded-full font-mono'>
                           {log.count}
                         </span>
                       )}
                     </Text>
-                    <Badge variant="default" size="sm">
+                    <Badge variant='default' size='sm'>
                       {log.type}
                     </Badge>
                   </Inline>
-                  
-                  <Text variant="caption" className="text-stone-500 font-mono">
+
+                  <Text variant='caption' className='text-stone-500 font-mono'>
                     {log.time}
-                    {log.count > 1 && " (last occurrence)"}
+                    {log.count > 1 && ' (last occurrence)'}
                   </Text>
                 </Stack>
               </div>
