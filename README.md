@@ -4,10 +4,13 @@
 
 **Expo Go開発では必ずnpmを使用してください。pnpmは依存関係の問題で破綻します。**
 
-## ⚡ デバッグ ⚡
+## ⚡ デバッグ ⚡ - Get Started
 
-まず、スマホにExpo Goをインストールしてください。
+### 1. まず、スマホにExpo Goをインストールしてください。
+- [iOS](https://apps.apple.com/jp/app/expo-go/id982107779)
+- [Android](https://play.google.com/store/apps/details?id=host.exp.exponent&hl=ja&pli=1)
 
+### 2. OK
 ```bash
 # ターミナル1: Tauri デスクトップアプリ (サーバー機能内蔵)
 ./pc.sh
