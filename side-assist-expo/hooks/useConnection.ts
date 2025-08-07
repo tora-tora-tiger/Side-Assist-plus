@@ -16,6 +16,7 @@ export const useConnection = () => {
   // recordingStatusを使用してログに出力
   console.log("Current recording status:", recordingStatus);
   const hasStartedRecording = useRef(false);
+  const processedCompletedActionIds = useRef<Set<string>>(new Set());
   const connectionMonitorRef = useRef<ReturnType<typeof setInterval> | null>(
     null,
   );
@@ -354,39 +355,62 @@ export const useConnection = () => {
         const status = await NetworkService.getRecordingStatus(macIP, macPort);
         console.log("🎥 Recording status check:", status);
 
-        if (!status.isRecording && hasStartedRecording.current) {
-          console.log("🎉 Recording completed!");
+        // サーバーレスポンスの形式に合わせて判定を修正
+        const isCurrentlyRecording =
+          status.isRecording || status.status === "recording";
+        const isCompleted = status.status === "completed";
 
-          hasStartedRecording.current = false;
-          setRecordingStatus("completed");
+        // 録画完了状態を検出した場合は、録画していたとみなしてアラートを表示
+        // action_id が存在し、かつ未処理の場合のみアラート表示
+        if (
+          isCompleted &&
+          status.action_id &&
+          typeof status.action_id === "string"
+        ) {
+          // 同じ action_id のアラートを重複表示しないようにチェック
+          if (!processedCompletedActionIds.current.has(status.action_id)) {
+            console.log(
+              "🎉 Recording completed for new action:",
+              status.action_id,
+            );
 
-          AlertManager.showAlert("録画完了", "録画が完了しました", [
-            {
-              text: "OK",
-              onPress: async () => {
-                console.log("✅ User acknowledged recording completion");
-                resetRecordingState();
+            // この action_id を処理済みとしてマーク
+            processedCompletedActionIds.current.add(status.action_id);
+
+            hasStartedRecording.current = false;
+            setRecordingStatus("completed");
+
+            const message = status.message || "録画が完了しました";
+            AlertManager.showAlert("録画完了", message, [
+              {
+                text: "OK",
+                onPress: async () => {
+                  console.log("✅ User acknowledged recording completion");
+                  resetRecordingState();
+                },
               },
-            },
-          ]);
+            ]);
 
-          // 完了確認を送信
-          console.log("✅ Sending acknowledgment...");
-          await NetworkService.acknowledgeRecording(macIP, macPort);
+            // 完了確認を送信
+            console.log("✅ Sending acknowledgment...");
+            await NetworkService.acknowledgeRecording(macIP, macPort);
 
-          // カスタムアクションを再読み込み（新しく保存されたアクションを反映）
-          console.log(
-            "🔄 Reloading custom actions after recording completion...",
-          );
-          await loadCustomActions();
-
-          // 監視停止
-          stopRecordingMonitoring();
-        } else if (status.isRecording && !hasStartedRecording.current) {
+            // カスタムアクションを再読み込み（新しく保存されたアクションを反映）
+            console.log(
+              "🔄 Reloading custom actions after recording completion...",
+            );
+            await loadCustomActions();
+          } else {
+            console.log(
+              "🔄 Already processed completion for action:",
+              status.action_id,
+            );
+          }
+        } else if (isCurrentlyRecording && !hasStartedRecording.current) {
           console.log("🔴 Recording started!");
           hasStartedRecording.current = true;
           setRecordingStatus("recording");
-        } else if (status.isRecording) {
+        } else if (isCurrentlyRecording) {
           console.log("🔴 Still recording...");
         } else {
           console.log("⚪ Recording idle");
@@ -452,6 +476,11 @@ export const useConnection = () => {
     setMacIP("");
     setMacPort("");
     setPassword("");
+
+    // 録画関連の状態もリセット
+    hasStartedRecording.current = false;
+    processedCompletedActionIds.current.clear();
+    setRecordingStatus("idle");
 
     console.log("🔌 [useConnection] Connection disconnected and state reset");
     console.log("🔌 [useConnection] disconnect END");
