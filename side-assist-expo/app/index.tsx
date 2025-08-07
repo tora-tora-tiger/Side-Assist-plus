@@ -26,6 +26,9 @@ const App = () => {
     sendText,
     sendCopy,
     sendPaste,
+    executeCustomAction,
+    startRecording,
+    stopRecording,
     authenticateWithPassword,
     connectManually,
     disconnect,
@@ -118,6 +121,9 @@ const App = () => {
               onSendText={handleSendText}
               onSendCopy={sendCopy}
               onSendPaste={sendPaste}
+              onExecuteCustomAction={executeCustomAction}
+              onStartRecording={startRecording}
+              onStopRecording={stopRecording}
               onDisconnect={disconnect}
             />
           );

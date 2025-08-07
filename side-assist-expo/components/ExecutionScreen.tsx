@@ -9,6 +9,9 @@ interface ExecutionScreenProps {
   onSendText: (text: string) => Promise<void>;
   onSendCopy: () => Promise<boolean>;
   onSendPaste: () => Promise<boolean>;
+  onExecuteCustomAction: (actionId: string) => Promise<boolean>;
+  onStartRecording: (actionId: string, name: string, icon?: string) => Promise<boolean>;
+  onStopRecording: (actionId: string) => Promise<boolean>;
   onDisconnect: () => void;
 }
 
@@ -17,16 +20,22 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   onSendText,
   onSendCopy,
   onSendPaste,
+  onExecuteCustomAction,
+  onStartRecording,
+  onStopRecording,
   onDisconnect,
 }) => {
   const [buttonScales] = useState(() => ({
     ultradeepthink: new Animated.Value(1),
     copy: new Animated.Value(1),
     paste: new Animated.Value(1),
-    action4: new Animated.Value(1),
+    record: new Animated.Value(1),
     action5: new Animated.Value(1),
     action6: new Animated.Value(1),
   }));
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingActionId, setRecordingActionId] = useState<string | null>(null);
 
   // 6つのアクション定義
   const actions = [
@@ -52,11 +61,11 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
       type: 'clipboard' as const,
     },
     {
-      id: 'action4',
-      icon: <MaterialIcons name="rocket-launch" size={32} color="#ffffff" />,
-      text: 'action4',
-      backgroundColor: '#ef4444', // Red
-      type: 'text' as const,
+      id: 'record',
+      icon: <MaterialIcons name={isRecording ? "stop" : "radio-button-checked"} size={32} color="#ffffff" />,
+      text: isRecording ? 'stop recording' : 'record action',
+      backgroundColor: isRecording ? '#ef4444' : '#f59e0b', // Red when recording, Amber when not
+      type: 'record' as const,
     },
     {
       id: 'action5',
@@ -111,6 +120,35 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
             throw new Error('Paste command failed');
           }
         }
+      } else if (action.type === 'record') {
+        if (isRecording) {
+          // Stop recording
+          console.log(`⏹️ [ExecutionScreen] Stopping recording for action: ${recordingActionId}`);
+          if (recordingActionId) {
+            const success = await onStopRecording(recordingActionId);
+            if (success) {
+              setIsRecording(false);
+              setRecordingActionId(null);
+              console.log(`✅ [ExecutionScreen] Recording stopped successfully`);
+            } else {
+              throw new Error('Failed to stop recording');
+            }
+          }
+        } else {
+          // Start recording
+          const actionId = `custom_${Date.now()}`;
+          const actionName = `Custom Action ${Date.now()}`;
+          console.log(`🔴 [ExecutionScreen] Starting recording for action: ${actionName} (${actionId})`);
+          
+          const success = await onStartRecording(actionId, actionName, 'build');
+          if (success) {
+            setIsRecording(true);
+            setRecordingActionId(actionId);
+            console.log(`✅ [ExecutionScreen] Recording started successfully`);
+          } else {
+            throw new Error('Failed to start recording');
+          }
+        }
       } else {
         console.log(`🚀 [ExecutionScreen] Sending text: "${action.text}"`);
         await onSendText(action.text);
@@ -118,9 +156,12 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
       }
     } catch (error) {
       console.error('🚨 [ExecutionScreen] Action press error:', error);
-      const errorMessage = action.type === 'clipboard' 
-        ? `${action.text}コマンドの実行中にエラーが発生しました`
-        : 'テキストの送信中にエラーが発生しました';
+      let errorMessage = 'テキストの送信中にエラーが発生しました';
+      if (action.type === 'clipboard') {
+        errorMessage = `${action.text}コマンドの実行中にエラーが発生しました`;
+      } else if (action.type === 'record') {
+        errorMessage = isRecording ? '録画の停止中にエラーが発生しました' : '録画の開始中にエラーが発生しました';
+      }
       AlertManager.showAlert('エラー', errorMessage);
     }
   };
@@ -183,7 +224,7 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
                   <ActionButton
                     icon={actions[3].icon}
                     onPress={() => handleActionPress(actions[3])}
-                    animatedValue={buttonScales.action4}
+                    animatedValue={buttonScales.record}
                     backgroundColor={actions[3].backgroundColor}
                   />
                 </View>

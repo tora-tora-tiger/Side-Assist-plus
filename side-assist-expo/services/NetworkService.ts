@@ -68,18 +68,28 @@ export class NetworkService {
     text: string,
     password?: string,
   ): Promise<boolean> {
+    return this.sendAction(ip, port, { type: 'text', text }, password);
+  }
+
+  // Unified action endpoint
+  static async sendAction(
+    ip: string,
+    port: string,
+    action: any,
+    password?: string,
+  ): Promise<boolean> {
     try {
       const response = await fetch(`http://${ip}:${port}/input`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text, password }),
+        body: JSON.stringify({ action, password }),
       });
 
       return response.ok;
     } catch (error) {
-      console.error('Failed to send text:', error);
+      console.error('Failed to send action:', error);
       return false;
     }
   }
@@ -122,65 +132,45 @@ export class NetworkService {
     }
   }
 
-  static async sendCopyCommand(
+
+  // Custom action methods
+  static async executeCustomAction(
     ip: string,
     port: string,
+    actionId: string,
     password?: string,
   ): Promise<boolean> {
-    console.log(`📋 [NetworkService] Sending copy command to ${ip}:${port}`);
-
-    try {
-      const response = await fetch(`http://${ip}:${port}/copy`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ password }),
-      });
-
-      if (response.ok) {
-        console.log(`✅ [NetworkService] Copy command sent successfully`);
-        return true;
-      } else {
-        console.log(
-          `❌ [NetworkService] Copy command failed: ${response.status}`,
-        );
-        return false;
-      }
-    } catch (error) {
-      console.error('💥 [NetworkService] Copy command error:', error);
-      return false;
-    }
+    console.log(`🎭 [NetworkService] Executing custom action: ${actionId}`);
+    return this.sendAction(ip, port, { type: 'custom', action_id: actionId }, password);
   }
 
-  static async sendPasteCommand(
+  static async startRecording(
     ip: string,
     port: string,
+    actionId: string,
+    name: string,
+    icon?: string,
     password?: string,
   ): Promise<boolean> {
-    console.log(`📋 [NetworkService] Sending paste command to ${ip}:${port}`);
+    console.log(`🔴 [NetworkService] Starting recording for action: ${name} (${actionId})`);
+    return this.sendAction(ip, port, {
+      type: 'record_start',
+      action_id: actionId,
+      name,
+      icon,
+    }, password);
+  }
 
-    try {
-      const response = await fetch(`http://${ip}:${port}/paste`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ password }),
-      });
-
-      if (response.ok) {
-        console.log(`✅ [NetworkService] Paste command sent successfully`);
-        return true;
-      } else {
-        console.log(
-          `❌ [NetworkService] Paste command failed: ${response.status}`,
-        );
-        return false;
-      }
-    } catch (error) {
-      console.error('💥 [NetworkService] Paste command error:', error);
-      return false;
-    }
+  static async stopRecording(
+    ip: string,
+    port: string,
+    actionId: string,
+    password?: string,
+  ): Promise<boolean> {
+    console.log(`⏹️ [NetworkService] Stopping recording for action: ${actionId}`);
+    return this.sendAction(ip, port, {
+      type: 'record_stop',
+      action_id: actionId,
+    }, password);
   }
 }

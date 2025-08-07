@@ -32,6 +32,31 @@ pub struct ClientInfo {
     pub last_health_check: u64,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CustomAction {
+    pub id: String,
+    pub name: String,
+    pub icon: Option<String>,
+    pub key_sequence: Vec<RecordedKey>,
+    pub created_at: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RecordedKey {
+    pub key: String, // Key名を文字列として保存
+    pub event_type: String, // "press" or "release"
+    pub timestamp: u64, // 相対タイムスタンプ（ミリ秒）
+}
+
+#[derive(Clone, Debug)]
+pub struct RecordingSession {
+    pub action_id: String,
+    pub name: String,
+    pub icon: Option<String>,
+    pub start_time: u64,
+    pub keys: Vec<RecordedKey>,
+}
+
 type AppState = Arc<Mutex<ServerState>>;
 
 #[derive(Clone, Debug)]
@@ -42,6 +67,9 @@ pub struct ServerState {
     pub one_time_password: Option<String>,
     pub password_expiry: Option<u64>,
     pub operation_in_progress: bool,
+    pub custom_actions: HashMap<String, CustomAction>,
+    pub recording_session: Option<RecordingSession>,
+    pub key_listener_active: bool,
 }
 
 impl Default for ServerState {
@@ -53,24 +81,43 @@ impl Default for ServerState {
             one_time_password: None,
             password_expiry: None,
             operation_in_progress: false,
+            custom_actions: HashMap::new(), // Will be loaded on startup
+            recording_session: None,
+            key_listener_active: false,
         }
     }
 }
 
 #[derive(Deserialize)]
 struct InputRequest {
-    text: String,
-    password: Option<String>,
+    pub action: ActionType,
+    pub password: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(tag = "type")]
+pub enum ActionType {
+    #[serde(rename = "text")]
+    Text { text: String },
+    #[serde(rename = "copy")]
+    Copy,
+    #[serde(rename = "paste")]
+    Paste,
+    #[serde(rename = "custom")]
+    Custom { action_id: String },
+    #[serde(rename = "record_start")]
+    RecordStart { 
+        action_id: String,
+        name: String,
+        icon: Option<String>,
+    },
+    #[serde(rename = "record_stop")]
+    RecordStop { action_id: String },
 }
 
 #[derive(Deserialize)]  
 struct AuthRequest {
     password: String,
-}
-
-#[derive(Deserialize)]
-struct ClipboardRequest {
-    password: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -641,6 +688,152 @@ async fn simulate_paste() -> Result<String, String> {
     }).await.map_err(|e| format!("Task error: {}", e))?
 }
 
+// キー録画開始
+async fn start_key_recording(
+    state: AppState,
+    action_id: String,
+    name: String,
+    icon: Option<String>,
+) -> Result<String, String> {
+    let mut state_guard = state.lock().map_err(|_| "Failed to lock state".to_string())?;
+    
+    // 既に録画中の場合は停止
+    if state_guard.recording_session.is_some() {
+        return Err("Recording already in progress. Stop current recording first.".to_string());
+    }
+    
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|_| "Failed to get system time")?
+        .as_secs();
+    
+    // 録画セッション開始
+    let session = RecordingSession {
+        action_id: action_id.clone(),
+        name: name.clone(),
+        icon: icon.clone(),
+        start_time: now,
+        keys: Vec::new(),
+    };
+    
+    state_guard.recording_session = Some(session);
+    state_guard.key_listener_active = true;
+    
+    // キーリスナーを開始（別スレッドで）
+    let state_clone = Arc::clone(&state);
+    tokio::spawn(async move {
+        key_listener_task(state_clone).await;
+    });
+    
+    println!("🔴 Key recording started for action: {} ({})", name, action_id);
+    Ok(format!("Key recording started for action: {}", name))
+}
+
+// キー録画停止
+async fn stop_key_recording(
+    state: AppState,
+    action_id: String,
+) -> Result<String, String> {
+    let session = {
+        let mut state_guard = state.lock().map_err(|_| "Failed to lock state".to_string())?;
+        state_guard.key_listener_active = false;
+        
+        match state_guard.recording_session.take() {
+            Some(session) if session.action_id == action_id => session,
+            Some(_) => return Err("Different recording session is active".to_string()),
+            None => return Err("No recording session active".to_string()),
+        }
+    };
+    
+    // 少し待って、最後のキーイベントをキャッチ
+    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+    
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|_| "Failed to get system time")?
+        .as_secs();
+    
+    // カスタムアクションを作成して保存
+    let custom_action = CustomAction {
+        id: session.action_id.clone(),
+        name: session.name.clone(),
+        icon: session.icon,
+        key_sequence: session.keys,
+        created_at: now,
+    };
+    
+    // 状態に追加して保存
+    {
+        let mut state_guard = state.lock().map_err(|_| "Failed to lock state".to_string())?;
+        state_guard.custom_actions.insert(session.action_id.clone(), custom_action.clone());
+        
+        // ディスクに保存
+        // TODO: Implement save_custom_actions
+        // if let Err(e) = save_custom_actions(&state_guard.custom_actions) {
+        //     eprintln!("⚠️ Failed to save custom actions: {}", e);
+        // }
+    }
+    
+    println!("⏹️ Key recording stopped and saved for action: {} ({})", session.name, session.action_id);
+    println!("📊 Recorded {} key events", custom_action.key_sequence.len());
+    
+    Ok(format!(
+        "Key recording stopped. Recorded {} key events for action: {}",
+        custom_action.key_sequence.len(),
+        session.name
+    ))
+}
+
+// キーリスナータスク（シンプルなモック実装）
+async fn key_listener_task(state: AppState) {
+    println!("🎧 Key listener task started");
+    
+    // シンプルなモック実装：実際のキーリスナーは後で実装
+    // 今はダミーのキーシーケンスを作成する
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
+    let mut key_count = 0;
+    
+    loop {
+        interval.tick().await;
+        
+        let should_stop = {
+            if let Ok(mut state_guard) = state.lock() {
+                if !state_guard.key_listener_active {
+                    true
+                } else if let Some(ref mut session) = state_guard.recording_session {
+                    // ダミーキーシーケンスを追加
+                    let now = SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_millis() as u64;
+                    let relative_time = now.saturating_sub(session.start_time * 1000);
+                    
+                    let dummy_key = RecordedKey {
+                        key: format!("Key{}", char::from(65 + (key_count % 26))), // A-Z
+                        event_type: "press".to_string(),
+                        timestamp: relative_time,
+                    };
+                    
+                    session.keys.push(dummy_key);
+                    key_count += 1;
+                    
+                    println!("⬇️ Mock key recorded: Key{}", char::from(65 + ((key_count - 1) % 26)));
+                    false
+                } else {
+                    true
+                }
+            } else {
+                true
+            }
+        };
+        
+        if should_stop {
+            println!("🔇 Key listener task stopping");
+            break;
+        }
+    }
+}
+
 async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let port = {
         let state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
@@ -650,10 +843,7 @@ async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Erro
     let app = Router::new()
         .route("/health", get(health_check))
         .route("/input", post(handle_input))
-        .route("/type", post(handle_input))  // モバイルアプリとの互換性のため
         .route("/auth", post(handle_auth))
-        .route("/copy", post(handle_copy))
-        .route("/paste", post(handle_paste))
         .layer(CorsLayer::permissive())
         .with_state(Arc::clone(&state));
 
@@ -665,11 +855,8 @@ async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Erro
     println!("🌐 Server accessible from network on port {}", port);
     println!("📱 Mobile endpoints:");
     println!("  - GET  /health - Health check with client tracking");
-    println!("  - POST /input  - Keyboard input simulation (requires password)");
-    println!("  - POST /type   - Keyboard input simulation (mobile compatibility, requires password)");
+    println!("  - POST /input  - Unified action endpoint (requires password)");
     println!("  - POST /auth   - Authentication endpoint");
-    println!("  - POST /copy   - OS-specific copy command (requires password)");
-    println!("  - POST /paste  - OS-specific paste command (requires password)");
     
     // サーバーの実行中に定期的にstateをチェックして停止する
     let server_task = tokio::spawn(async move {
@@ -784,7 +971,7 @@ async fn handle_input(
         };
         
         if !is_valid {
-            println!("❌ Invalid or expired password provided");
+        println!("❌ Invalid or expired password provided");
             return Err(StatusCode::UNAUTHORIZED);
         }
     } else {
@@ -792,19 +979,60 @@ async fn handle_input(
         return Err(StatusCode::UNAUTHORIZED);
     }
     
-    println!("⌨️ Processing authenticated keyboard input: '{}'", payload.text);
+    println!("🎯 Processing authenticated input action: {:?}", payload.action);
     
-    match simulate_typing(payload.text.clone()).await {
-        Ok(_) => {
-            println!("✅ Keyboard simulation complete");
+    // アクションタイプに基づいて処理を分岐
+    let result = match &payload.action {
+        ActionType::Text { text } => {
+            println!("⌨️ Processing text input: '{}'", text);
+            simulate_typing(text.clone()).await
+        }
+        ActionType::Copy => {
+            println!("📋 Processing copy command");
+            simulate_copy().await
+        }
+        ActionType::Paste => {
+            println!("📋 Processing paste command");
+            simulate_paste().await
+        }
+        ActionType::Custom { action_id } => {
+            println!("🎭 Processing custom action: {}", action_id);
+            let action = {
+                let state_guard = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                state_guard.custom_actions.get(action_id).cloned()
+            };
+            
+            if let Some(_action) = action {
+                // TODO: Implement execute_custom_action
+                Ok(format!("Mock execution of custom action: {}", action_id))
+            } else {
+                Err(format!("Custom action '{}' not found", action_id))
+            }
+        }
+        ActionType::RecordStart { action_id, name, icon } => {
+            println!("🔴 Starting key recording for action: {} ({})", name, action_id);
+            start_key_recording(Arc::clone(&state), action_id.clone(), name.clone(), icon.clone()).await
+        }
+        ActionType::RecordStop { action_id } => {
+            println!("⏹️ Stopping key recording for action: {}", action_id);
+            stop_key_recording(Arc::clone(&state), action_id.clone()).await
+        }
+    };
+    
+    match result {
+        Ok(message) => {
+            println!("✅ Input processing complete");
             Ok(JsonResponse(ApiResponse {
                 success: true,
-                message: "Text input successful".to_string(),
+                message,
             }))
         }
         Err(e) => {
-            eprintln!("❌ Keyboard simulation failed: {}", e);
-            Err(StatusCode::INTERNAL_SERVER_ERROR)
+            eprintln!("❌ Input processing failed: {}", e);
+            Ok(JsonResponse(ApiResponse {
+                success: false,
+                message: e,
+            }))
         }
     }
 }
@@ -837,100 +1065,6 @@ async fn handle_auth(
     } else {
         println!("❌ Authentication failed");
         Err(StatusCode::UNAUTHORIZED)
-    }
-}
-
-async fn handle_copy(
-    State(state): State<AppState>,
-    Json(payload): Json<ClipboardRequest>,
-) -> Result<JsonResponse<ApiResponse>, StatusCode> {
-    // パスワード認証チェック
-    if let Some(provided_password) = &payload.password {
-        let is_valid = {
-            let state = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-            
-            if let (Some(stored_password), Some(expiry)) = (&state.one_time_password, state.password_expiry) {
-                let now = match SystemTime::now().duration_since(UNIX_EPOCH) {
-                    Ok(duration) => duration.as_secs(),
-                    Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR),
-                };
-                
-                provided_password == stored_password && now < expiry
-            } else {
-                false
-            }
-        };
-        
-        if !is_valid {
-            println!("❌ Invalid or expired password provided for copy command");
-            return Err(StatusCode::UNAUTHORIZED);
-        }
-    } else {
-        println!("❌ No password provided for copy command");
-        return Err(StatusCode::UNAUTHORIZED);
-    }
-    
-    println!("📋 Processing authenticated copy command");
-    
-    match simulate_copy().await {
-        Ok(message) => {
-            println!("✅ Copy command complete");
-            Ok(JsonResponse(ApiResponse {
-                success: true,
-                message,
-            }))
-        }
-        Err(e) => {
-            eprintln!("❌ Copy command failed: {}", e);
-            Err(StatusCode::INTERNAL_SERVER_ERROR)
-        }
-    }
-}
-
-async fn handle_paste(
-    State(state): State<AppState>,
-    Json(payload): Json<ClipboardRequest>,
-) -> Result<JsonResponse<ApiResponse>, StatusCode> {
-    // パスワード認証チェック
-    if let Some(provided_password) = &payload.password {
-        let is_valid = {
-            let state = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-            
-            if let (Some(stored_password), Some(expiry)) = (&state.one_time_password, state.password_expiry) {
-                let now = match SystemTime::now().duration_since(UNIX_EPOCH) {
-                    Ok(duration) => duration.as_secs(),
-                    Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR),
-                };
-                
-                provided_password == stored_password && now < expiry
-            } else {
-                false
-            }
-        };
-        
-        if !is_valid {
-            println!("❌ Invalid or expired password provided for paste command");
-            return Err(StatusCode::UNAUTHORIZED);
-        }
-    } else {
-        println!("❌ No password provided for paste command");
-        return Err(StatusCode::UNAUTHORIZED);
-    }
-    
-    println!("📋 Processing authenticated paste command");
-    
-    match simulate_paste().await {
-        Ok(message) => {
-            println!("✅ Paste command complete");
-            Ok(JsonResponse(ApiResponse {
-                success: true,
-                message,
-            }))
-        }
-        Err(e) => {
-            eprintln!("❌ Paste command failed: {}", e);
-            Err(StatusCode::INTERNAL_SERVER_ERROR)
-        }
     }
 }
 

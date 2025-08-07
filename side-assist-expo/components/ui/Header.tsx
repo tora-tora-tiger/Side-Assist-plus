@@ -13,6 +13,8 @@ interface HeaderProps {
   showBack?: boolean;
   transparent?: boolean;
   centerTitle?: boolean;
+  showShadow?: boolean;
+  shadowDirection?: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -26,6 +28,8 @@ export const Header: React.FC<HeaderProps> = ({
   showBack = false,
   transparent = false,
   centerTitle = false,
+  showShadow = false,
+  shadowDirection = 'down',
 }) => {
   return (
     <>

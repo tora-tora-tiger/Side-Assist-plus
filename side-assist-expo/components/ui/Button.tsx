@@ -149,8 +149,9 @@ export const Button: React.FC<ButtonProps> = ({
           {icon && iconPosition === 'left' && (
             <View className="mr-2">
               {React.cloneElement(icon as React.ReactElement, { 
+                ...((icon as React.ReactElement).props || {}),
                 color: getIconColor() 
-              })}
+              } as any)}
             </View>
           )}
           <Text className={getTextClasses()}>
@@ -159,8 +160,9 @@ export const Button: React.FC<ButtonProps> = ({
           {icon && iconPosition === 'right' && (
             <View className="ml-2">
               {React.cloneElement(icon as React.ReactElement, { 
+                ...((icon as React.ReactElement).props || {}),
                 color: getIconColor() 
-              })}
+              } as any)}
             </View>
           )}
         </>

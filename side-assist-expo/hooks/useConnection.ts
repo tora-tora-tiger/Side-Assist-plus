@@ -200,7 +200,7 @@ export const useConnection = () => {
         return false;
       }
 
-      return await NetworkService.sendCopyCommand(macIP, macPort, password);
+      return await NetworkService.sendAction(macIP, macPort, { type: 'copy' }, password);
     },
     [macIP, macPort, isConnected, isAuthenticated, password],
   );
@@ -211,7 +211,40 @@ export const useConnection = () => {
         return false;
       }
 
-      return await NetworkService.sendPasteCommand(macIP, macPort, password);
+      return await NetworkService.sendAction(macIP, macPort, { type: 'paste' }, password);
+    },
+    [macIP, macPort, isConnected, isAuthenticated, password],
+  );
+
+  const executeCustomAction = useCallback(
+    async (actionId: string): Promise<boolean> => {
+      if (!macIP || !macPort || !isConnected || !isAuthenticated) {
+        return false;
+      }
+
+      return await NetworkService.executeCustomAction(macIP, macPort, actionId, password);
+    },
+    [macIP, macPort, isConnected, isAuthenticated, password],
+  );
+
+  const startRecording = useCallback(
+    async (actionId: string, name: string, icon?: string): Promise<boolean> => {
+      if (!macIP || !macPort || !isConnected || !isAuthenticated) {
+        return false;
+      }
+
+      return await NetworkService.startRecording(macIP, macPort, actionId, name, icon, password);
+    },
+    [macIP, macPort, isConnected, isAuthenticated, password],
+  );
+
+  const stopRecording = useCallback(
+    async (actionId: string): Promise<boolean> => {
+      if (!macIP || !macPort || !isConnected || !isAuthenticated) {
+        return false;
+      }
+
+      return await NetworkService.stopRecording(macIP, macPort, actionId, password);
     },
     [macIP, macPort, isConnected, isAuthenticated, password],
   );
@@ -313,6 +346,9 @@ export const useConnection = () => {
     sendText,
     sendCopy,
     sendPaste,
+    executeCustomAction,
+    startRecording,
+    stopRecording,
     authenticateWithPassword,
     connectManually,
     disconnect,
