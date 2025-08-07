@@ -100,21 +100,50 @@ npx expo start                            # Expo Go開発サーバー起動
 
 iPhone/Androidで「ultradeepthink」ボタン → Mac/Windows/Linuxで自動入力される
 
-## 教訓
+## 🚨 重要な教訓・注意事項 🚨
 
-~~旧時代の話~~
-- androidのビルドで、node_modulesの構造の違いでpnpmではエラーがおきたから。
+### 🔴 **絶対に避けるべきこと**
 
-- react nativeだとtabler-iconとか使えなかった。
+#### ⚡ **React Native Modal バグ - 致命的な問題** ⚡
+```typescript
+// ❌ 絶対に使用禁止！Android で表示が崩れる
+import { Modal } from 'react-native';
+
+<Modal visible={true} transparent>
+  {/* ExecutionScreen内で2回目以降の表示が左上に崩れる */}
+</Modal>
+```
+
+**解決策:**
+```typescript
+// ✅ 絶対位置オーバーレイを使用
+<View className="absolute inset-0 flex-1 justify-center items-center bg-black/50 z-[10000]">
+  <View className="bg-white rounded-2xl p-6 w-11/12 max-w-sm">
+    {/* 安定した表示 */}
+  </View>
+</View>
+```
+
+**原因:** React Native の Modal コンポーネントは ExecutionScreen のような複雑なスクリーン内で状態が変化すると、Android で描画位置が破綻する既知のバグがあります。
+
 ---
 
-⏺ TailwindCSS v4とNativeWind v4の最新情報（2025年）:
+### 📦 **パッケージ管理の落とし穴**
 
-  現在、NativeWind v4はTailwindCSS v3.4.xを使用しています。TailwindCSS 
-  v4はまだNativeWindでは完全にサポートされていません。
+#### ❌ **pnpm 使用禁止** (Expo プロジェクト)
+- androidのビルドで、node_modulesの構造の違いでpnpmではエラーがおきたから。
+- expoで、pnpmつかうと破壊される(n敗) https://github.com/expo/expo/issues/28703
 
+#### ❌ **アイコンライブラリ制限**
+- react nativeだとtabler-iconとか使えなかった。
 
-- expoで、pnpmつかうと破壊される(n敗)https://github.com/expo/expo/issues/28703
+---
+
+### 🎨 **スタイリングの制約**
+
+⏺ **TailwindCSS v4とNativeWind v4の最新情報（2025年）:**
+
+現在、NativeWind v4はTailwindCSS v3.4.xを使用しています。TailwindCSS v4はまだNativeWindでは完全にサポートされていません。
 
 ## 🛠️ 技術スタック
 

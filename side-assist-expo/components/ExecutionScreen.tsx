@@ -73,15 +73,15 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
 
   // グローバルなリセット関数を作成（useConnectionで呼び出される）
   useEffect(() => {
-    // グローバルなwindowオブジェクトに関数を追加
-    (
-      window as { resetExecutionScreenRecordingState?: () => void }
-    ).resetExecutionScreenRecordingState = handleResetRecordingState;
+    // React Native環境ではglobalオブジェクトを使用
+    const globalObj = global as {
+      resetExecutionScreenRecordingState?: () => void;
+    };
+    globalObj.resetExecutionScreenRecordingState = handleResetRecordingState;
 
     return () => {
       // クリーンアップ
-      delete (window as { resetExecutionScreenRecordingState?: () => void })
-        .resetExecutionScreenRecordingState;
+      delete globalObj.resetExecutionScreenRecordingState;
     };
   }, [handleResetRecordingState]);
 
@@ -252,11 +252,7 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
         onSettingsPress={onSettingsPress}
       />
 
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="flex-grow"
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* ステータス表示 */}
         <View className="px-6 py-4">
           <StatusIndicator isConnected={true} variant="detailed" />

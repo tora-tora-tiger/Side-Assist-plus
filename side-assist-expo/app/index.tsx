@@ -77,7 +77,9 @@ const App = () => {
       setAlertData(alert);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const handleSendText = async (text: string) => {
