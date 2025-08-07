@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::fs;
+use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use rand::Rng;
 use lazy_static::lazy_static;
@@ -14,21 +16,9 @@ use axum::{
 };
 use tower_http::cors::CorsLayer;
 // ENIGOは完全に削除し、rdevを使用
-use rdev::{EventType, Event};
+use rdev::{Key, EventType, Event};
 use qrcode::QrCode;
 use qrcode::render::svg;
-
-// モジュール宣言
-mod network;
-mod storage;
-mod keyboard;
-mod simulation;
-
-// モジュールからのインポート  
-use network::get_local_ip_address;
-use storage::{save_custom_actions, load_custom_actions};
-use keyboard::{string_to_key, key_to_string};
-use simulation::{simulate_typing, simulate_copy, simulate_paste};
 
 // グローバル録画状態（rdevコールバック用）
 lazy_static! {
@@ -331,9 +321,118 @@ async fn generate_qr_code(state: tauri::State<'_, AppState>) -> Result<String, S
     Ok(svg_string)
 }
 
+fn get_local_ip_address() -> Option<String> {
+    use std::net::UdpSocket;
+    
+    // 最も確実な方法：UDP socket を使って外部に接続し、実際のローカルIPを取得
+    if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
+        if socket.connect("8.8.8.8:80").is_ok() {
+            if let Ok(addr) = socket.local_addr() {
+                let ip = addr.ip().to_string();
+                println!("🌐 Detected local IP address: {}", ip);
+                return Some(ip);
+            }
+        }
+    }
+    
+    // 別のアプローチ：複数の外部サーバーに接続を試行
+    let test_servers = ["8.8.8.8:80", "1.1.1.1:80", "208.67.222.222:80"];
+    for server in &test_servers {
+        if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
+            if socket.connect(server).is_ok() {
+                if let Ok(addr) = socket.local_addr() {
+                    let ip = addr.ip().to_string();
+                    println!("🌐 Detected local IP address via {}: {}", server, ip);
+                    return Some(ip);
+                }
+            }
+        }
+    }
+    
+    println!("❌ Could not detect local IP address");
+    None
+}
 
+// カスタムアクション保存ファイルのパスを取得
+fn get_custom_actions_file_path() -> Result<PathBuf, String> {
+    // アプリケーション固有のデータディレクトリを取得
+    let app_data_dir = if cfg!(target_os = "macos") {
+        dirs::home_dir()
+            .ok_or("Failed to get home directory")?
+            .join("Library")
+            .join("Application Support")
+            .join("Side Assist Plus")
+    } else if cfg!(target_os = "windows") {
+        dirs::data_dir()
+            .ok_or("Failed to get data directory")?
+            .join("Side Assist Plus")
+    } else {
+        dirs::data_dir()
+            .ok_or("Failed to get data directory")?
+            .join("side-assist-plus")
+    };
 
+    // ディレクトリが存在しない場合は作成
+    if !app_data_dir.exists() {
+        fs::create_dir_all(&app_data_dir)
+            .map_err(|e| format!("Failed to create app data directory: {}", e))?;
+        println!("📁 Created app data directory: {:?}", app_data_dir);
+    }
 
+    Ok(app_data_dir.join("custom_actions.json"))
+}
+
+// カスタムアクションをファイルに保存
+async fn save_custom_actions(actions: &HashMap<String, CustomAction>) -> Result<(), String> {
+    let file_path = get_custom_actions_file_path()?;
+    
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|_| "Failed to get current time")?
+        .as_secs();
+
+    let storage = CustomActionsStorage {
+        actions: actions.values().cloned().collect(),
+        version: 1,
+        last_updated: now,
+    };
+
+    let json_content = serde_json::to_string_pretty(&storage)
+        .map_err(|e| format!("Failed to serialize custom actions: {}", e))?;
+
+    // 非同期的にファイルに書き込み
+    tokio::fs::write(&file_path, json_content).await
+        .map_err(|e| format!("Failed to write custom actions to file: {}", e))?;
+
+    println!("💾 Saved {} custom actions to: {:?}", actions.len(), file_path);
+    Ok(())
+}
+
+// カスタムアクションをファイルから読み込み
+async fn load_custom_actions() -> Result<HashMap<String, CustomAction>, String> {
+    let file_path = get_custom_actions_file_path()?;
+    
+    // ファイルが存在しない場合は空のHashMapを返す
+    if !file_path.exists() {
+        println!("📂 No custom actions file found, starting with empty collection");
+        return Ok(HashMap::new());
+    }
+
+    // ファイル内容を非同期的に読み込み
+    let json_content = tokio::fs::read_to_string(&file_path).await
+        .map_err(|e| format!("Failed to read custom actions file: {}", e))?;
+
+    let storage: CustomActionsStorage = serde_json::from_str(&json_content)
+        .map_err(|e| format!("Failed to parse custom actions file: {}", e))?;
+
+    let mut actions_map = HashMap::new();
+    for action in storage.actions {
+        actions_map.insert(action.id.clone(), action);
+    }
+
+    println!("📂 Loaded {} custom actions from: {:?}", actions_map.len(), file_path);
+    Ok(actions_map)
+}
 
 // 保存されたキーシーケンスを再生する関数
 async fn execute_custom_action(action: &CustomAction) -> Result<String, String> {
@@ -388,6 +487,63 @@ async fn execute_custom_action(action: &CustomAction) -> Result<String, String> 
     }).await.map_err(|e| format!("Task error: {}", e))?
 }
 
+// 文字列からrdev::Keyに変換する関数（key_to_stringの逆）
+fn string_to_key(key_str: &str) -> Option<Key> {
+    match key_str {
+        "KeyA" => Some(Key::KeyA),
+        "KeyB" => Some(Key::KeyB),
+        "KeyC" => Some(Key::KeyC),
+        "KeyD" => Some(Key::KeyD),
+        "KeyE" => Some(Key::KeyE),
+        "KeyF" => Some(Key::KeyF),
+        "KeyG" => Some(Key::KeyG),
+        "KeyH" => Some(Key::KeyH),
+        "KeyI" => Some(Key::KeyI),
+        "KeyJ" => Some(Key::KeyJ),
+        "KeyK" => Some(Key::KeyK),
+        "KeyL" => Some(Key::KeyL),
+        "KeyM" => Some(Key::KeyM),
+        "KeyN" => Some(Key::KeyN),
+        "KeyO" => Some(Key::KeyO),
+        "KeyP" => Some(Key::KeyP),
+        "KeyQ" => Some(Key::KeyQ),
+        "KeyR" => Some(Key::KeyR),
+        "KeyS" => Some(Key::KeyS),
+        "KeyT" => Some(Key::KeyT),
+        "KeyU" => Some(Key::KeyU),
+        "KeyV" => Some(Key::KeyV),
+        "KeyW" => Some(Key::KeyW),
+        "KeyX" => Some(Key::KeyX),
+        "KeyY" => Some(Key::KeyY),
+        "KeyZ" => Some(Key::KeyZ),
+        "Num0" => Some(Key::Num0),
+        "Num1" => Some(Key::Num1),
+        "Num2" => Some(Key::Num2),
+        "Num3" => Some(Key::Num3),
+        "Num4" => Some(Key::Num4),
+        "Num5" => Some(Key::Num5),
+        "Num6" => Some(Key::Num6),
+        "Num7" => Some(Key::Num7),
+        "Num8" => Some(Key::Num8),
+        "Num9" => Some(Key::Num9),
+        "Space" => Some(Key::Space),
+        "MetaLeft" => Some(Key::MetaLeft),
+        "MetaRight" => Some(Key::MetaRight),
+        "ControlLeft" => Some(Key::ControlLeft),
+        "ControlRight" => Some(Key::ControlRight),
+        "ShiftLeft" => Some(Key::ShiftLeft),
+        "ShiftRight" => Some(Key::ShiftRight),
+        "Alt" => Some(Key::Alt),
+        "Enter" => Some(Key::Return),
+        "Escape" => Some(Key::Escape),
+        "Backspace" => Some(Key::Backspace),
+        "Tab" => Some(Key::Tab),
+        _ => {
+            println!("⚠️ Unsupported key string: {}", key_str);
+            None
+        }
+    }
+}
 
 #[tauri::command]
 async fn set_port(state: tauri::State<'_, AppState>, port: u16) -> Result<String, String> {
@@ -607,10 +763,239 @@ async fn open_system_preferences() -> Result<String, String> {
     }
 }
 
+#[tauri::command]
+async fn simulate_typing(text: String) -> Result<String, String> {
+    println!("⌨️ [simulate_typing] Starting text simulation using rdev: '{}'", text);
+    
+    tokio::task::spawn_blocking(move || {
+        use rdev::{simulate, EventType, SimulateError};
+        use std::{thread, time};
+        
+        fn send(event_type: &EventType) -> Result<(), SimulateError> {
+            let delay = time::Duration::from_millis(30);
+            let result = simulate(event_type);
+            thread::sleep(delay);
+            result
+        }
+        
+        // 文字列を1文字ずつシミュレート
+        for ch in text.chars() {
+            if let Some(key) = char_to_key(ch) {
+                println!("🔑 [simulate_typing] Typing character: '{}'", ch);
+                send(&EventType::KeyPress(key))
+                    .map_err(|_| format!("Failed to press key for character: {}", ch))?;
+                send(&EventType::KeyRelease(key))
+                    .map_err(|_| format!("Failed to release key for character: {}", ch))?;
+            } else {
+                println!("⚠️ [simulate_typing] Unsupported character: '{}'", ch);
+            }
+        }
+        
+        println!("✅ [simulate_typing] Text simulation completed successfully");
+        Ok(format!("Successfully typed: {}", text))
+    }).await.map_err(|e| format!("Task error: {}", e))?
+}
 
+// 文字をrdevのKeyに変換する関数
+fn char_to_key(ch: char) -> Option<Key> {
+    match ch.to_ascii_lowercase() {
+        'a' => Some(Key::KeyA),
+        'b' => Some(Key::KeyB),
+        'c' => Some(Key::KeyC),
+        'd' => Some(Key::KeyD),
+        'e' => Some(Key::KeyE),
+        'f' => Some(Key::KeyF),
+        'g' => Some(Key::KeyG),
+        'h' => Some(Key::KeyH),
+        'i' => Some(Key::KeyI),
+        'j' => Some(Key::KeyJ),
+        'k' => Some(Key::KeyK),
+        'l' => Some(Key::KeyL),
+        'm' => Some(Key::KeyM),
+        'n' => Some(Key::KeyN),
+        'o' => Some(Key::KeyO),
+        'p' => Some(Key::KeyP),
+        'q' => Some(Key::KeyQ),
+        'r' => Some(Key::KeyR),
+        's' => Some(Key::KeyS),
+        't' => Some(Key::KeyT),
+        'u' => Some(Key::KeyU),
+        'v' => Some(Key::KeyV),
+        'w' => Some(Key::KeyW),
+        'x' => Some(Key::KeyX),
+        'y' => Some(Key::KeyY),
+        'z' => Some(Key::KeyZ),
+        '0' => Some(Key::Num0),
+        '1' => Some(Key::Num1),
+        '2' => Some(Key::Num2),
+        '3' => Some(Key::Num3),
+        '4' => Some(Key::Num4),
+        '5' => Some(Key::Num5),
+        '6' => Some(Key::Num6),
+        '7' => Some(Key::Num7),
+        '8' => Some(Key::Num8),
+        '9' => Some(Key::Num9),
+        ' ' => Some(Key::Space),
+        _ => None, // サポートされていない文字
+    }
+}
 
+#[tauri::command]
+async fn simulate_copy() -> Result<String, String> {
+    println!("📋 [simulate_copy] Starting copy command simulation using rdev");
+    
+    tokio::task::spawn_blocking(|| {
+        use rdev::{simulate, EventType, SimulateError};
+        use std::{thread, time};
+        
+        fn send(event_type: &EventType) -> Result<(), SimulateError> {
+            let delay = time::Duration::from_millis(50);
+            let result = simulate(event_type);
+            // OS同期のための待機（特にmacOS）
+            thread::sleep(delay);
+            result
+        }
+        
+        println!("🔧 [simulate_copy] Using rdev for cross-platform key simulation");
+        
+        // プラットフォーム別のModifier key
+        #[cfg(target_os = "macos")]
+        let modifier = Key::MetaLeft; // macOS: Command key
+        
+        #[cfg(not(target_os = "macos"))]
+        let modifier = Key::ControlLeft; // Windows/Linux: Ctrl key
+        
+        println!("🔑 [simulate_copy] Pressing modifier key");
+        send(&EventType::KeyPress(modifier))
+            .map_err(|_| "Failed to press modifier key".to_string())?;
+        
+        println!("🔑 [simulate_copy] Pressing C key");
+        send(&EventType::KeyPress(Key::KeyC))
+            .map_err(|_| "Failed to press C key".to_string())?;
+        
+        println!("🔑 [simulate_copy] Releasing C key");
+        send(&EventType::KeyRelease(Key::KeyC))
+            .map_err(|_| "Failed to release C key".to_string())?;
+        
+        println!("🔑 [simulate_copy] Releasing modifier key");
+        send(&EventType::KeyRelease(modifier))
+            .map_err(|_| "Failed to release modifier key".to_string())?;
+        
+        println!("✅ [simulate_copy] Copy command executed successfully");
+        
+        #[cfg(target_os = "macos")]
+        return Ok("Successfully executed copy command (Cmd+C) via rdev".to_string());
+        
+        #[cfg(not(target_os = "macos"))]
+        return Ok("Successfully executed copy command (Ctrl+C) via rdev".to_string());
+    }).await.map_err(|e| format!("Task error: {}", e))?
+}
 
+#[tauri::command]
+async fn simulate_paste() -> Result<String, String> {
+    println!("📋 [simulate_paste] Starting paste command simulation using rdev");
+    
+    tokio::task::spawn_blocking(|| {
+        use rdev::{simulate, EventType, SimulateError};
+        use std::{thread, time};
+        
+        fn send(event_type: &EventType) -> Result<(), SimulateError> {
+            let delay = time::Duration::from_millis(50);
+            let result = simulate(event_type);
+            // OS同期のための待機（特にmacOS）
+            thread::sleep(delay);
+            result
+        }
+        
+        println!("🔧 [simulate_paste] Using rdev for cross-platform key simulation");
+        
+        // プラットフォーム別のModifier key
+        #[cfg(target_os = "macos")]
+        let modifier = Key::MetaLeft; // macOS: Command key
+        
+        #[cfg(not(target_os = "macos"))]
+        let modifier = Key::ControlLeft; // Windows/Linux: Ctrl key
+        
+        println!("🔑 [simulate_paste] Pressing modifier key");
+        send(&EventType::KeyPress(modifier))
+            .map_err(|_| "Failed to press modifier key".to_string())?;
+        
+        println!("🔑 [simulate_paste] Pressing V key");
+        send(&EventType::KeyPress(Key::KeyV))
+            .map_err(|_| "Failed to press V key".to_string())?;
+        
+        println!("🔑 [simulate_paste] Releasing V key");
+        send(&EventType::KeyRelease(Key::KeyV))
+            .map_err(|_| "Failed to release V key".to_string())?;
+        
+        println!("🔑 [simulate_paste] Releasing modifier key");
+        send(&EventType::KeyRelease(modifier))
+            .map_err(|_| "Failed to release modifier key".to_string())?;
+        
+        println!("✅ [simulate_paste] Paste command executed successfully");
+        
+        #[cfg(target_os = "macos")]
+        return Ok("Successfully executed paste command (Cmd+V) via rdev".to_string());
+        
+        #[cfg(not(target_os = "macos"))]
+        return Ok("Successfully executed paste command (Ctrl+V) via rdev".to_string());
+    }).await.map_err(|e| format!("Task error: {}", e))?
+}
 
+// rdev::KeyからKey文字列に変換する関数
+fn key_to_string(key: Key) -> String {
+    match key {
+        Key::KeyA => "KeyA".to_string(),
+        Key::KeyB => "KeyB".to_string(),
+        Key::KeyC => "KeyC".to_string(),
+        Key::KeyD => "KeyD".to_string(),
+        Key::KeyE => "KeyE".to_string(),
+        Key::KeyF => "KeyF".to_string(),
+        Key::KeyG => "KeyG".to_string(),
+        Key::KeyH => "KeyH".to_string(),
+        Key::KeyI => "KeyI".to_string(),
+        Key::KeyJ => "KeyJ".to_string(),
+        Key::KeyK => "KeyK".to_string(),
+        Key::KeyL => "KeyL".to_string(),
+        Key::KeyM => "KeyM".to_string(),
+        Key::KeyN => "KeyN".to_string(),
+        Key::KeyO => "KeyO".to_string(),
+        Key::KeyP => "KeyP".to_string(),
+        Key::KeyQ => "KeyQ".to_string(),
+        Key::KeyR => "KeyR".to_string(),
+        Key::KeyS => "KeyS".to_string(),
+        Key::KeyT => "KeyT".to_string(),
+        Key::KeyU => "KeyU".to_string(),
+        Key::KeyV => "KeyV".to_string(),
+        Key::KeyW => "KeyW".to_string(),
+        Key::KeyX => "KeyX".to_string(),
+        Key::KeyY => "KeyY".to_string(),
+        Key::KeyZ => "KeyZ".to_string(),
+        Key::Num0 => "Num0".to_string(),
+        Key::Num1 => "Num1".to_string(),
+        Key::Num2 => "Num2".to_string(),
+        Key::Num3 => "Num3".to_string(),
+        Key::Num4 => "Num4".to_string(),
+        Key::Num5 => "Num5".to_string(),
+        Key::Num6 => "Num6".to_string(),
+        Key::Num7 => "Num7".to_string(),
+        Key::Num8 => "Num8".to_string(),
+        Key::Num9 => "Num9".to_string(),
+        Key::Space => "Space".to_string(),
+        Key::MetaLeft => "MetaLeft".to_string(),
+        Key::MetaRight => "MetaRight".to_string(),
+        Key::ControlLeft => "ControlLeft".to_string(),
+        Key::ControlRight => "ControlRight".to_string(),
+        Key::ShiftLeft => "ShiftLeft".to_string(),
+        Key::ShiftRight => "ShiftRight".to_string(),
+        Key::Alt => "Alt".to_string(),
+        Key::Return => "Enter".to_string(),
+        Key::Escape => "Escape".to_string(),
+        Key::Backspace => "Backspace".to_string(),
+        Key::Tab => "Tab".to_string(),
+        _ => format!("{:?}", key), // Fallback for unsupported keys
+    }
+}
 
 #[tauri::command]
 async fn get_recording_modal_info(state: tauri::State<'_, AppState>) -> Result<Option<RecordingModalInfo>, String> {
