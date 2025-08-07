@@ -11,7 +11,9 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "typecheck": "npx tsc --noEmit",
+    "typecheck:ide": "echo 'Use IDE diagnostics or VS Code TypeScript errors for comprehensive checking'"
   },
   "jest": {
     "preset": "jest-expo"
