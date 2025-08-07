@@ -430,7 +430,21 @@ export const useConnection = () => {
   const connectManually = useCallback(
     async (ip: string, port: string, password: string): Promise<boolean> => {
       try {
-        console.log("🔗 [useConnection] connectManually START");
+        console.log("🔗 [useConnection] connectManually START with IP:", ip);
+        console.log(
+          "🔗 [useConnection] Current state - isConnected:",
+          isConnected,
+          "isAuthenticated:",
+          isAuthenticated,
+        );
+
+        // すでに接続済みの場合は重複処理を防ぐ
+        if (isConnected && isAuthenticated && macIP === ip) {
+          console.log(
+            "⚠️ [useConnection] Already connected and authenticated to this IP, skipping",
+          );
+          return true;
+        }
 
         const connected = await NetworkService.testConnection(ip, port);
         if (!connected) {
@@ -444,6 +458,7 @@ export const useConnection = () => {
           password,
         );
         if (authSuccess) {
+          console.log("✅ [useConnection] Setting connection state...");
           setMacIP(ip);
           setMacPort(port);
           setPassword(password);
@@ -460,7 +475,7 @@ export const useConnection = () => {
         return false;
       }
     },
-    [],
+    [isConnected, isAuthenticated, macIP],
   );
 
   const disconnect = useCallback(() => {

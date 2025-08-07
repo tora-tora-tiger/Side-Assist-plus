@@ -35,7 +35,9 @@ class AlertManager {
   }
 
   private static notifyListeners(): void {
-    this.listeners.forEach(listener => listener(this.currentAlert));
+    this.listeners.forEach(listener => {
+      listener(this.currentAlert);
+    });
   }
 
   static getCurrentAlert(): AlertData | null {

@@ -1,7 +1,8 @@
 import React from "react";
-import { View, Text, Linking, Alert } from "react-native";
+import { View, Text, Linking } from "react-native";
 import { Header, Button } from "./ui";
 import { getDeviceConfig } from "../utils/DeviceConfig";
+import AlertManager from "../utils/AlertManager";
 
 interface SettingsPanelProps {
   isVisible: boolean;
@@ -22,13 +23,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     try {
       await Linking.openSettings();
     } catch {
-      Alert.alert("エラー", "設定アプリを開けませんでした");
+      AlertManager.showAlert("エラー", "設定アプリを開けませんでした");
     }
   };
   if (!isVisible) return null;
 
   return (
-    <View className="absolute inset-0 z-50 bg-white">
+    <View className="absolute inset-0 z-40 bg-white">
       <Header title="設定" showClose={true} onClosePress={onClose} />
 
       <View className="flex-1 p-5">
