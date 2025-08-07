@@ -6,6 +6,9 @@
 
 ## ⚡ デバッグ ⚡ - Get Started
 
+- node.js v24.0.2
+- npm v11.3.0
+
 ### 1. まず、スマホにExpo Goをインストールしてください。
 - [iOS](https://apps.apple.com/jp/app/expo-go/id982107779)
 - [Android](https://play.google.com/store/apps/details?id=host.exp.exponent&hl=ja&pli=1)
