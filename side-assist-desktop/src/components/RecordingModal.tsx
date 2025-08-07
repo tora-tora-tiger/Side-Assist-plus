@@ -88,12 +88,7 @@ export const RecordingModal: React.FC = () => {
   if (!modalInfo?.is_visible) return null;
 
   return (
-    <Modal
-      isOpen={true}
-      onClose={handleCancel}
-      title='カスタムアクション録画'
-      size='md'
-    >
+    <Modal isOpen={true} onClose={handleCancel} title='カスタムアクション録画'>
       <div className='p-6'>
         <Card className='mb-6'>
           <div className='flex items-center space-x-4 p-4'>
