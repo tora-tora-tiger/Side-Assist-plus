@@ -23,14 +23,16 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
     ? { transform: [{ scale: animatedValue }] }
     : {};
 
+  const buttonStyle = {
+    width: size,
+    height: size,
+    backgroundColor: disabled ? "#a3a3a3" : backgroundColor,
+  };
+
   return (
     <ButtonComponent style={animatedStyle}>
       <TouchableOpacity
-        style={{
-          width: size,
-          height: size,
-          backgroundColor: disabled ? "#a3a3a3" : backgroundColor,
-        }}
+        style={buttonStyle}
         className="rounded-3xl shadow-soft justify-center items-center"
         onPress={onPress}
         disabled={disabled}
