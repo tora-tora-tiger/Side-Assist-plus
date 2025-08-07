@@ -144,7 +144,7 @@ export class NetworkService {
     return this.sendAction(ip, port, { type: 'custom', action_id: actionId }, password);
   }
 
-  static async startRecording(
+  static async prepareRecording(
     ip: string,
     port: string,
     actionId: string,
@@ -152,25 +152,54 @@ export class NetworkService {
     icon?: string,
     password?: string,
   ): Promise<boolean> {
-    console.log(`🔴 [NetworkService] Starting recording for action: ${name} (${actionId})`);
+    console.log(`🎥 [NetworkService] Preparing recording for action: ${name} (${actionId})`);
     return this.sendAction(ip, port, {
-      type: 'record_start',
+      type: 'prepare_recording',
       action_id: actionId,
       name,
       icon,
     }, password);
   }
 
-  static async stopRecording(
-    ip: string,
-    port: string,
-    actionId: string,
-    password?: string,
-  ): Promise<boolean> {
-    console.log(`⏹️ [NetworkService] Stopping recording for action: ${actionId}`);
-    return this.sendAction(ip, port, {
-      type: 'record_stop',
-      action_id: actionId,
-    }, password);
+  static async getRecordingStatus(ip: string, port: string): Promise<any> {
+    try {
+      const url = `http://${ip}:${port}/recording/status`;
+      // console.log(`📡 [NetworkService] Getting recording status from: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // console.log(`📊 [NetworkService] Recording status response:`, data);
+        return data;
+      } else {
+        console.error(`❌ [NetworkService] Recording status failed: ${response.status}`);
+        return null;
+      }
+    } catch (error) {
+      console.error('Failed to get recording status:', error);
+      return null;
+    }
+  }
+
+  static async acknowledgeRecording(ip: string, port: string): Promise<boolean> {
+    try {
+      const response = await fetch(`http://${ip}:${port}/recording/acknowledge`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Failed to acknowledge recording:', error);
+      return false;
+    }
   }
 }

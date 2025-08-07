@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Animated, ScrollView } from 'react-native';
+import { View, Animated, ScrollView, Text, TouchableOpacity } from 'react-native';
 import { Header, StatusIndicator, ActionButton, Button } from './ui';
 import { MaterialIcons } from '@expo/vector-icons';
 import AlertManager from '../utils/AlertManager';
@@ -10,8 +10,8 @@ interface ExecutionScreenProps {
   onSendCopy: () => Promise<boolean>;
   onSendPaste: () => Promise<boolean>;
   onExecuteCustomAction: (actionId: string) => Promise<boolean>;
-  onStartRecording: (actionId: string, name: string, icon?: string) => Promise<boolean>;
-  onStopRecording: (actionId: string) => Promise<boolean>;
+  onPrepareRecording: (actionId: string, name: string, icon?: string) => Promise<boolean>;
+  resetRecordingState: () => void;
   onDisconnect: () => void;
 }
 
@@ -21,21 +21,43 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   onSendCopy,
   onSendPaste,
   onExecuteCustomAction,
-  onStartRecording,
-  onStopRecording,
+  onPrepareRecording,
+  resetRecordingState,
   onDisconnect,
 }) => {
   const [buttonScales] = useState(() => ({
     ultradeepthink: new Animated.Value(1),
     copy: new Animated.Value(1),
     paste: new Animated.Value(1),
-    record: new Animated.Value(1),
+    action4: new Animated.Value(1),
     action5: new Animated.Value(1),
     action6: new Animated.Value(1),
+    recordButton: new Animated.Value(1),
   }));
 
-  const [isRecording, setIsRecording] = useState(false);
+  const [isRecordingPrepared, setIsRecordingPrepared] = useState(false);
+  const [isRecordingActive, setIsRecordingActive] = useState(false);
   const [recordingActionId, setRecordingActionId] = useState<string | null>(null);
+
+  // 録画状態リセット関数の実装
+  const handleResetRecordingState = React.useCallback(() => {
+    console.log('🔄 [ExecutionScreen] Resetting recording state...');
+    setIsRecordingPrepared(false);
+    setIsRecordingActive(false);  
+    setRecordingActionId(null);
+    console.log('✅ [ExecutionScreen] Recording state reset completed');
+  }, []);
+
+  // グローバルなリセット関数を作成（useConnectionで呼び出される）
+  React.useEffect(() => {
+    // グローバルなwindowオブジェクトに関数を追加
+    (window as any).resetExecutionScreenRecordingState = handleResetRecordingState;
+    
+    return () => {
+      // クリーンアップ
+      delete (window as any).resetExecutionScreenRecordingState;
+    };
+  }, [handleResetRecordingState]);
 
   // 6つのアクション定義
   const actions = [
@@ -61,11 +83,11 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
       type: 'clipboard' as const,
     },
     {
-      id: 'record',
-      icon: <MaterialIcons name={isRecording ? "stop" : "radio-button-checked"} size={32} color="#ffffff" />,
-      text: isRecording ? 'stop recording' : 'record action',
-      backgroundColor: isRecording ? '#ef4444' : '#f59e0b', // Red when recording, Amber when not
-      type: 'record' as const,
+      id: 'action4',
+      icon: <MaterialIcons name="rocket-launch" size={32} color="#ffffff" />,
+      text: 'action4',
+      backgroundColor: '#ef4444', // Red
+      type: 'text' as const,
     },
     {
       id: 'action5',
@@ -120,35 +142,6 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
             throw new Error('Paste command failed');
           }
         }
-      } else if (action.type === 'record') {
-        if (isRecording) {
-          // Stop recording
-          console.log(`⏹️ [ExecutionScreen] Stopping recording for action: ${recordingActionId}`);
-          if (recordingActionId) {
-            const success = await onStopRecording(recordingActionId);
-            if (success) {
-              setIsRecording(false);
-              setRecordingActionId(null);
-              console.log(`✅ [ExecutionScreen] Recording stopped successfully`);
-            } else {
-              throw new Error('Failed to stop recording');
-            }
-          }
-        } else {
-          // Start recording
-          const actionId = `custom_${Date.now()}`;
-          const actionName = `Custom Action ${Date.now()}`;
-          console.log(`🔴 [ExecutionScreen] Starting recording for action: ${actionName} (${actionId})`);
-          
-          const success = await onStartRecording(actionId, actionName, 'build');
-          if (success) {
-            setIsRecording(true);
-            setRecordingActionId(actionId);
-            console.log(`✅ [ExecutionScreen] Recording started successfully`);
-          } else {
-            throw new Error('Failed to start recording');
-          }
-        }
       } else {
         console.log(`🚀 [ExecutionScreen] Sending text: "${action.text}"`);
         await onSendText(action.text);
@@ -159,8 +152,6 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
       let errorMessage = 'テキストの送信中にエラーが発生しました';
       if (action.type === 'clipboard') {
         errorMessage = `${action.text}コマンドの実行中にエラーが発生しました`;
-      } else if (action.type === 'record') {
-        errorMessage = isRecording ? '録画の停止中にエラーが発生しました' : '録画の開始中にエラーが発生しました';
       }
       AlertManager.showAlert('エラー', errorMessage);
     }
@@ -185,6 +176,46 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
         },
       ]
     );
+  };
+
+  // 録画準備処理
+  const handlePrepareRecording = async () => {
+    console.log('🎥 [ExecutionScreen] Preparing recording...');
+    
+    // シンプルなアニメーション
+    const scale = buttonScales.recordButton;
+    Animated.sequence([
+      Animated.timing(scale, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scale, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    try {
+      const actionId = `custom_${Date.now()}`;
+      const actionName = `Custom Action ${new Date().toLocaleTimeString()}`;
+      
+      console.log(`📝 [ExecutionScreen] Preparing recording: ${actionName} (${actionId})`);
+      
+      const success = await onPrepareRecording(actionId, actionName, 'build');
+      if (success) {
+        setIsRecordingPrepared(true);
+        setRecordingActionId(actionId);
+        console.log('✅ [ExecutionScreen] Recording prepared successfully');
+        AlertManager.showAlert('録画準備完了', `デスクトップで「${actionName}」の録画を開始できます。`);
+      } else {
+        throw new Error('Failed to prepare recording');
+      }
+    } catch (error) {
+      console.error('🚨 [ExecutionScreen] Recording preparation error:', error);
+      AlertManager.showAlert('エラー', '録画準備中にエラーが発生しました');
+    }
   };
 
   return (
@@ -224,7 +255,7 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
                   <ActionButton
                     icon={actions[3].icon}
                     onPress={() => handleActionPress(actions[3])}
-                    animatedValue={buttonScales.record}
+                    animatedValue={buttonScales.action4}
                     backgroundColor={actions[3].backgroundColor}
                   />
                 </View>
@@ -265,6 +296,53 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
                   />
                 </View>
               </View>
+            </View>
+          </View>
+        </View>
+
+        {/* 録画セクション */}
+        <View className="px-6 py-4">
+          <View className="bg-white rounded-3xl p-6 shadow-soft mb-4">
+            <View className="items-center">
+              <Text className="text-lg font-bold text-neutral-900 mb-2">
+                カスタムアクション録画
+              </Text>
+              <Text className="text-sm text-neutral-500 mb-4 text-center">
+                デスクトップでキーボード操作を録画し、
+                {"\n"}カスタムアクションとして保存できます
+              </Text>
+              
+              <Animated.View 
+                style={{ transform: [{ scale: buttonScales.recordButton }] }}
+                className="mb-2"
+              >
+                <TouchableOpacity
+                  className={`w-20 h-20 rounded-full items-center justify-center ${
+                    isRecordingPrepared ? 'bg-green-500' : 'bg-red-500'
+                  } shadow-lg`}
+                  onPress={handlePrepareRecording}
+                  activeOpacity={0.8}
+                  disabled={isRecordingPrepared}
+                >
+                  <MaterialIcons 
+                    name={isRecordingPrepared ? "check-circle" : "radio-button-checked"} 
+                    size={40} 
+                    color="#ffffff" 
+                  />
+                </TouchableOpacity>
+              </Animated.View>
+              
+              <Text className={`text-sm font-medium ${
+                isRecordingPrepared ? 'text-green-600' : 'text-neutral-700'
+              }`}>
+                {isRecordingPrepared ? '録画準備完了' : '録画を準備する'}
+              </Text>
+              
+              {isRecordingPrepared && (
+                <Text className="text-xs text-green-500 mt-1 text-center">
+                  デスクトップで録画を開始してください
+                </Text>
+              )}
             </View>
           </View>
         </View>

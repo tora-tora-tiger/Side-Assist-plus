@@ -1,8 +1,9 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
 use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 use rand::Rng;
+use lazy_static::lazy_static;
 use axum::{
     extract::{Json, State},
     http::{HeaderMap, StatusCode},
@@ -12,9 +13,23 @@ use axum::{
 };
 use tower_http::cors::CorsLayer;
 // ENIGOは完全に削除し、rdevを使用
-use rdev::Key;
+use rdev::{Key, EventType, Event};
 use qrcode::QrCode;
 use qrcode::render::svg;
+
+// グローバル録画状態（rdevコールバック用）
+lazy_static! {
+    static ref GLOBAL_RECORDING_STATE: Mutex<Option<GlobalRecordingState>> = Mutex::new(None);
+    static ref SHOULD_STOP_RECORDING: AtomicBool = AtomicBool::new(false);
+    static ref LAST_RECORDED_KEY: Mutex<Option<(String, u64)>> = Mutex::new(None); // (key_name, timestamp) for debouncing
+    static ref MAIN_STATE_REF: Mutex<Option<AppState>> = Mutex::new(None); // メイン状態への参照
+}
+
+#[derive(Clone, Debug)]
+struct GlobalRecordingState {
+    pub start_time: u64,
+    pub recorded_keys: Arc<Mutex<Vec<RecordedKey>>>,
+}
 
 #[cfg(target_os = "macos")]
 use std::process::Command;
@@ -48,16 +63,20 @@ pub struct RecordedKey {
     pub timestamp: u64, // 相対タイムスタンプ（ミリ秒）
 }
 
-#[derive(Clone, Debug)]
-pub struct RecordingSession {
+
+type AppState = Arc<Mutex<ServerState>>;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RecordingModalInfo {
     pub action_id: String,
     pub name: String,
     pub icon: Option<String>,
-    pub start_time: u64,
-    pub keys: Vec<RecordedKey>,
+    pub is_visible: bool,
+    pub is_recording: bool,
+    pub is_completed: bool, // 録画完了フラグ
+    pub start_time: Option<u64>,
+    pub recorded_keys: Vec<RecordedKey>,
 }
-
-type AppState = Arc<Mutex<ServerState>>;
 
 #[derive(Clone, Debug)]
 pub struct ServerState {
@@ -68,8 +87,7 @@ pub struct ServerState {
     pub password_expiry: Option<u64>,
     pub operation_in_progress: bool,
     pub custom_actions: HashMap<String, CustomAction>,
-    pub recording_session: Option<RecordingSession>,
-    pub key_listener_active: bool,
+    pub recording_modal_info: Option<RecordingModalInfo>,
 }
 
 impl Default for ServerState {
@@ -82,8 +100,7 @@ impl Default for ServerState {
             password_expiry: None,
             operation_in_progress: false,
             custom_actions: HashMap::new(), // Will be loaded on startup
-            recording_session: None,
-            key_listener_active: false,
+            recording_modal_info: None,
         }
     }
 }
@@ -105,14 +122,12 @@ pub enum ActionType {
     Paste,
     #[serde(rename = "custom")]
     Custom { action_id: String },
-    #[serde(rename = "record_start")]
-    RecordStart { 
+    #[serde(rename = "prepare_recording")]
+    PrepareRecording { 
         action_id: String,
         name: String,
         icon: Option<String>,
     },
-    #[serde(rename = "record_stop")]
-    RecordStop { action_id: String },
 }
 
 #[derive(Deserialize)]  
@@ -135,6 +150,15 @@ struct HealthResponse {
 struct ApiResponse {
     success: bool,
     message: String,
+}
+
+#[derive(Serialize)]
+struct RecordingStatusResponse {
+    status: String, // "idle", "preparing", "recording", "completed"
+    action_id: Option<String>,
+    name: Option<String>,
+    recorded_keys_count: Option<usize>,
+    message: Option<String>,
 }
 
 #[tauri::command]
@@ -688,65 +712,129 @@ async fn simulate_paste() -> Result<String, String> {
     }).await.map_err(|e| format!("Task error: {}", e))?
 }
 
-// キー録画開始
-async fn start_key_recording(
-    state: AppState,
-    action_id: String,
-    name: String,
-    icon: Option<String>,
-) -> Result<String, String> {
-    let mut state_guard = state.lock().map_err(|_| "Failed to lock state".to_string())?;
-    
-    // 既に録画中の場合は停止
-    if state_guard.recording_session.is_some() {
-        return Err("Recording already in progress. Stop current recording first.".to_string());
+// rdev::KeyからKey文字列に変換する関数
+fn key_to_string(key: Key) -> String {
+    match key {
+        Key::KeyA => "KeyA".to_string(),
+        Key::KeyB => "KeyB".to_string(),
+        Key::KeyC => "KeyC".to_string(),
+        Key::KeyD => "KeyD".to_string(),
+        Key::KeyE => "KeyE".to_string(),
+        Key::KeyF => "KeyF".to_string(),
+        Key::KeyG => "KeyG".to_string(),
+        Key::KeyH => "KeyH".to_string(),
+        Key::KeyI => "KeyI".to_string(),
+        Key::KeyJ => "KeyJ".to_string(),
+        Key::KeyK => "KeyK".to_string(),
+        Key::KeyL => "KeyL".to_string(),
+        Key::KeyM => "KeyM".to_string(),
+        Key::KeyN => "KeyN".to_string(),
+        Key::KeyO => "KeyO".to_string(),
+        Key::KeyP => "KeyP".to_string(),
+        Key::KeyQ => "KeyQ".to_string(),
+        Key::KeyR => "KeyR".to_string(),
+        Key::KeyS => "KeyS".to_string(),
+        Key::KeyT => "KeyT".to_string(),
+        Key::KeyU => "KeyU".to_string(),
+        Key::KeyV => "KeyV".to_string(),
+        Key::KeyW => "KeyW".to_string(),
+        Key::KeyX => "KeyX".to_string(),
+        Key::KeyY => "KeyY".to_string(),
+        Key::KeyZ => "KeyZ".to_string(),
+        Key::Num0 => "Num0".to_string(),
+        Key::Num1 => "Num1".to_string(),
+        Key::Num2 => "Num2".to_string(),
+        Key::Num3 => "Num3".to_string(),
+        Key::Num4 => "Num4".to_string(),
+        Key::Num5 => "Num5".to_string(),
+        Key::Num6 => "Num6".to_string(),
+        Key::Num7 => "Num7".to_string(),
+        Key::Num8 => "Num8".to_string(),
+        Key::Num9 => "Num9".to_string(),
+        Key::Space => "Space".to_string(),
+        Key::MetaLeft => "MetaLeft".to_string(),
+        Key::MetaRight => "MetaRight".to_string(),
+        Key::ControlLeft => "ControlLeft".to_string(),
+        Key::ControlRight => "ControlRight".to_string(),
+        Key::ShiftLeft => "ShiftLeft".to_string(),
+        Key::ShiftRight => "ShiftRight".to_string(),
+        Key::Alt => "Alt".to_string(),
+        Key::Return => "Enter".to_string(),
+        Key::Escape => "Escape".to_string(),
+        Key::Backspace => "Backspace".to_string(),
+        Key::Tab => "Tab".to_string(),
+        _ => format!("{:?}", key), // Fallback for unsupported keys
     }
-    
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_err(|_| "Failed to get system time")?
-        .as_secs();
-    
-    // 録画セッション開始
-    let session = RecordingSession {
-        action_id: action_id.clone(),
-        name: name.clone(),
-        icon: icon.clone(),
-        start_time: now,
-        keys: Vec::new(),
-    };
-    
-    state_guard.recording_session = Some(session);
-    state_guard.key_listener_active = true;
-    
-    // キーリスナーを開始（別スレッドで）
-    let state_clone = Arc::clone(&state);
-    tokio::spawn(async move {
-        key_listener_task(state_clone).await;
-    });
-    
-    println!("🔴 Key recording started for action: {} ({})", name, action_id);
-    Ok(format!("Key recording started for action: {}", name))
 }
 
-// キー録画停止
-async fn stop_key_recording(
-    state: AppState,
-    action_id: String,
-) -> Result<String, String> {
-    let session = {
-        let mut state_guard = state.lock().map_err(|_| "Failed to lock state".to_string())?;
-        state_guard.key_listener_active = false;
+#[tauri::command]
+async fn get_recording_modal_info(state: tauri::State<'_, AppState>) -> Result<Option<RecordingModalInfo>, String> {
+    let state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+    Ok(state_guard.recording_modal_info.clone())
+}
+
+#[tauri::command]
+async fn clear_recording_modal(state: tauri::State<'_, AppState>) -> Result<String, String> {
+    let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+    state_guard.recording_modal_info = None;
+    println!("🗑️ Recording modal cleared");
+    Ok("Recording modal cleared".to_string())
+}
+
+#[tauri::command]
+async fn start_actual_recording(state: tauri::State<'_, AppState>) -> Result<String, String> {
+    let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+    
+    if let Some(ref mut modal_info) = state_guard.recording_modal_info {
+        modal_info.is_recording = true;
+        modal_info.start_time = Some(
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map_err(|_| "Failed to get system time")?
+                .as_millis() as u64
+        );
+        modal_info.recorded_keys.clear();
         
-        match state_guard.recording_session.take() {
-            Some(session) if session.action_id == action_id => session,
-            Some(_) => return Err("Different recording session is active".to_string()),
-            None => return Err("No recording session active".to_string()),
+        println!("🔴 Actual recording started for: {}", modal_info.name);
+        
+        // リアルキーリスナー開始
+        let state_clone = Arc::clone(&state);
+        tokio::spawn(async move {
+            start_real_key_listener(state_clone).await;
+        });
+        
+        Ok(format!("Recording started for: {}", modal_info.name))
+    } else {
+        Err("No recording modal active".to_string())
+    }
+}
+
+#[tauri::command]
+async fn stop_actual_recording(state: tauri::State<'_, AppState>) -> Result<String, String> {
+    // まず録画停止フラグを設定
+    {
+        let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+        
+        if let Some(ref mut modal_info) = state_guard.recording_modal_info {
+            modal_info.is_recording = false;
+            println!("🛑 Recording stop requested for: {}", modal_info.name);
+        } else {
+            return Err("No recording modal active".to_string());
+        }
+    }
+    
+    // キー同期が完了するまで少し待機
+    tokio::time::sleep(tokio::time::Duration::from_millis(300)).await;
+    
+    let modal_info = {
+        let state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+        
+        if let Some(ref modal_info) = state_guard.recording_modal_info {
+            modal_info.clone()
+        } else {
+            return Err("No recording modal active".to_string());
         }
     };
-    
-    // 少し待って、最後のキーイベントをキャッチ
-    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
     
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -755,71 +843,79 @@ async fn stop_key_recording(
     
     // カスタムアクションを作成して保存
     let custom_action = CustomAction {
-        id: session.action_id.clone(),
-        name: session.name.clone(),
-        icon: session.icon,
-        key_sequence: session.keys,
+        id: modal_info.action_id.clone(),
+        name: modal_info.name.clone(),
+        icon: modal_info.icon,
+        key_sequence: modal_info.recorded_keys,
         created_at: now,
     };
     
     // 状態に追加して保存
     {
-        let mut state_guard = state.lock().map_err(|_| "Failed to lock state".to_string())?;
-        state_guard.custom_actions.insert(session.action_id.clone(), custom_action.clone());
+        let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+        state_guard.custom_actions.insert(modal_info.action_id.clone(), custom_action.clone());
         
-        // ディスクに保存
-        // TODO: Implement save_custom_actions
-        // if let Err(e) = save_custom_actions(&state_guard.custom_actions) {
-        //     eprintln!("⚠️ Failed to save custom actions: {}", e);
-        // }
+        // モーダル状態を録画完了状態に更新（即座にクリアしない）
+        if let Some(ref mut modal_info) = state_guard.recording_modal_info {
+            modal_info.is_recording = false;
+            modal_info.is_completed = true; // 完了フラグを設定
+            modal_info.recorded_keys = custom_action.key_sequence.clone();
+        }
     }
     
-    println!("⏹️ Key recording stopped and saved for action: {} ({})", session.name, session.action_id);
-    println!("📊 Recorded {} key events", custom_action.key_sequence.len());
+    println!("⏹️ Recording stopped and saved: {} ({} keys)", custom_action.name, custom_action.key_sequence.len());
     
     Ok(format!(
-        "Key recording stopped. Recorded {} key events for action: {}",
+        "Recording stopped. Saved {} key events for: {}",
         custom_action.key_sequence.len(),
-        session.name
+        custom_action.name
     ))
 }
 
-// キーリスナータスク（シンプルなモック実装）
-async fn key_listener_task(state: AppState) {
-    println!("🎧 Key listener task started");
+// rdevコールバック関数（グローバル関数として定義）
+fn rdev_callback(event: Event) {
+    // 停止フラグをチェック
+    if SHOULD_STOP_RECORDING.load(Ordering::Relaxed) {
+        return;
+    }
     
-    // シンプルなモック実装：実際のキーリスナーは後で実装
-    // 今はダミーのキーシーケンスを作成する
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
-    let mut key_count = 0;
+    // グローバル録画状態から情報を取得
+    let (start_time, recorded_keys) = {
+        if let Ok(recording_state_guard) = GLOBAL_RECORDING_STATE.lock() {
+            if let Some(ref state) = *recording_state_guard {
+                (state.start_time, Arc::clone(&state.recorded_keys))
+            } else {
+                return; // 録画状態がない場合は終了
+            }
+        } else {
+            return;
+        }
+    };
     
-    loop {
-        interval.tick().await;
+    // キープレスのみを記録（重複を避けるため + デバウンス）
+    if let EventType::KeyPress(key) = event.event_type {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64;
         
-        let should_stop = {
-            if let Ok(mut state_guard) = state.lock() {
-                if !state_guard.key_listener_active {
-                    true
-                } else if let Some(ref mut session) = state_guard.recording_session {
-                    // ダミーキーシーケンスを追加
-                    let now = SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap_or_default()
-                        .as_millis() as u64;
-                    let relative_time = now.saturating_sub(session.start_time * 1000);
-                    
-                    let dummy_key = RecordedKey {
-                        key: format!("Key{}", char::from(65 + (key_count % 26))), // A-Z
-                        event_type: "press".to_string(),
-                        timestamp: relative_time,
-                    };
-                    
-                    session.keys.push(dummy_key);
-                    key_count += 1;
-                    
-                    println!("⬇️ Mock key recorded: Key{}", char::from(65 + ((key_count - 1) % 26)));
-                    false
+        let key_name = key_to_string(key);
+        
+        // デバウンス: 同じキーが50ms以内に記録されていないかチェック
+        let should_record = {
+            if let Ok(mut last_key_guard) = LAST_RECORDED_KEY.lock() {
+                if let Some((last_key, last_time)) = &*last_key_guard {
+                    if key_name == *last_key && now.saturating_sub(*last_time) < 50 {
+                        // 同じキーが50ms以内 - 重複とみなす
+                        false
+                    } else {
+                        // 異なるキーまたは十分時間が経過 - 記録する
+                        *last_key_guard = Some((key_name.clone(), now));
+                        true
+                    }
                 } else {
+                    // 初回記録
+                    *last_key_guard = Some((key_name.clone(), now));
                     true
                 }
             } else {
@@ -827,11 +923,142 @@ async fn key_listener_task(state: AppState) {
             }
         };
         
-        if should_stop {
-            println!("🔇 Key listener task stopping");
+        if should_record {
+            let relative_time = now.saturating_sub(start_time);
+            
+            let recorded_key = RecordedKey {
+                key: key_name.clone(),
+                event_type: "press".to_string(),
+                timestamp: relative_time,
+            };
+            
+            // グローバル録画状態に追加
+            if let Ok(mut keys_guard) = recorded_keys.lock() {
+                keys_guard.push(recorded_key.clone());
+                println!("🔑 Key recorded: {} (total: {})", 
+                    recorded_key.key, 
+                    keys_guard.len()
+                );
+                
+                // キー入力直後にメイン状態にも即座に同期
+                sync_to_main_state(&keys_guard);
+            }
+        } else {
+            println!("🚫 Key debounced: {} (too soon)", key_name);
+        }
+    }
+    // KeyReleaseは記録しない（重複を避けるため）
+}
+
+// メイン状態への即座同期関数
+fn sync_to_main_state(keys: &Vec<RecordedKey>) {
+    if let Ok(main_state_guard) = MAIN_STATE_REF.lock() {
+        if let Some(ref main_state) = *main_state_guard {
+            if let Ok(mut state_guard) = main_state.lock() {
+                if let Some(ref mut modal_info) = state_guard.recording_modal_info {
+                    modal_info.recorded_keys = keys.clone();
+                    // println!("⚡ Instantly synced {} keys to main state", keys.len());
+                }
+            }
+        }
+    }
+}
+
+// リアルキーリスナー実装（グローバルstateを使用）
+async fn start_real_key_listener(state: AppState) {
+    println!("🎧 Real key listener started - using actual rdev events");
+    
+    // メイン状態への参照を設定
+    {
+        let mut main_state_ref = MAIN_STATE_REF.lock().unwrap();
+        *main_state_ref = Some(Arc::clone(&state));
+    }
+    
+    // 録画開始時刻と記録用のベクターを取得
+    let (start_time, recorded_keys) = {
+        if let Ok(state_guard) = state.lock() {
+            if let Some(ref modal_info) = state_guard.recording_modal_info {
+                let start_time = modal_info.start_time.unwrap_or(0);
+                let recorded_keys = Arc::new(Mutex::new(Vec::new()));
+                (start_time, recorded_keys)
+            } else {
+                return; // モーダル情報がない場合は終了
+            }
+        } else {
+            return;
+        }
+    };
+    
+    // グローバル録画状態を設定
+    {
+        let mut global_state = GLOBAL_RECORDING_STATE.lock().unwrap();
+        *global_state = Some(GlobalRecordingState {
+            start_time,
+            recorded_keys: Arc::clone(&recorded_keys),
+        });
+    }
+    
+    // 停止フラグをリセット
+    SHOULD_STOP_RECORDING.store(false, Ordering::Relaxed);
+    
+    // rdev::listenは別スレッドで実行
+    let listener_handle = tokio::task::spawn_blocking(move || {
+        use rdev::listen;
+        
+        println!("🚀 Starting rdev::listen for real key events");
+        
+        // rdev::listenでキーイベントを監視（関数ポインタを使用）
+        if let Err(error) = listen(rdev_callback) {
+            eprintln!("❌ rdev listen error: {:?}", error);
+            eprintln!("💡 Note: On macOS, accessibility permissions are required");
+        }
+        
+        println!("🔇 rdev key listener stopped");
+    });
+    
+    // シンプルな監視ループ（停止待ち）
+    loop {
+        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+        
+        let should_continue = {
+            if let Ok(state_guard) = state.lock() {
+                if let Some(ref modal_info) = state_guard.recording_modal_info {
+                    modal_info.is_recording
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        };
+        
+        if !should_continue {
+            println!("🔇 Real key listener monitor stopping");
+            
+            // rdev::listenを停止する信号を送信
+            SHOULD_STOP_RECORDING.store(true, Ordering::Relaxed);
+            
+            // グローバル状態をクリア
+            {
+                let mut global_state = GLOBAL_RECORDING_STATE.lock().unwrap();
+                *global_state = None;
+            }
+            
+            // メイン状態参照もクリア
+            {
+                let mut main_state_ref = MAIN_STATE_REF.lock().unwrap();
+                *main_state_ref = None;
+            }
+            
             break;
         }
     }
+    
+    println!("✅ Key listener monitor task completed");
+    
+    // リスナータスクの終了を待つ（タイムアウト付き）
+    let timeout = tokio::time::Duration::from_millis(1000);
+    let _ = tokio::time::timeout(timeout, listener_handle).await;
 }
 
 async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -844,6 +1071,8 @@ async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Erro
         .route("/health", get(health_check))
         .route("/input", post(handle_input))
         .route("/auth", post(handle_auth))
+        .route("/recording/status", get(get_recording_status))
+        .route("/recording/acknowledge", post(acknowledge_recording))
         .layer(CorsLayer::permissive())
         .with_state(Arc::clone(&state));
 
@@ -1009,13 +1238,25 @@ async fn handle_input(
                 Err(format!("Custom action '{}' not found", action_id))
             }
         }
-        ActionType::RecordStart { action_id, name, icon } => {
-            println!("🔴 Starting key recording for action: {} ({})", name, action_id);
-            start_key_recording(Arc::clone(&state), action_id.clone(), name.clone(), icon.clone()).await
-        }
-        ActionType::RecordStop { action_id } => {
-            println!("⏹️ Stopping key recording for action: {}", action_id);
-            stop_key_recording(Arc::clone(&state), action_id.clone()).await
+        ActionType::PrepareRecording { action_id, name, icon } => {
+            println!("🎥 Preparing recording for action: {} ({})", name, action_id);
+            
+            let mut state_guard = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            
+            // 録画モーダル情報を設定
+            state_guard.recording_modal_info = Some(RecordingModalInfo {
+                action_id: action_id.clone(),
+                name: name.clone(),
+                icon: icon.clone(),
+                is_visible: true,
+                is_recording: false,
+                is_completed: false, // 初期状態では未完了
+                start_time: None,
+                recorded_keys: Vec::new(),
+            });
+            
+            println!("✅ Recording modal prepared successfully for: {}", name);
+            Ok(format!("Recording prepared for action: {}", name))
         }
     };
     
@@ -1065,6 +1306,83 @@ async fn handle_auth(
     } else {
         println!("❌ Authentication failed");
         Err(StatusCode::UNAUTHORIZED)
+    }
+}
+
+async fn get_recording_status(
+    State(state): State<AppState>,
+) -> Result<JsonResponse<RecordingStatusResponse>, StatusCode> {
+    let state_guard = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+    let response = if let Some(ref modal_info) = state_guard.recording_modal_info {
+        if modal_info.is_completed {
+            // 録画完了状態
+            RecordingStatusResponse {
+                status: "completed".to_string(),
+                action_id: Some(modal_info.action_id.clone()),
+                name: Some(modal_info.name.clone()),
+                recorded_keys_count: Some(modal_info.recorded_keys.len()),
+                message: Some(format!("録画完了：「{}」に{}個のキーを保存しました", modal_info.name, modal_info.recorded_keys.len())),
+            }
+        } else if modal_info.is_recording {
+            // 録画中
+            RecordingStatusResponse {
+                status: "recording".to_string(),
+                action_id: Some(modal_info.action_id.clone()),
+                name: Some(modal_info.name.clone()),
+                recorded_keys_count: Some(modal_info.recorded_keys.len()),
+                message: Some("録画中...".to_string()),
+            }
+        } else {
+            // 録画準備状態
+            RecordingStatusResponse {
+                status: "preparing".to_string(),
+                action_id: Some(modal_info.action_id.clone()),
+                name: Some(modal_info.name.clone()),
+                recorded_keys_count: None,
+                message: Some("録画準備完了".to_string()),
+            }
+        }
+    } else {
+        // アイドル状態
+        RecordingStatusResponse {
+            status: "idle".to_string(),
+            action_id: None,
+            name: None,
+            recorded_keys_count: None,
+            message: None,
+        }
+    };
+    
+    Ok(JsonResponse(response))
+}
+
+async fn acknowledge_recording(
+    State(state): State<AppState>,
+) -> Result<JsonResponse<ApiResponse>, StatusCode> {
+    let mut state_guard = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+    if let Some(ref modal_info) = state_guard.recording_modal_info {
+        if modal_info.is_completed {
+            // 録画完了状態をクリア
+            state_guard.recording_modal_info = None;
+            println!("✅ Recording completion acknowledged and cleared");
+            
+            Ok(JsonResponse(ApiResponse {
+                success: true,
+                message: "Recording acknowledged".to_string(),
+            }))
+        } else {
+            Ok(JsonResponse(ApiResponse {
+                success: false,
+                message: "No completed recording to acknowledge".to_string(),
+            }))
+        }
+    } else {
+        Ok(JsonResponse(ApiResponse {
+            success: false,
+            message: "No recording session active".to_string(),
+        }))
     }
 }
 
@@ -1133,7 +1451,11 @@ pub fn run() {
             open_system_preferences,
             generate_one_time_password,
             get_current_password,
-            generate_qr_code
+            generate_qr_code,
+            get_recording_modal_info,
+            clear_recording_modal,
+            start_actual_recording,
+            stop_actual_recording
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

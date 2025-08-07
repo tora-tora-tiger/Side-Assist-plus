@@ -9,6 +9,7 @@ import { KeyboardTest } from './components/KeyboardTest';
 import { ActivityLog } from './components/ActivityLog';
 import { PermissionStatus } from './components/PermissionStatus';
 import { PortSettings } from './components/PortSettings';
+import { RecordingModal } from './components/RecordingModal';
 import { Icon } from './components/ui';
 import "./App.css";
 
@@ -234,6 +235,9 @@ function App() {
           </div>
         )}
       </div>
+      
+      {/* Recording Modal */}
+      <RecordingModal />
     </div>
   );
 }

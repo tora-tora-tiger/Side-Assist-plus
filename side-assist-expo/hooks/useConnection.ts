@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { NetworkService } from '../services/NetworkService';
 import { DeepLinkService, ConnectionParams } from '../services/DeepLinkService';
+import AlertManager from '../utils/AlertManager';
 
 export const useConnection = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -10,6 +11,7 @@ export const useConnection = () => {
   const [password, setPassword] = useState<string>('');
   const connectionMonitorRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const monitoringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recordingMonitorRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // DeepLink処理のハンドラー
   const handleDeepLink = useCallback(async (params: ConnectionParams) => {
@@ -227,27 +229,101 @@ export const useConnection = () => {
     [macIP, macPort, isConnected, isAuthenticated, password],
   );
 
-  const startRecording = useCallback(
+  const prepareRecording = useCallback(
     async (actionId: string, name: string, icon?: string): Promise<boolean> => {
       if (!macIP || !macPort || !isConnected || !isAuthenticated) {
         return false;
       }
 
-      return await NetworkService.startRecording(macIP, macPort, actionId, name, icon, password);
-    },
-    [macIP, macPort, isConnected, isAuthenticated, password],
-  );
-
-  const stopRecording = useCallback(
-    async (actionId: string): Promise<boolean> => {
-      if (!macIP || !macPort || !isConnected || !isAuthenticated) {
-        return false;
+      const result = await NetworkService.prepareRecording(macIP, macPort, actionId, name, icon, password);
+      
+      if (result) {
+        // 録画準備成功時に録画状態監視を開始
+        startRecordingMonitoring();
       }
-
-      return await NetworkService.stopRecording(macIP, macPort, actionId, password);
+      
+      return result;
     },
-    [macIP, macPort, isConnected, isAuthenticated, password],
+    [macIP, macPort, isConnected, isAuthenticated, password, startRecordingMonitoring],
   );
+
+  const startRecordingMonitoring = useCallback(() => {
+    if (recordingMonitorRef.current) {
+      clearInterval(recordingMonitorRef.current);
+    }
+
+    console.log('🎥 Starting recording status monitoring...');
+
+    recordingMonitorRef.current = setInterval(async () => {
+      if (!macIP || !macPort) return;
+
+      try {
+        const status = await NetworkService.getRecordingStatus(macIP, macPort);
+        console.log('🎥 Recording status check:', status);
+        
+        if (status?.status === 'completed') {
+          console.log('🎉 Recording completed! Showing alert...', status);
+          
+          // アラート表示（完了確認付き）
+          if (status.message) {
+            console.log('📱 Calling AlertManager.showAlert with:', status.message);
+            AlertManager.showAlert('録画完了', status.message, [{
+              text: 'OK',
+              onPress: async () => {
+                console.log('✅ User acknowledged recording completion');
+                // このresetRecordingStateは外部から提供される関数への参照として機能
+                resetRecordingState();
+              }
+            }]);
+          } else {
+            console.log('📱 Calling AlertManager.showAlert with default message');
+            AlertManager.showAlert('録画完了', '録画が完了しました', [{
+              text: 'OK', 
+              onPress: async () => {
+                console.log('✅ User acknowledged recording completion');
+                // このresetRecordingStateは外部から提供される関数への参照として機能
+                resetRecordingState();
+              }
+            }]);
+          }
+          
+          // 完了確認を送信
+          console.log('✅ Sending acknowledgment...');
+          await NetworkService.acknowledgeRecording(macIP, macPort);
+          
+          // 監視停止
+          stopRecordingMonitoring();
+        } else if (status?.status === 'recording') {
+          console.log('🔴 Still recording... keys:', status.recorded_keys_count || 0);
+        } else if (status?.status === 'preparing') {
+          console.log('🟡 Recording prepared, waiting for start...');
+        } else {
+          console.log('⚪ Recording status:', status?.status || 'unknown');
+        }
+      } catch (error) {
+        console.error('Recording status monitoring error:', error);
+      }
+    }, 1000); // 1秒ごとにチェック
+  }, [macIP, macPort]);
+
+  const stopRecordingMonitoring = useCallback(() => {
+    if (recordingMonitorRef.current) {
+      clearInterval(recordingMonitorRef.current);
+      recordingMonitorRef.current = null;
+      console.log('🎥 Recording status monitoring stopped');
+    }
+  }, []);
+
+  const resetRecordingState = useCallback(() => {
+    console.log('🔄 Resetting recording UI state for next recording');
+    // ExecutionScreenのグローバル関数を呼び出してリセット
+    if (typeof (window as any).resetExecutionScreenRecordingState === 'function') {
+      console.log('🎯 Calling ExecutionScreen reset function...');
+      (window as any).resetExecutionScreenRecordingState();
+    } else {
+      console.log('⚠️ ExecutionScreen reset function not found');
+    }
+  }, []);
 
   const connectManually = useCallback(
     async (ip: string, port: string, password: string): Promise<boolean> => {
@@ -321,8 +397,9 @@ export const useConnection = () => {
   const disconnect = useCallback(() => {
     console.log('🔌 [useConnection] disconnect START');
     
-    // 監視を停止
+    // 全ての監視を停止
     stopConnectionMonitoring();
+    stopRecordingMonitoring();
     
     // 接続状態をリセット
     setIsConnected(false);
@@ -333,7 +410,7 @@ export const useConnection = () => {
     
     console.log('🔌 [useConnection] Connection disconnected and state reset');
     console.log('🔌 [useConnection] disconnect END');
-  }, [stopConnectionMonitoring]);
+  }, [stopConnectionMonitoring, stopRecordingMonitoring]);
 
   return {
     isConnected,
@@ -347,8 +424,8 @@ export const useConnection = () => {
     sendCopy,
     sendPaste,
     executeCustomAction,
-    startRecording,
-    stopRecording,
+    prepareRecording,
+    resetRecordingState,
     authenticateWithPassword,
     connectManually,
     disconnect,
