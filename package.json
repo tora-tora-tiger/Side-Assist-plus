@@ -3,6 +3,7 @@
 	"version": "1.0.0",
 	"description": "Cross-platform keyboard automation suite with mobile and desktop components",
 	"scripts": {
+		"postinstall": "npm run lefthook:install",
 		"lefthook:install": "lefthook install",
 		"lefthook:uninstall": "lefthook uninstall",
 		"check:i18n": "cd side-assist-desktop && ./check-i18n.sh",

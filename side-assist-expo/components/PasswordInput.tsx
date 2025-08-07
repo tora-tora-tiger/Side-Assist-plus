@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text } from 'react-native';
-import { Button, InputField } from './ui';
+import React, { useState } from "react";
+import { View, Text } from "react-native";
+import { Button, InputField } from "./ui";
 
 interface PasswordInputProps {
   onAuthenticate: (password: string) => Promise<boolean>;
@@ -11,12 +11,12 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
   onAuthenticate,
   isVisible,
 }) => {
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAuthenticate = async () => {
     if (!password) return;
-    
+
     setIsLoading(true);
     try {
       await onAuthenticate(password);

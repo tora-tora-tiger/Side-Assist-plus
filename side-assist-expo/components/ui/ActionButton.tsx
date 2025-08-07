@@ -1,5 +1,5 @@
-import React from 'react';
-import { TouchableOpacity, View, Animated } from 'react-native';
+import React from "react";
+import { TouchableOpacity, View, Animated } from "react-native";
 
 interface ActionButtonProps {
   icon: React.ReactNode;
@@ -16,7 +16,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
   disabled = false,
   size = 75,
   animatedValue,
-  backgroundColor = '#e5e7eb',
+  backgroundColor = "#e5e7eb",
 }) => {
   const ButtonComponent = animatedValue ? Animated.View : View;
   const animatedStyle = animatedValue
@@ -29,7 +29,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
         style={{
           width: size,
           height: size,
-          backgroundColor: disabled ? '#a3a3a3' : backgroundColor,
+          backgroundColor: disabled ? "#a3a3a3" : backgroundColor,
         }}
         className="rounded-3xl shadow-soft justify-center items-center"
         onPress={onPress}

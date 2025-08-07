@@ -1,9 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { View, Animated, ScrollView, Text, TouchableOpacity } from 'react-native';
-import { Header, StatusIndicator, ActionButton, Button } from './ui';
-import { MaterialIcons } from '@expo/vector-icons';
-import AlertManager from '../utils/AlertManager';
-import { CustomAction } from '../services/NetworkService';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Animated,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+} from "react-native";
+import { Header, StatusIndicator, ActionButton, Button } from "./ui";
+import { MaterialIcons } from "@expo/vector-icons";
+import AlertManager from "../utils/AlertManager";
+import { CustomAction } from "../services/NetworkService";
 
 interface ExecutionScreenProps {
   onSettingsPress: () => void;
@@ -11,7 +17,11 @@ interface ExecutionScreenProps {
   onSendCopy: () => Promise<boolean>;
   onSendPaste: () => Promise<boolean>;
   onExecuteCustomAction: (actionId: string) => Promise<boolean>;
-  onPrepareRecording: (actionId: string, name: string, icon?: string) => Promise<boolean>;
+  onPrepareRecording: (
+    actionId: string,
+    name: string,
+    icon?: string,
+  ) => Promise<boolean>;
   resetRecordingState: () => void;
   customActions: CustomAction[];
   onDisconnect: () => void;
@@ -24,15 +34,18 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   onSendPaste,
   onExecuteCustomAction,
   onPrepareRecording,
-  resetRecordingState,
   customActions,
   onDisconnect,
 }) => {
   // カスタムアクション状態をログ出力
   useEffect(() => {
-    console.log(`🎭 [ExecutionScreen] Custom actions updated: ${customActions.length} actions`);
+    console.log(
+      `🎭 [ExecutionScreen] Custom actions updated: ${customActions.length} actions`,
+    );
     customActions.forEach((action, index) => {
-      console.log(`  ${index + 1}. ${action.name} (id: ${action.id}, keys: ${action.key_sequence.length})`);
+      console.log(
+        `  ${index + 1}. ${action.name} (id: ${action.id}, keys: ${action.key_sequence.length})`,
+      );
     });
   }, [customActions]);
 
@@ -47,23 +60,20 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   }));
 
   const [isRecordingPrepared, setIsRecordingPrepared] = useState(false);
-  const [isRecordingActive, setIsRecordingActive] = useState(false);
-  const [recordingActionId, setRecordingActionId] = useState<string | null>(null);
 
   // 録画状態リセット関数の実装
   const handleResetRecordingState = React.useCallback(() => {
-    console.log('🔄 [ExecutionScreen] Resetting recording state...');
+    console.log("🔄 [ExecutionScreen] Resetting recording state...");
     setIsRecordingPrepared(false);
-    setIsRecordingActive(false);  
-    setRecordingActionId(null);
-    console.log('✅ [ExecutionScreen] Recording state reset completed');
+    console.log("✅ [ExecutionScreen] Recording state reset completed");
   }, []);
 
   // グローバルなリセット関数を作成（useConnectionで呼び出される）
   useEffect(() => {
     // グローバルなwindowオブジェクトに関数を追加
-    (window as any).resetExecutionScreenRecordingState = handleResetRecordingState;
-    
+    (window as any).resetExecutionScreenRecordingState =
+      handleResetRecordingState;
+
     return () => {
       // クリーンアップ
       delete (window as any).resetExecutionScreenRecordingState;
@@ -73,52 +83,54 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   // 6つのアクション定義
   const actions = [
     {
-      id: 'ultradeepthink',
+      id: "ultradeepthink",
       icon: <MaterialIcons name="psychology" size={32} color="#ffffff" />,
-      text: 'ultradeepthink',
-      backgroundColor: '#6366f1', // Indigo
-      type: 'text' as const,
+      text: "ultradeepthink",
+      backgroundColor: "#6366f1", // Indigo
+      type: "text" as const,
     },
     {
-      id: 'copy',
+      id: "copy",
       icon: <MaterialIcons name="content-copy" size={32} color="#ffffff" />,
-      text: 'copy',
-      backgroundColor: '#f59e0b', // Amber
-      type: 'clipboard' as const,
+      text: "copy",
+      backgroundColor: "#f59e0b", // Amber
+      type: "clipboard" as const,
     },
     {
-      id: 'paste',
+      id: "paste",
       icon: <MaterialIcons name="content-paste" size={32} color="#ffffff" />,
-      text: 'paste',
-      backgroundColor: '#10b981', // Emerald
-      type: 'clipboard' as const,
+      text: "paste",
+      backgroundColor: "#10b981", // Emerald
+      type: "clipboard" as const,
     },
     {
-      id: 'action4',
+      id: "action4",
       icon: <MaterialIcons name="rocket-launch" size={32} color="#ffffff" />,
-      text: 'action4',
-      backgroundColor: '#ef4444', // Red
-      type: 'text' as const,
+      text: "action4",
+      backgroundColor: "#ef4444", // Red
+      type: "text" as const,
     },
     {
-      id: 'action5',
+      id: "action5",
       icon: <MaterialIcons name="build" size={32} color="#ffffff" />,
-      text: 'action5',
-      backgroundColor: '#8b5cf6', // Violet
-      type: 'text' as const,
+      text: "action5",
+      backgroundColor: "#8b5cf6", // Violet
+      type: "text" as const,
     },
     {
-      id: 'action6',
+      id: "action6",
       icon: <MaterialIcons name="bar-chart" size={32} color="#ffffff" />,
-      text: 'action6',
-      backgroundColor: '#06b6d4', // Cyan
-      type: 'text' as const,
+      text: "action6",
+      backgroundColor: "#06b6d4", // Cyan
+      type: "text" as const,
     },
   ];
 
   const handleActionPress = async (action: (typeof actions)[0]) => {
-    console.log(`🔥 [ExecutionScreen] Button pressed: ${action.id} - "${action.text}"`);
-    
+    console.log(
+      `🔥 [ExecutionScreen] Button pressed: ${action.id} - "${action.text}"`,
+    );
+
     // シンプルなアニメーション
     const scale = buttonScales[action.id as keyof typeof buttonScales];
     Animated.sequence([
@@ -135,82 +147,101 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
     ]).start();
 
     try {
-      if (action.type === 'clipboard') {
-        if (action.id === 'copy') {
+      if (action.type === "clipboard") {
+        if (action.id === "copy") {
           console.log(`📋 [ExecutionScreen] Executing copy command`);
           const success = await onSendCopy();
           if (success) {
-            console.log(`✅ [ExecutionScreen] Copy command executed successfully`);
+            console.log(
+              `✅ [ExecutionScreen] Copy command executed successfully`,
+            );
           } else {
-            throw new Error('Copy command failed');
+            throw new Error("Copy command failed");
           }
-        } else if (action.id === 'paste') {
+        } else if (action.id === "paste") {
           console.log(`📋 [ExecutionScreen] Executing paste command`);
           const success = await onSendPaste();
           if (success) {
-            console.log(`✅ [ExecutionScreen] Paste command executed successfully`);
+            console.log(
+              `✅ [ExecutionScreen] Paste command executed successfully`,
+            );
           } else {
-            throw new Error('Paste command failed');
+            throw new Error("Paste command failed");
           }
         }
       } else {
         console.log(`🚀 [ExecutionScreen] Sending text: "${action.text}"`);
         await onSendText(action.text);
-        console.log(`✅ [ExecutionScreen] Text sent successfully: "${action.text}"`);
+        console.log(
+          `✅ [ExecutionScreen] Text sent successfully: "${action.text}"`,
+        );
       }
     } catch (error) {
-      console.error('🚨 [ExecutionScreen] Action press error:', error);
-      let errorMessage = 'テキストの送信中にエラーが発生しました';
-      if (action.type === 'clipboard') {
+      console.error("🚨 [ExecutionScreen] Action press error:", error);
+      let errorMessage = "テキストの送信中にエラーが発生しました";
+      if (action.type === "clipboard") {
         errorMessage = `${action.text}コマンドの実行中にエラーが発生しました`;
       }
-      AlertManager.showAlert('エラー', errorMessage);
+      AlertManager.showAlert("エラー", errorMessage);
     }
   };
 
   // カスタムアクション実行処理
   const handleCustomAction = async (action: CustomAction) => {
-    console.log(`🎭 [ExecutionScreen] Executing custom action: ${action.name} (${action.id})`);
-    
+    console.log(
+      `🎭 [ExecutionScreen] Executing custom action: ${action.name} (${action.id})`,
+    );
+
     try {
       const success = await onExecuteCustomAction(action.id);
       if (success) {
-        console.log(`✅ [ExecutionScreen] Custom action executed successfully: ${action.name}`);
-        AlertManager.showAlert('実行完了', `カスタムアクション「${action.name}」を実行しました。`);
+        console.log(
+          `✅ [ExecutionScreen] Custom action executed successfully: ${action.name}`,
+        );
+        AlertManager.showAlert(
+          "実行完了",
+          `カスタムアクション「${action.name}」を実行しました。`,
+        );
       } else {
-        throw new Error('Custom action execution failed');
+        throw new Error("Custom action execution failed");
       }
     } catch (error) {
-      console.error('🚨 [ExecutionScreen] Custom action execution error:', error);
-      AlertManager.showAlert('エラー', `カスタムアクション「${action.name}」の実行中にエラーが発生しました。`);
+      console.error(
+        "🚨 [ExecutionScreen] Custom action execution error:",
+        error,
+      );
+      AlertManager.showAlert(
+        "エラー",
+        `カスタムアクション「${action.name}」の実行中にエラーが発生しました。`,
+      );
     }
   };
 
   const handleDisconnect = () => {
     AlertManager.showAlert(
-      '接続解除の確認',
-      'PCとの接続を解除しますか？実行中の操作は中断されます。',
+      "接続解除の確認",
+      "PCとの接続を解除しますか？実行中の操作は中断されます。",
       [
         {
-          text: 'キャンセル',
-          style: 'cancel',
+          text: "キャンセル",
+          style: "cancel",
         },
         {
-          text: '解除',
-          style: 'destructive',
+          text: "解除",
+          style: "destructive",
           onPress: () => {
-            console.log('🔌 [ExecutionScreen] User confirmed disconnect');
+            console.log("🔌 [ExecutionScreen] User confirmed disconnect");
             onDisconnect();
           },
         },
-      ]
+      ],
     );
   };
 
   // 録画準備処理
   const handlePrepareRecording = async () => {
-    console.log('🎥 [ExecutionScreen] Preparing recording...');
-    
+    console.log("🎥 [ExecutionScreen] Preparing recording...");
+
     // シンプルなアニメーション
     const scale = buttonScales.recordButton;
     Animated.sequence([
@@ -229,21 +260,26 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
     try {
       const actionId = `custom_${Date.now()}`;
       const actionName = `Custom Action ${new Date().toLocaleTimeString()}`;
-      
-      console.log(`📝 [ExecutionScreen] Preparing recording: ${actionName} (${actionId})`);
-      
-      const success = await onPrepareRecording(actionId, actionName, 'build');
+
+      console.log(
+        `📝 [ExecutionScreen] Preparing recording: ${actionName} (${actionId})`,
+      );
+
+      const success = await onPrepareRecording(actionId, actionName, "build");
       if (success) {
         setIsRecordingPrepared(true);
         setRecordingActionId(actionId);
-        console.log('✅ [ExecutionScreen] Recording prepared successfully');
-        AlertManager.showAlert('録画準備完了', `デスクトップで「${actionName}」の録画を開始できます。`);
+        console.log("✅ [ExecutionScreen] Recording prepared successfully");
+        AlertManager.showAlert(
+          "録画準備完了",
+          `デスクトップで「${actionName}」の録画を開始できます。`,
+        );
       } else {
-        throw new Error('Failed to prepare recording');
+        throw new Error("Failed to prepare recording");
       }
     } catch (error) {
-      console.error('🚨 [ExecutionScreen] Recording preparation error:', error);
-      AlertManager.showAlert('エラー', '録画準備中にエラーが発生しました');
+      console.error("🚨 [ExecutionScreen] Recording preparation error:", error);
+      AlertManager.showAlert("エラー", "録画準備中にエラーが発生しました");
     }
   };
 
@@ -257,8 +293,8 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
         onSettingsPress={onSettingsPress}
       />
 
-      <ScrollView 
-        className="flex-1" 
+      <ScrollView
+        className="flex-1"
         contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
       >
@@ -340,33 +376,39 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
                 デスクトップでキーボード操作を録画し、
                 {"\n"}カスタムアクションとして保存できます
               </Text>
-              
-              <Animated.View 
+
+              <Animated.View
                 style={{ transform: [{ scale: buttonScales.recordButton }] }}
                 className="mb-2"
               >
                 <TouchableOpacity
                   className={`w-20 h-20 rounded-full items-center justify-center ${
-                    isRecordingPrepared ? 'bg-green-500' : 'bg-red-500'
+                    isRecordingPrepared ? "bg-green-500" : "bg-red-500"
                   } shadow-lg`}
                   onPress={handlePrepareRecording}
                   activeOpacity={0.8}
                   disabled={isRecordingPrepared}
                 >
-                  <MaterialIcons 
-                    name={isRecordingPrepared ? "check-circle" : "radio-button-checked"} 
-                    size={40} 
-                    color="#ffffff" 
+                  <MaterialIcons
+                    name={
+                      isRecordingPrepared
+                        ? "check-circle"
+                        : "radio-button-checked"
+                    }
+                    size={40}
+                    color="#ffffff"
                   />
                 </TouchableOpacity>
               </Animated.View>
-              
-              <Text className={`text-sm font-medium ${
-                isRecordingPrepared ? 'text-green-600' : 'text-neutral-700'
-              }`}>
-                {isRecordingPrepared ? '録画準備完了' : '録画を準備する'}
+
+              <Text
+                className={`text-sm font-medium ${
+                  isRecordingPrepared ? "text-green-600" : "text-neutral-700"
+                }`}
+              >
+                {isRecordingPrepared ? "録画準備完了" : "録画を準備する"}
               </Text>
-              
+
               {isRecordingPrepared && (
                 <Text className="text-xs text-green-500 mt-1 text-center">
                   デスクトップで録画を開始してください
@@ -385,13 +427,14 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
                   保存済みカスタムアクション
                 </Text>
                 <Text className="text-sm text-neutral-500 mb-4">
-                  録画済みのキーシーケンスを実行できます ({customActions.length}個)
+                  録画済みのキーシーケンスを実行できます ({customActions.length}
+                  個)
                 </Text>
               </View>
-              
+
               {/* カスタムアクション一覧 */}
               <View className="space-y-3">
-                {customActions.map((action) => (
+                {customActions.map(action => (
                   <TouchableOpacity
                     key={action.id}
                     className="bg-neutral-50 rounded-xl p-4 flex-row items-center justify-between border border-neutral-200"
@@ -400,10 +443,10 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
                   >
                     <View className="flex-1 flex-row items-center">
                       <View className="w-8 h-8 bg-blue-500 rounded-full items-center justify-center mr-3">
-                        <MaterialIcons 
-                          name={action.icon ? action.icon as any : 'build'} 
-                          size={18} 
-                          color="#ffffff" 
+                        <MaterialIcons
+                          name={action.icon ? (action.icon as any) : "build"}
+                          size={18}
+                          color="#ffffff"
                         />
                       </View>
                       <View className="flex-1">
@@ -411,11 +454,19 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
                           {action.name}
                         </Text>
                         <Text className="text-xs text-neutral-500">
-                          {action.key_sequence.length}個のキー・{new Date(action.created_at * 1000).toLocaleDateString()}作成
+                          {action.key_sequence.length}個のキー・
+                          {new Date(
+                            action.created_at * 1000,
+                          ).toLocaleDateString()}
+                          作成
                         </Text>
                       </View>
                     </View>
-                    <MaterialIcons name="play-arrow" size={24} color="#6b7280" />
+                    <MaterialIcons
+                      name="play-arrow"
+                      size={24}
+                      color="#6b7280"
+                    />
                   </TouchableOpacity>
                 ))}
               </View>

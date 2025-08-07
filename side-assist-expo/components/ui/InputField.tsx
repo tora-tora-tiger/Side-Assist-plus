@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
 
 interface InputFieldProps {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
-  keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad';
+  keyboardType?: "default" | "numeric" | "email-address" | "phone-pad";
   maxLength?: number;
   secureTextEntry?: boolean;
   disabled?: boolean;
@@ -21,7 +21,7 @@ export const InputField: React.FC<InputFieldProps> = ({
   value,
   onChangeText,
   placeholder,
-  keyboardType = 'default',
+  keyboardType = "default",
   maxLength,
   secureTextEntry = false,
   disabled = false,
@@ -36,45 +36,46 @@ export const InputField: React.FC<InputFieldProps> = ({
   const showPasswordToggle = secureTextEntry;
 
   const getContainerClasses = () => {
-    let classes = 'mb-4';
+    const classes = "mb-4";
     return classes;
   };
 
   const getInputContainerClasses = () => {
-    let classes = 'flex-row items-center bg-white border rounded-2xl px-4 py-4 ';
-    
+    let classes =
+      "flex-row items-center bg-white border rounded-2xl px-4 py-4 ";
+
     if (hasError) {
-      classes += 'border-danger-500 ';
+      classes += "border-danger-500 ";
     } else if (isFocused) {
-      classes += 'border-primary-500 shadow-glow ';
+      classes += "border-primary-500 shadow-glow ";
     } else {
-      classes += 'border-neutral-200 ';
+      classes += "border-neutral-200 ";
     }
 
     if (disabled) {
-      classes += 'bg-neutral-100 ';
+      classes += "bg-neutral-100 ";
     }
 
     return classes;
   };
 
   const getInputClasses = () => {
-    let classes = 'flex-1 text-base text-neutral-900 ';
-    
+    let classes = "flex-1 text-base text-neutral-900 ";
+
     if (disabled) {
-      classes += 'text-neutral-500 ';
+      classes += "text-neutral-500 ";
     }
 
     return classes;
   };
 
   const getLabelClasses = () => {
-    let classes = 'text-base font-semibold mb-2 ';
-    
+    let classes = "text-base font-semibold mb-2 ";
+
     if (hasError) {
-      classes += 'text-danger-600 ';
+      classes += "text-danger-600 ";
     } else {
-      classes += 'text-neutral-700 ';
+      classes += "text-neutral-700 ";
     }
 
     return classes;
@@ -84,12 +85,8 @@ export const InputField: React.FC<InputFieldProps> = ({
     <View className={getContainerClasses()}>
       {/* Label */}
       <View className="flex-row items-center mb-2">
-        <Text className={getLabelClasses()}>
-          {label}
-        </Text>
-        {required && (
-          <Text className="text-danger-500 ml-1">*</Text>
-        )}
+        <Text className={getLabelClasses()}>{label}</Text>
+        {required && <Text className="text-danger-500 ml-1">*</Text>}
       </View>
 
       {/* Input Container */}
@@ -116,7 +113,7 @@ export const InputField: React.FC<InputFieldProps> = ({
             activeOpacity={0.7}
           >
             <MaterialIcons
-              name={isPasswordVisible ? 'visibility-off' : 'visibility'}
+              name={isPasswordVisible ? "visibility-off" : "visibility"}
               size={20}
               color="#737373"
             />
@@ -128,17 +125,13 @@ export const InputField: React.FC<InputFieldProps> = ({
       {hasError && (
         <View className="flex-row items-center mt-2">
           <MaterialIcons name="error-outline" size={16} color="#dc2626" />
-          <Text className="text-danger-600 text-sm ml-2 flex-1">
-            {error}
-          </Text>
+          <Text className="text-danger-600 text-sm ml-2 flex-1">{error}</Text>
         </View>
       )}
 
       {/* Hint Message */}
       {hint && !hasError && (
-        <Text className="text-neutral-500 text-sm mt-2">
-          {hint}
-        </Text>
+        <Text className="text-neutral-500 text-sm mt-2">{hint}</Text>
       )}
     </View>
   );

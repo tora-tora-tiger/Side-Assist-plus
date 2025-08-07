@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { Button, StatusIndicator, Header } from '@/components/ui';
+import React, { useState } from "react";
+import { View, Text } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { Button, StatusIndicator, Header } from "@/components/ui";
 
 export default function SideAssistScreen() {
   const [isConnected, setIsConnected] = useState(false);
@@ -12,13 +12,13 @@ export default function SideAssistScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <Header 
+      <Header
         title="Side Assist Plus"
         showSettings={true}
-        onSettingsPress={() => console.log('Settings pressed')}
+        onSettingsPress={() => console.log("Settings pressed")}
         showShadow={true}
       />
-      
+
       <View className="px-5 pb-5">
         <StatusIndicator isConnected={isConnected} />
       </View>
@@ -32,7 +32,7 @@ export default function SideAssistScreen() {
             Side Assist Plus
           </Text>
           <Text className="text-base text-gray-600 text-center mt-2 leading-6">
-            Expo Router v5 移植テスト{'\n'}TailwindCSS + Vector Icons
+            Expo Router v5 移植テスト{"\n"}TailwindCSS + Vector Icons
           </Text>
         </View>
 
@@ -40,10 +40,10 @@ export default function SideAssistScreen() {
           <Button
             title={isConnected ? "Disconnect Test" : "Connect Test"}
             icon={
-              <MaterialIcons 
-                name={isConnected ? "link-off" : "link"} 
-                size={18} 
-                color="#ffffff" 
+              <MaterialIcons
+                name={isConnected ? "link-off" : "link"}
+                size={18}
+                color="#ffffff"
               />
             }
             variant="primary"

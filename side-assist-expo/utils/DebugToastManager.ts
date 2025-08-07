@@ -1,4 +1,4 @@
-import { isDebugModeEnabled } from './DeviceConfig';
+import { isDebugModeEnabled } from "./DeviceConfig";
 
 class DebugToastManager {
   private static listeners: Array<(message: string) => void> = [];
@@ -15,12 +15,12 @@ class DebugToastManager {
     if (!isDebugModeEnabled() && !__DEV__) {
       return;
     }
-    
-    console.log('🐛 [DebugToast]', message);
+
+    console.log("🐛 [DebugToast]", message);
     this.listeners.forEach(listener => listener(message));
   }
 
-  static showTouchEvent(componentName: string, eventType: string = 'Press') {
+  static showTouchEvent(componentName: string, eventType: string = "Press") {
     const timestamp = new Date().toLocaleTimeString();
     this.show(`${componentName} ${eventType} detected at ${timestamp}`);
   }

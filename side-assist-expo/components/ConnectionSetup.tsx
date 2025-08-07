@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Header, Button, InputField } from './ui';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import { Header, Button, InputField } from "./ui";
+import { MaterialIcons } from "@expo/vector-icons";
 
 interface ConnectionSetupProps {
   onConnect: (ip: string, port: string, password: string) => Promise<boolean>;
@@ -14,33 +20,37 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
   isVisible,
   onClose,
 }) => {
-  const [ip, setIP] = useState('');
-  const [port, setPort] = useState('8080');
-  const [password, setPassword] = useState('');
+  const [ip, setIP] = useState("");
+  const [port, setPort] = useState("8080");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
+    const newErrors: { [key: string]: string } = {};
 
     if (!ip.trim()) {
-      newErrors.ip = 'IPアドレスを入力してください';
+      newErrors.ip = "IPアドレスを入力してください";
     } else if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(ip.trim())) {
-      newErrors.ip = '正しいIPアドレスの形式で入力してください';
+      newErrors.ip = "正しいIPアドレスの形式で入力してください";
     }
 
     if (!port.trim()) {
-      newErrors.port = 'ポート番号を入力してください';
-    } else if (isNaN(Number(port)) || Number(port) < 1 || Number(port) > 65535) {
-      newErrors.port = '1-65535の範囲で入力してください';
+      newErrors.port = "ポート番号を入力してください";
+    } else if (
+      isNaN(Number(port)) ||
+      Number(port) < 1 ||
+      Number(port) > 65535
+    ) {
+      newErrors.port = "1-65535の範囲で入力してください";
     }
 
     if (!password.trim()) {
-      newErrors.password = 'パスワードを入力してください';
+      newErrors.password = "パスワードを入力してください";
     } else if (password.length !== 5) {
-      newErrors.password = '5桁の数字を入力してください';
+      newErrors.password = "5桁の数字を入力してください";
     } else if (!/^\d{5}$/.test(password)) {
-      newErrors.password = '数字のみで入力してください';
+      newErrors.password = "数字のみで入力してください";
     }
 
     setErrors(newErrors);
@@ -49,7 +59,7 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
 
   const handleConnect = async () => {
     if (!validateForm()) return;
-    
+
     setIsLoading(true);
     setErrors({});
 
@@ -58,11 +68,11 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
       if (success) {
         onClose();
       } else {
-        setErrors({ general: '接続に失敗しました。設定を確認してください。' });
+        setErrors({ general: "接続に失敗しました。設定を確認してください。" });
       }
     } catch (error) {
-      console.error('Connection error:', error);
-      setErrors({ general: '接続中にエラーが発生しました。' });
+      console.error("Connection error:", error);
+      setErrors({ general: "接続中にエラーが発生しました。" });
     } finally {
       setIsLoading(false);
     }
@@ -79,12 +89,12 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
         onClosePress={onClose}
       />
 
-      <KeyboardAvoidingView 
-        className="flex-1" 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ScrollView 
-          className="flex-1" 
+        <ScrollView
+          className="flex-1"
           contentContainerStyle={{ flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -94,7 +104,11 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
             <View className="bg-white rounded-3xl p-6 mb-6 shadow-soft">
               <View className="flex-row items-start">
                 <View className="w-12 h-12 bg-primary-100 rounded-2xl items-center justify-center mr-4">
-                  <MaterialIcons name="info-outline" size={24} color="#0ea5e9" />
+                  <MaterialIcons
+                    name="info-outline"
+                    size={24}
+                    color="#0ea5e9"
+                  />
                 </View>
                 <View className="flex-1">
                   <Text className="text-lg font-bold text-neutral-900 mb-2">
@@ -113,7 +127,11 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
               {errors.general && (
                 <View className="bg-danger-50 border border-danger-200 rounded-2xl p-4 mb-6">
                   <View className="flex-row items-center">
-                    <MaterialIcons name="error-outline" size={20} color="#dc2626" />
+                    <MaterialIcons
+                      name="error-outline"
+                      size={20}
+                      color="#dc2626"
+                    />
                     <Text className="text-danger-600 font-medium ml-2 flex-1">
                       {errors.general}
                     </Text>
@@ -177,7 +195,11 @@ export const ConnectionSetup: React.FC<ConnectionSetupProps> = ({
             <View className="bg-white rounded-3xl p-6 mt-6 shadow-soft">
               <View className="flex-row items-start">
                 <View className="w-10 h-10 bg-warning-100 rounded-2xl items-center justify-center mr-4 mt-1">
-                  <MaterialIcons name="help-outline" size={20} color="#ca8a04" />
+                  <MaterialIcons
+                    name="help-outline"
+                    size={20}
+                    color="#ca8a04"
+                  />
                 </View>
                 <View className="flex-1">
                   <Text className="text-lg font-semibold text-neutral-900 mb-2">

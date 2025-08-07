@@ -9,35 +9,33 @@ export default {
     userInterfaceStyle: "automatic",
     extra: {
       debugMode: process.env.EXPO_PUBLIC_DEBUG_MODE === "true",
-      developmentMode: process.env.EXPO_PUBLIC_DEVELOPMENT_MODE === "true"
+      developmentMode: process.env.EXPO_PUBLIC_DEVELOPMENT_MODE === "true",
     },
     splash: {
       image: "./assets/images/splash-icon.png",
       resizeMode: "contain",
-      backgroundColor: "#ffffff"
+      backgroundColor: "#ffffff",
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.anonymous.side-assist-expo"
+      bundleIdentifier: "com.anonymous.side-assist-expo",
     },
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
-        backgroundColor: "#ffffff"
+        backgroundColor: "#ffffff",
       },
       edgeToEdgeEnabled: true,
-      package: "com.anonymous.sideassistexpo"
+      package: "com.anonymous.sideassistexpo",
     },
     web: {
       bundler: "metro",
       output: "static",
-      favicon: "./assets/images/favicon.png"
+      favicon: "./assets/images/favicon.png",
     },
-    plugins: [
-      "expo-router"
-    ],
+    plugins: ["expo-router"],
     experiments: {
-      typedRoutes: true
-    }
-  }
+      typedRoutes: true,
+    },
+  },
 };

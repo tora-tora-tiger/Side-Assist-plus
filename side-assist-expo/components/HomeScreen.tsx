@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, Linking, ScrollView } from 'react-native';
-import { Header, Button, StatusIndicator } from './ui';
-import { QRScanner } from './QRScanner';
-import { ConnectionSetup } from './ConnectionSetup';
-import { DeepLinkService } from '../services/DeepLinkService';
-import { MaterialIcons } from '@expo/vector-icons';
-import AlertManager from '../utils/AlertManager';
+import React, { useState } from "react";
+import { View, Text, Linking, ScrollView } from "react-native";
+import { Header, Button, StatusIndicator } from "./ui";
+import { QRScanner } from "./QRScanner";
+import { ConnectionSetup } from "./ConnectionSetup";
+import { DeepLinkService } from "../services/DeepLinkService";
+import { MaterialIcons } from "@expo/vector-icons";
+import AlertManager from "../utils/AlertManager";
 
 interface HomeScreenProps {
   isConnected: boolean;
@@ -24,7 +24,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [showManualInput, setShowManualInput] = useState(false);
 
   const handleOpenQRScanner = () => {
-    console.log('📷 [HomeScreen] Opening QR scanner');
+    console.log("📷 [HomeScreen] Opening QR scanner");
     setShowQRScanner(true);
   };
 
@@ -33,23 +33,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   const handleQRCodeScanned = async (data: string) => {
-    console.log('📱 [HomeScreen] QR Code scanned:', data);
-    
+    console.log("📱 [HomeScreen] QR Code scanned:", data);
+
     const connectionParams = DeepLinkService.parseConnectionURL(data);
-    console.log('📱 Parsed connection params:', connectionParams);
+    console.log("📱 Parsed connection params:", connectionParams);
 
     setShowQRScanner(false);
 
     setTimeout(async () => {
       if (!connectionParams) {
         AlertManager.showAlert(
-          'QRコードエラー',
+          "QRコードエラー",
           `無効なQRコードです。\n\n読み取ったデータ:\n${data.substring(0, 100)}${
-            data.length > 100 ? '...' : ''
+            data.length > 100 ? "..." : ""
           }\n\nPCで生成された正しいQRコードをスキャンしてください。`,
           [
             {
-              text: '再試行',
+              text: "再試行",
               onPress: () => {
                 setTimeout(() => {
                   setShowQRScanner(true);
@@ -57,7 +57,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               },
             },
             {
-              text: 'キャンセル',
+              text: "キャンセル",
             },
           ],
         );
@@ -72,16 +72,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         );
 
         if (success) {
-          AlertManager.showAlert('接続成功', 'PCに正常に接続されました！');
+          AlertManager.showAlert("接続成功", "PCに正常に接続されました！");
         } else {
           AlertManager.showAlert(
-            '接続失敗',
-            'PCに接続できませんでした。PCが起動していることとネットワーク接続を確認してください。',
+            "接続失敗",
+            "PCに接続できませんでした。PCが起動していることとネットワーク接続を確認してください。",
           );
         }
       } catch (error) {
-        console.error('QR connection error:', error);
-        AlertManager.showAlert('エラー', '接続中にエラーが発生しました');
+        console.error("QR connection error:", error);
+        AlertManager.showAlert("エラー", "接続中にエラーが発生しました");
       }
     }, 300);
   };
@@ -103,8 +103,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         onSettingsPress={onSettingsPress}
       />
 
-      <ScrollView 
-        className="flex-1" 
+      <ScrollView
+        className="flex-1"
         contentContainerClassName="min-h-full"
         showsVerticalScrollIndicator={false}
       >
@@ -129,7 +129,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     PCと接続
                   </Text>
                   <Text className="text-base text-neutral-600 text-center leading-relaxed mb-8">
-                    QRコードをスキャンして{'\n'}簡単に接続できます
+                    QRコードをスキャンして{"\n"}簡単に接続できます
                   </Text>
 
                   {/* Action Buttons */}
@@ -167,7 +167,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <View className="bg-white rounded-3xl p-6 shadow-soft">
                 <View className="flex-row items-start">
                   <View className="w-10 h-10 bg-primary-100 rounded-2xl items-center justify-center mr-4 mt-1">
-                    <MaterialIcons name="info-outline" size={20} color="#0ea5e9" />
+                    <MaterialIcons
+                      name="info-outline"
+                      size={20}
+                      color="#0ea5e9"
+                    />
                   </View>
                   <View className="flex-1">
                     <Text className="text-lg font-semibold text-neutral-900 mb-2">
@@ -185,8 +189,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       onPress={async () => {
                         try {
                           await Linking.openSettings();
-                        } catch (error) {
-                          AlertManager.showAlert('エラー', '設定アプリを開けませんでした');
+                        } catch {
+                          AlertManager.showAlert(
+                            "エラー",
+                            "設定アプリを開けませんでした",
+                          );
                         }
                       }}
                     />
@@ -217,7 +224,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <View className="bg-white rounded-3xl p-8 shadow-soft w-full">
               <View className="items-center">
                 <View className="w-16 h-16 bg-success-100 rounded-2xl items-center justify-center mb-4">
-                  <MaterialIcons name="check-circle" size={32} color="#16a34a" />
+                  <MaterialIcons
+                    name="check-circle"
+                    size={32}
+                    color="#16a34a"
+                  />
                 </View>
                 <Text className="text-xl font-bold text-neutral-900 mb-2">
                   接続完了
@@ -225,7 +236,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <Text className="text-neutral-600 text-center mb-6">
                   PCとの接続が確立されました
                 </Text>
-                
+
                 {/* 接続解除ボタン */}
                 <Button
                   title="接続を解除"
@@ -235,22 +246,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   onPress={() => {
                     // 確認ダイアログを表示
                     AlertManager.showAlert(
-                      '接続解除の確認',
-                      'PCとの接続を解除しますか？',
+                      "接続解除の確認",
+                      "PCとの接続を解除しますか？",
                       [
                         {
-                          text: 'キャンセル',
-                          style: 'cancel',
+                          text: "キャンセル",
+                          style: "cancel",
                         },
                         {
-                          text: '解除',
-                          style: 'destructive',
+                          text: "解除",
+                          style: "destructive",
                           onPress: () => {
-                            console.log('🔌 [HomeScreen] User confirmed disconnect');
+                            console.log(
+                              "🔌 [HomeScreen] User confirmed disconnect",
+                            );
                             onDisconnect();
                           },
                         },
-                      ]
+                      ],
                     );
                   }}
                 />

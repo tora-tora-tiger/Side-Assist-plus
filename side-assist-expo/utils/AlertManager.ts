@@ -1,7 +1,7 @@
 interface Button {
   text: string;
   onPress?: () => void;
-  style?: 'default' | 'cancel' | 'destructive';
+  style?: "default" | "cancel" | "destructive";
 }
 
 class AlertManager {
@@ -16,12 +16,12 @@ class AlertManager {
   }
 
   static showAlert(title: string, message: string, buttons?: Button[]): void {
-    console.log('📱 [AlertManager] Showing alert:', title);
+    console.log("📱 [AlertManager] Showing alert:", title);
 
     const alertData: AlertData = {
       title,
       message,
-      buttons: buttons || [{ text: 'OK' }],
+      buttons: buttons || [{ text: "OK" }],
     };
 
     this.currentAlert = alertData;
@@ -29,7 +29,7 @@ class AlertManager {
   }
 
   static hideAlert(): void {
-    console.log('📱 [AlertManager] Hiding alert');
+    console.log("📱 [AlertManager] Hiding alert");
     this.currentAlert = null;
     this.notifyListeners();
   }
@@ -43,7 +43,7 @@ class AlertManager {
   }
 
   static clearQueue(): void {
-    console.log('📱 [AlertManager] Clearing state');
+    console.log("📱 [AlertManager] Clearing state");
     this.currentAlert = null;
     this.notifyListeners();
   }

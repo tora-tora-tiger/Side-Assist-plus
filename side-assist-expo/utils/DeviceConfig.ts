@@ -1,5 +1,5 @@
-import Constants from 'expo-constants';
-import * as Device from 'expo-device';
+import Constants from "expo-constants";
+import * as Device from "expo-device";
 
 export interface DeviceConfigType {
   deviceName: string;
@@ -15,10 +15,15 @@ export const getDeviceConfig = (): DeviceConfigType => {
   // .envファイルの設定を取得
   const envDeviceName = Constants.expoConfig?.extra?.deviceName;
   const envDebugMode = Constants.expoConfig?.extra?.debugMode || false;
-  const envDevelopmentMode = Constants.expoConfig?.extra?.developmentMode || __DEV__;
+  const envDevelopmentMode =
+    Constants.expoConfig?.extra?.developmentMode || __DEV__;
 
   // デバイス名を決定 (優先順位: .env > デバイス名 > デフォルト)
-  const deviceName = envDeviceName || Device.deviceName || `${Device.brand} ${Device.modelName}` || 'Unknown Device';
+  const deviceName =
+    envDeviceName ||
+    Device.deviceName ||
+    `${Device.brand} ${Device.modelName}` ||
+    "Unknown Device";
 
   return {
     deviceName,

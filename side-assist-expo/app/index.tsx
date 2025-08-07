@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { View, StatusBar } from 'react-native';
-import AlertManager from '../utils/AlertManager';
-import DebugToastManager from '../utils/DebugToastManager';
+import React, { useState, useEffect } from "react";
+import { View } from "react-native";
+import AlertManager from "../utils/AlertManager";
+import DebugToastManager from "../utils/DebugToastManager";
 
-import { useConnection } from '../hooks/useConnection';
-import { HomeScreen } from '../components/HomeScreen';
-import { ExecutionScreen } from '../components/ExecutionScreen';
-import { SettingsPanel } from '../components/SettingsPanel';
-import { PasswordInput } from '../components/PasswordInput';
-import { DebugToast } from '../components/DebugToast';
-import { CustomAlert } from '../components/CustomAlert';
+import { useConnection } from "../hooks/useConnection";
+import { HomeScreen } from "../components/HomeScreen";
+import { ExecutionScreen } from "../components/ExecutionScreen";
+import { SettingsPanel } from "../components/SettingsPanel";
+import { PasswordInput } from "../components/PasswordInput";
+import { DebugToast } from "../components/DebugToast";
+import { CustomAlert } from "../components/CustomAlert";
 
 const App = () => {
   const [showSettings, setShowSettings] = useState(false);
-  const [debugMessage, setDebugMessage] = useState('');
+  const [debugMessage, setDebugMessage] = useState("");
   const [showDebugToast, setShowDebugToast] = useState(false);
   const [alertData, setAlertData] = useState<any>(null);
 
@@ -36,19 +36,22 @@ const App = () => {
   } = useConnection();
 
   useEffect(() => {
-    console.log('🚀 [App] Connection status changed - isConnected:', isConnected);
+    console.log(
+      "🚀 [App] Connection status changed - isConnected:",
+      isConnected,
+    );
 
     // 接続が確立されたら監視を開始
     if (isConnected) {
-      console.log('📊 [App] Starting connection monitoring');
+      console.log("📊 [App] Starting connection monitoring");
       startConnectionMonitoring();
     } else {
-      console.log('📊 [App] Stopping connection monitoring');
+      console.log("📊 [App] Stopping connection monitoring");
       stopConnectionMonitoring();
     }
 
     return () => {
-      console.log('🛑 [App] Cleanup - stopping monitoring');
+      console.log("🛑 [App] Cleanup - stopping monitoring");
       stopConnectionMonitoring();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -66,7 +69,7 @@ const App = () => {
 
   // カスタムアラートマネージャーの購読
   useEffect(() => {
-    const unsubscribe = AlertManager.subscribe((alert) => {
+    const unsubscribe = AlertManager.subscribe(alert => {
       setAlertData(alert);
     });
 
@@ -75,7 +78,7 @@ const App = () => {
 
   const handleSendText = async (text: string) => {
     if (!isAuthenticated) {
-      AlertManager.showAlert('認証が必要', 'まずパスワードで認証してください');
+      AlertManager.showAlert("認証が必要", "まずパスワードで認証してください");
       return;
     }
 
@@ -85,27 +88,31 @@ const App = () => {
         console.log(`✅ Text sent successfully: "${text}"`);
       } else {
         AlertManager.showAlert(
-          '送信失敗',
-          'テキストの送信に失敗しました。パスワードを再確認してください。',
+          "送信失敗",
+          "テキストの送信に失敗しました。パスワードを再確認してください。",
         );
       }
     } catch (error) {
-      console.error('Send text error:', error);
+      console.error("Send text error:", error);
       AlertManager.showAlert(
-        'エラー',
-        'テキストの送信中にエラーが発生しました',
+        "エラー",
+        "テキストの送信中にエラーが発生しました",
       );
     }
   };
 
   return (
     <View className="flex-1 bg-white">
-
       {(() => {
-        console.log('🔍 [App] Rendering state - isConnected:', isConnected, 'isAuthenticated:', isAuthenticated);
-        
+        console.log(
+          "🔍 [App] Rendering state - isConnected:",
+          isConnected,
+          "isAuthenticated:",
+          isAuthenticated,
+        );
+
         if (!isConnected) {
-          console.log('📱 [App] Rendering HomeScreen (not connected)');
+          console.log("📱 [App] Rendering HomeScreen (not connected)");
           return (
             <HomeScreen
               isConnected={isConnected}
@@ -115,7 +122,9 @@ const App = () => {
             />
           );
         } else if (isAuthenticated) {
-          console.log('🎯 [App] Rendering ExecutionScreen (connected & authenticated)');
+          console.log(
+            "🎯 [App] Rendering ExecutionScreen (connected & authenticated)",
+          );
           return (
             <ExecutionScreen
               onSettingsPress={() => setShowSettings(true)}
@@ -130,7 +139,9 @@ const App = () => {
             />
           );
         } else {
-          console.log('🔒 [App] Rendering HomeScreen + PasswordInput (connected but not authenticated)');
+          console.log(
+            "🔒 [App] Rendering HomeScreen + PasswordInput (connected but not authenticated)",
+          );
           return (
             <View className="flex-1">
               <HomeScreen
@@ -164,8 +175,8 @@ const App = () => {
 
       <CustomAlert
         visible={!!alertData}
-        title={alertData?.title || ''}
-        message={alertData?.message || ''}
+        title={alertData?.title || ""}
+        message={alertData?.message || ""}
         buttons={alertData?.buttons}
         onDismiss={() => AlertManager.hideAlert()}
       />

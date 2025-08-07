@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Platform } from "react-native";
 
 export class NetworkPermissionService {
   /**
@@ -7,7 +7,7 @@ export class NetworkPermissionService {
    * Android: 常にtrue（権限不要）
    */
   static async checkNetworkPermission(): Promise<boolean> {
-    if (Platform.OS !== 'ios') {
+    if (Platform.OS !== "ios") {
       return true; // Android は権限不要
     }
 
@@ -17,17 +17,17 @@ export class NetworkPermissionService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 1500);
 
-      await fetch('http://192.168.1.1:80', {
-        method: 'HEAD',
+      await fetch("http://192.168.1.1:80", {
+        method: "HEAD",
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
-      console.log('Network permission check passed');
+      console.log("Network permission check passed");
       return true;
-    } catch (error: any) {
+    } catch {
       console.log(
-        'Network permission check - no access to router, checking common gateway',
+        "Network permission check - no access to router, checking common gateway",
       );
 
       // ルーターに失敗した場合、別の一般的なゲートウェイをチェック
@@ -35,17 +35,17 @@ export class NetworkPermissionService {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 1500);
 
-        await fetch('http://192.168.0.1:80', {
-          method: 'HEAD',
+        await fetch("http://192.168.0.1:80", {
+          method: "HEAD",
           signal: controller.signal,
         });
 
         clearTimeout(timeoutId);
-        console.log('Network permission check passed (alternative gateway)');
+        console.log("Network permission check passed (alternative gateway)");
         return true;
-      } catch (secondError: any) {
+      } catch {
         // 両方失敗した場合は権限なしと判定
-        console.log('Network permission denied - no access to local network');
+        console.log("Network permission denied - no access to local network");
         return false;
       }
     }
@@ -58,7 +58,7 @@ export class NetworkPermissionService {
   static async testServerDiscovery(): Promise<boolean> {
     try {
       // 権限が確認済みの場合のみ、最小限のサーバー発見テストを実行
-      const subnets = ['192.168.1', '192.168.0']; // 最も一般的な2つのサブネットのみ
+      const subnets = ["192.168.1", "192.168.0"]; // 最も一般的な2つのサブネットのみ
 
       for (const subnet of subnets) {
         for (let i = 2; i <= 5; i++) {
@@ -69,7 +69,7 @@ export class NetworkPermissionService {
             const timeoutId = setTimeout(() => controller.abort(), 800);
 
             await fetch(`http://${testIP}:8080/health`, {
-              method: 'GET',
+              method: "GET",
               signal: controller.signal,
             });
 
@@ -83,7 +83,7 @@ export class NetworkPermissionService {
 
       return false; // サーバー発見失敗
     } catch (error) {
-      console.error('Server discovery test failed:', error);
+      console.error("Server discovery test failed:", error);
       return false;
     }
   }
@@ -93,7 +93,7 @@ export class NetworkPermissionService {
    * サーバー発見に失敗し、かつ権限チェックも失敗した場合にガイドを表示
    */
   static async shouldShowPermissionGuide(): Promise<boolean> {
-    if (Platform.OS !== 'ios') {
+    if (Platform.OS !== "ios") {
       return false; // iOS以外では表示しない
     }
 

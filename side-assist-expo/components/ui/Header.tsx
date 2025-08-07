@@ -1,6 +1,12 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import React from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+} from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
 
 interface HeaderProps {
   title: string;
@@ -13,8 +19,6 @@ interface HeaderProps {
   showBack?: boolean;
   transparent?: boolean;
   centerTitle?: boolean;
-  showShadow?: boolean;
-  shadowDirection?: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -28,22 +32,20 @@ export const Header: React.FC<HeaderProps> = ({
   showBack = false,
   transparent = false,
   centerTitle = false,
-  showShadow = false,
-  shadowDirection = 'down',
 }) => {
   return (
     <>
-      <StatusBar 
-        barStyle="dark-content" 
-        backgroundColor={transparent ? 'transparent' : '#ffffff'} 
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={transparent ? "transparent" : "#ffffff"}
         translucent={transparent}
       />
-      <SafeAreaView className={transparent ? 'bg-transparent' : 'bg-white'}>
-        <View 
+      <SafeAreaView className={transparent ? "bg-transparent" : "bg-white"}>
+        <View
           className={`px-6 py-4 ${
-            transparent 
-              ? 'bg-transparent' 
-              : 'bg-white border-b border-neutral-100'
+            transparent
+              ? "bg-transparent"
+              : "bg-white border-b border-neutral-100"
           }`}
         >
           <View className="flex-row items-center justify-between min-h-[44px]">
@@ -58,7 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <MaterialIcons name="arrow-back" size={20} color="#404040" />
                 </TouchableOpacity>
               )}
-              
+
               {!centerTitle && (
                 <View className="flex-1">
                   <Text className="text-xl font-bold text-neutral-900 leading-tight">
