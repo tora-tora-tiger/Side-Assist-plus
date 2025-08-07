@@ -1,12 +1,7 @@
 import React from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-} from "react-native";
+import { View, Text, TouchableOpacity, StatusBar } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface HeaderProps {
   title: string;
@@ -33,14 +28,19 @@ export const Header: React.FC<HeaderProps> = ({
   transparent = false,
   centerTitle = false,
 }) => {
+  const insets = useSafeAreaInsets();
+
   return (
     <>
       <StatusBar
         barStyle="dark-content"
         backgroundColor={transparent ? "transparent" : "#ffffff"}
-        translucent={transparent}
+        translucent={false}
       />
-      <SafeAreaView className={transparent ? "bg-transparent" : "bg-white"}>
+      <View
+        style={{ paddingTop: insets.top }}
+        className={transparent ? "bg-transparent" : "bg-white"}
+      >
         <View
           className={`px-6 py-4 ${
             transparent
@@ -113,7 +113,7 @@ export const Header: React.FC<HeaderProps> = ({
             </View>
           </View>
         </View>
-      </SafeAreaView>
+      </View>
     </>
   );
 };
