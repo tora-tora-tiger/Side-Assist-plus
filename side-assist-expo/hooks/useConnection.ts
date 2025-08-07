@@ -364,18 +364,18 @@ export const useConnection = () => {
         // action_id が存在し、かつ未処理の場合のみアラート表示
         if (
           isCompleted &&
-          status.action_id &&
-          typeof status.action_id === "string"
+          status.actionId &&
+          typeof status.actionId === "string"
         ) {
           // 同じ action_id のアラートを重複表示しないようにチェック
-          if (!processedCompletedActionIds.current.has(status.action_id)) {
+          if (!processedCompletedActionIds.current.has(status.actionId)) {
             console.log(
               "🎉 Recording completed for new action:",
-              status.action_id,
+              status.actionId,
             );
 
             // この action_id を処理済みとしてマーク
-            processedCompletedActionIds.current.add(status.action_id);
+            processedCompletedActionIds.current.add(status.actionId);
 
             hasStartedRecording.current = false;
             setRecordingStatus("completed");
@@ -403,7 +403,7 @@ export const useConnection = () => {
           } else {
             console.log(
               "🔄 Already processed completion for action:",
-              status.action_id,
+              status.actionId,
             );
           }
         } else if (isCurrentlyRecording && !hasStartedRecording.current) {
@@ -419,13 +419,7 @@ export const useConnection = () => {
         console.error("Recording status monitoring error:", error);
       }
     }, 1000); // 1秒ごとにチェック
-  }, [
-    macIP,
-    macPort,
-    loadCustomActions,
-    resetRecordingState,
-    stopRecordingMonitoring,
-  ]);
+  }, [macIP, macPort, loadCustomActions, resetRecordingState]);
 
   const connectManually = useCallback(
     async (ip: string, port: string, password: string): Promise<boolean> => {

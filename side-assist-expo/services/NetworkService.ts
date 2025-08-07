@@ -175,7 +175,12 @@ export class NetworkService {
   static async getRecordingStatus(
     ip: string,
     port: string,
-  ): Promise<{ isRecording: boolean; actionId?: string }> {
+  ): Promise<{
+    isRecording: boolean;
+    actionId?: string;
+    status?: string;
+    message?: string;
+  }> {
     try {
       const url = `http://${ip}:${port}/recording/status`;
       // console.log(`📡 [NetworkService] Getting recording status from: ${url}`);
