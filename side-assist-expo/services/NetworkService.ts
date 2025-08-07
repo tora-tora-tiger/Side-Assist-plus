@@ -202,4 +202,49 @@ export class NetworkService {
       return false;
     }
   }
+
+  static async getCustomActions(ip: string, port: string): Promise<CustomAction[]> {
+    try {
+      const url = `http://${ip}:${port}/custom_actions`;
+      console.log(`📡 [NetworkService] Fetching custom actions from: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log(`📊 [NetworkService] Custom actions response status: ${response.status} ${response.statusText}`);
+
+      if (response.ok) {
+        const actions = await response.json();
+        console.log(`📋 [NetworkService] Retrieved ${actions.length} custom actions from server`);
+        console.log(`📦 [NetworkService] Actions details:`, actions.map((a: any) => ({ id: a.id, name: a.name, keys: a.key_sequence?.length || 0 })));
+        return actions;
+      } else {
+        const errorText = await response.text();
+        console.error(`❌ [NetworkService] Failed to get custom actions: ${response.status} - ${errorText}`);
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ [NetworkService] Failed to get custom actions:', error);
+      return [];
+    }
+  }
+}
+
+// カスタムアクション型定義
+export interface CustomAction {
+  id: string;
+  name: string;
+  icon?: string;
+  key_sequence: RecordedKey[];
+  created_at: number;
+}
+
+export interface RecordedKey {
+  key: string;
+  event_type: string;
+  timestamp: number;
 }

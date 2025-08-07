@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { NetworkService } from '../services/NetworkService';
+import { NetworkService, CustomAction } from '../services/NetworkService';
 import { DeepLinkService, ConnectionParams } from '../services/DeepLinkService';
 import AlertManager from '../utils/AlertManager';
 
@@ -9,6 +9,7 @@ export const useConnection = () => {
   const [macPort, setMacPort] = useState<string>('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState<string>('');
+  const [customActions, setCustomActions] = useState<CustomAction[]>([]);
   const connectionMonitorRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const monitoringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recordingMonitorRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -79,6 +80,17 @@ export const useConnection = () => {
       subscription?.remove();
     };
   }, [handleDeepLink]);
+
+  // 認証成功時にカスタムアクションを読み込み
+  useEffect(() => {
+    if (isAuthenticated && macIP && macPort) {
+      console.log('🔐 Authentication successful, loading custom actions...');
+      loadCustomActions();
+    } else {
+      // 認証失敗時はカスタムアクションをクリア
+      setCustomActions([]);
+    }
+  }, [isAuthenticated, macIP, macPort, loadCustomActions]);
 
   const startConnectionMonitoring = useCallback(() => {
     console.log(
@@ -291,6 +303,10 @@ export const useConnection = () => {
           console.log('✅ Sending acknowledgment...');
           await NetworkService.acknowledgeRecording(macIP, macPort);
           
+          // カスタムアクションを再読み込み（新しく保存されたアクションを反映）
+          console.log('🔄 Reloading custom actions after recording completion...');
+          await loadCustomActions();
+          
           // 監視停止
           stopRecordingMonitoring();
         } else if (status?.status === 'recording') {
@@ -313,6 +329,32 @@ export const useConnection = () => {
       console.log('🎥 Recording status monitoring stopped');
     }
   }, []);
+
+  const loadCustomActions = useCallback(
+    async (): Promise<void> => {
+      if (!macIP || !macPort || !isConnected || !isAuthenticated) {
+        console.log('⚠️ Cannot load custom actions - missing connection info:', {
+          macIP: !!macIP,
+          macPort: !!macPort, 
+          isConnected,
+          isAuthenticated
+        });
+        return;
+      }
+
+      try {
+        console.log(`📋 Loading custom actions from ${macIP}:${macPort}...`);
+        const actions = await NetworkService.getCustomActions(macIP, macPort);
+        console.log(`📦 Received ${actions.length} custom actions:`, actions.map(a => ({ id: a.id, name: a.name, keys: a.key_sequence.length })));
+        setCustomActions(actions);
+        console.log(`✅ Successfully updated local state with ${actions.length} custom actions`);
+      } catch (error) {
+        console.error('❌ Failed to load custom actions:', error);
+        setCustomActions([]);
+      }
+    },
+    [macIP, macPort, isConnected, isAuthenticated]
+  );
 
   const resetRecordingState = useCallback(() => {
     console.log('🔄 Resetting recording UI state for next recording');
@@ -418,6 +460,7 @@ export const useConnection = () => {
     macPort,
     isAuthenticated,
     password,
+    customActions,
     startConnectionMonitoring,
     stopConnectionMonitoring,
     sendText,
@@ -426,6 +469,7 @@ export const useConnection = () => {
     executeCustomAction,
     prepareRecording,
     resetRecordingState,
+    loadCustomActions,
     authenticateWithPassword,
     connectManually,
     disconnect,

@@ -21,6 +21,7 @@ const App = () => {
     isConnected,
     macIP,
     isAuthenticated,
+    customActions,
     startConnectionMonitoring,
     stopConnectionMonitoring,
     sendText,
@@ -124,6 +125,7 @@ const App = () => {
               onExecuteCustomAction={executeCustomAction}
               onPrepareRecording={prepareRecording}
               resetRecordingState={resetRecordingState}
+              customActions={customActions}
               onDisconnect={disconnect}
             />
           );

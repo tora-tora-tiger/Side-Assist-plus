@@ -1,9 +1,12 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::fs;
+use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use rand::Rng;
 use lazy_static::lazy_static;
+use tauri::Manager;
 use axum::{
     extract::{Json, State},
     http::{HeaderMap, StatusCode},
@@ -57,6 +60,13 @@ pub struct CustomAction {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CustomActionsStorage {
+    pub actions: Vec<CustomAction>,
+    pub version: u32,
+    pub last_updated: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RecordedKey {
     pub key: String, // Key名を文字列として保存
     pub event_type: String, // "press" or "release"
@@ -99,7 +109,7 @@ impl Default for ServerState {
             one_time_password: None,
             password_expiry: None,
             operation_in_progress: false,
-            custom_actions: HashMap::new(), // Will be loaded on startup
+            custom_actions: HashMap::new(), // Will be loaded asynchronously during startup
             recording_modal_info: None,
         }
     }
@@ -159,6 +169,34 @@ struct RecordingStatusResponse {
     name: Option<String>,
     recorded_keys_count: Option<usize>,
     message: Option<String>,
+}
+
+#[tauri::command]
+async fn load_custom_actions_on_startup(state: tauri::State<'_, AppState>) -> Result<String, String> {
+    println!("📂 Loading custom actions from persistent storage...");
+    
+    match load_custom_actions().await {
+        Ok(loaded_actions) => {
+            let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+            state_guard.custom_actions = loaded_actions;
+            let count = state_guard.custom_actions.len();
+            
+            println!("✅ Successfully loaded {} custom actions on startup", count);
+            Ok(format!("Loaded {} custom actions", count))
+        }
+        Err(e) => {
+            eprintln!("❌ Failed to load custom actions on startup: {}", e);
+            Err(format!("Failed to load custom actions: {}", e))
+        }
+    }
+}
+
+#[tauri::command]
+async fn get_all_custom_actions(state: tauri::State<'_, AppState>) -> Result<Vec<CustomAction>, String> {
+    let state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+    let actions: Vec<CustomAction> = state_guard.custom_actions.values().cloned().collect();
+    println!("📋 Returning {} custom actions to frontend", actions.len());
+    Ok(actions)
 }
 
 #[tauri::command]
@@ -313,6 +351,198 @@ fn get_local_ip_address() -> Option<String> {
     
     println!("❌ Could not detect local IP address");
     None
+}
+
+// カスタムアクション保存ファイルのパスを取得
+fn get_custom_actions_file_path() -> Result<PathBuf, String> {
+    // アプリケーション固有のデータディレクトリを取得
+    let app_data_dir = if cfg!(target_os = "macos") {
+        dirs::home_dir()
+            .ok_or("Failed to get home directory")?
+            .join("Library")
+            .join("Application Support")
+            .join("Side Assist Plus")
+    } else if cfg!(target_os = "windows") {
+        dirs::data_dir()
+            .ok_or("Failed to get data directory")?
+            .join("Side Assist Plus")
+    } else {
+        dirs::data_dir()
+            .ok_or("Failed to get data directory")?
+            .join("side-assist-plus")
+    };
+
+    // ディレクトリが存在しない場合は作成
+    if !app_data_dir.exists() {
+        fs::create_dir_all(&app_data_dir)
+            .map_err(|e| format!("Failed to create app data directory: {}", e))?;
+        println!("📁 Created app data directory: {:?}", app_data_dir);
+    }
+
+    Ok(app_data_dir.join("custom_actions.json"))
+}
+
+// カスタムアクションをファイルに保存
+async fn save_custom_actions(actions: &HashMap<String, CustomAction>) -> Result<(), String> {
+    let file_path = get_custom_actions_file_path()?;
+    
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|_| "Failed to get current time")?
+        .as_secs();
+
+    let storage = CustomActionsStorage {
+        actions: actions.values().cloned().collect(),
+        version: 1,
+        last_updated: now,
+    };
+
+    let json_content = serde_json::to_string_pretty(&storage)
+        .map_err(|e| format!("Failed to serialize custom actions: {}", e))?;
+
+    // 非同期的にファイルに書き込み
+    tokio::fs::write(&file_path, json_content).await
+        .map_err(|e| format!("Failed to write custom actions to file: {}", e))?;
+
+    println!("💾 Saved {} custom actions to: {:?}", actions.len(), file_path);
+    Ok(())
+}
+
+// カスタムアクションをファイルから読み込み
+async fn load_custom_actions() -> Result<HashMap<String, CustomAction>, String> {
+    let file_path = get_custom_actions_file_path()?;
+    
+    // ファイルが存在しない場合は空のHashMapを返す
+    if !file_path.exists() {
+        println!("📂 No custom actions file found, starting with empty collection");
+        return Ok(HashMap::new());
+    }
+
+    // ファイル内容を非同期的に読み込み
+    let json_content = tokio::fs::read_to_string(&file_path).await
+        .map_err(|e| format!("Failed to read custom actions file: {}", e))?;
+
+    let storage: CustomActionsStorage = serde_json::from_str(&json_content)
+        .map_err(|e| format!("Failed to parse custom actions file: {}", e))?;
+
+    let mut actions_map = HashMap::new();
+    for action in storage.actions {
+        actions_map.insert(action.id.clone(), action);
+    }
+
+    println!("📂 Loaded {} custom actions from: {:?}", actions_map.len(), file_path);
+    Ok(actions_map)
+}
+
+// 保存されたキーシーケンスを再生する関数
+async fn execute_custom_action(action: &CustomAction) -> Result<String, String> {
+    println!("🎬 Starting playback of custom action: {}", action.name);
+    
+    tokio::task::spawn_blocking({
+        let key_sequence = action.key_sequence.clone();
+        let action_name = action.name.clone();
+        
+        move || {
+            use rdev::{simulate, EventType, SimulateError};
+            use std::{thread, time};
+            
+            fn send(event_type: &EventType) -> Result<(), SimulateError> {
+                let delay = time::Duration::from_millis(50);
+                let result = simulate(event_type);
+                thread::sleep(delay);
+                result
+            }
+            
+            // 再生開始前に少し待機
+            thread::sleep(time::Duration::from_millis(200));
+            
+            let mut executed_keys = 0;
+            for recorded_key in &key_sequence {
+                // 文字列からrdev::Keyに変換
+                if let Some(key) = string_to_key(&recorded_key.key) {
+                    // KeyPressのみ再生（録画時にKeyPressのみ記録しているため）
+                    if recorded_key.event_type == "press" {
+                        // キープレス
+                        send(&EventType::KeyPress(key))
+                            .map_err(|e| format!("Failed to press key {}: {:?}", recorded_key.key, e))?;
+                        
+                        // キーリリース（セット実行）
+                        send(&EventType::KeyRelease(key))
+                            .map_err(|e| format!("Failed to release key {}: {:?}", recorded_key.key, e))?;
+                        
+                        executed_keys += 1;
+                        println!("🔑 Executed key: {} ({}/{})", recorded_key.key, executed_keys, key_sequence.len());
+                        
+                        // キー間の遅延（元のタイムスタンプは無視して一定間隔）
+                        thread::sleep(time::Duration::from_millis(100));
+                    }
+                } else {
+                    println!("⚠️ Unsupported key in sequence: {}", recorded_key.key);
+                }
+            }
+            
+            println!("✅ Custom action playback completed: {} ({} keys executed)", action_name, executed_keys);
+            Ok(format!("Successfully executed custom action '{}' with {} keys", action_name, executed_keys))
+        }
+    }).await.map_err(|e| format!("Task error: {}", e))?
+}
+
+// 文字列からrdev::Keyに変換する関数（key_to_stringの逆）
+fn string_to_key(key_str: &str) -> Option<Key> {
+    match key_str {
+        "KeyA" => Some(Key::KeyA),
+        "KeyB" => Some(Key::KeyB),
+        "KeyC" => Some(Key::KeyC),
+        "KeyD" => Some(Key::KeyD),
+        "KeyE" => Some(Key::KeyE),
+        "KeyF" => Some(Key::KeyF),
+        "KeyG" => Some(Key::KeyG),
+        "KeyH" => Some(Key::KeyH),
+        "KeyI" => Some(Key::KeyI),
+        "KeyJ" => Some(Key::KeyJ),
+        "KeyK" => Some(Key::KeyK),
+        "KeyL" => Some(Key::KeyL),
+        "KeyM" => Some(Key::KeyM),
+        "KeyN" => Some(Key::KeyN),
+        "KeyO" => Some(Key::KeyO),
+        "KeyP" => Some(Key::KeyP),
+        "KeyQ" => Some(Key::KeyQ),
+        "KeyR" => Some(Key::KeyR),
+        "KeyS" => Some(Key::KeyS),
+        "KeyT" => Some(Key::KeyT),
+        "KeyU" => Some(Key::KeyU),
+        "KeyV" => Some(Key::KeyV),
+        "KeyW" => Some(Key::KeyW),
+        "KeyX" => Some(Key::KeyX),
+        "KeyY" => Some(Key::KeyY),
+        "KeyZ" => Some(Key::KeyZ),
+        "Num0" => Some(Key::Num0),
+        "Num1" => Some(Key::Num1),
+        "Num2" => Some(Key::Num2),
+        "Num3" => Some(Key::Num3),
+        "Num4" => Some(Key::Num4),
+        "Num5" => Some(Key::Num5),
+        "Num6" => Some(Key::Num6),
+        "Num7" => Some(Key::Num7),
+        "Num8" => Some(Key::Num8),
+        "Num9" => Some(Key::Num9),
+        "Space" => Some(Key::Space),
+        "MetaLeft" => Some(Key::MetaLeft),
+        "MetaRight" => Some(Key::MetaRight),
+        "ControlLeft" => Some(Key::ControlLeft),
+        "ControlRight" => Some(Key::ControlRight),
+        "ShiftLeft" => Some(Key::ShiftLeft),
+        "ShiftRight" => Some(Key::ShiftRight),
+        "Alt" => Some(Key::Alt),
+        "Enter" => Some(Key::Return),
+        "Escape" => Some(Key::Escape),
+        "Backspace" => Some(Key::Backspace),
+        "Tab" => Some(Key::Tab),
+        _ => {
+            println!("⚠️ Unsupported key string: {}", key_str);
+            None
+        }
+    }
 }
 
 #[tauri::command]
@@ -853,7 +1083,10 @@ async fn stop_actual_recording(state: tauri::State<'_, AppState>) -> Result<Stri
     // 状態に追加して保存
     {
         let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+        
+        println!("💾 Adding custom action to memory: {} ({})", custom_action.name, custom_action.id);
         state_guard.custom_actions.insert(modal_info.action_id.clone(), custom_action.clone());
+        println!("📊 Total custom actions in memory: {}", state_guard.custom_actions.len());
         
         // モーダル状態を録画完了状態に更新（即座にクリアしない）
         if let Some(ref mut modal_info) = state_guard.recording_modal_info {
@@ -861,6 +1094,23 @@ async fn stop_actual_recording(state: tauri::State<'_, AppState>) -> Result<Stri
             modal_info.is_completed = true; // 完了フラグを設定
             modal_info.recorded_keys = custom_action.key_sequence.clone();
         }
+    }
+    
+    // カスタムアクションをファイルに永続化保存
+    {
+        let state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+        let actions_to_save = state_guard.custom_actions.clone();
+        drop(state_guard); // ロックを早期解放
+        
+        // 非同期保存を実行
+        tokio::spawn(async move {
+            println!("💾 Attempting to save {} custom actions to file...", actions_to_save.len());
+            if let Err(e) = save_custom_actions(&actions_to_save).await {
+                eprintln!("❌ Failed to save custom actions to file: {}", e);
+            } else {
+                println!("✅ Custom action automatically saved to persistent storage");
+            }
+        });
     }
     
     println!("⏹️ Recording stopped and saved: {} ({} keys)", custom_action.name, custom_action.key_sequence.len());
@@ -1073,6 +1323,7 @@ async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Erro
         .route("/auth", post(handle_auth))
         .route("/recording/status", get(get_recording_status))
         .route("/recording/acknowledge", post(acknowledge_recording))
+        .route("/custom_actions", get(get_custom_actions))
         .layer(CorsLayer::permissive())
         .with_state(Arc::clone(&state));
 
@@ -1231,9 +1482,9 @@ async fn handle_input(
                 state_guard.custom_actions.get(action_id).cloned()
             };
             
-            if let Some(_action) = action {
-                // TODO: Implement execute_custom_action
-                Ok(format!("Mock execution of custom action: {}", action_id))
+            if let Some(action) = action {
+                println!("🎭 Executing custom action: {} with {} keys", action.name, action.key_sequence.len());
+                execute_custom_action(&action).await
             } else {
                 Err(format!("Custom action '{}' not found", action_id))
             }
@@ -1357,6 +1608,20 @@ async fn get_recording_status(
     Ok(JsonResponse(response))
 }
 
+async fn get_custom_actions(
+    State(state): State<AppState>,
+) -> Result<JsonResponse<Vec<CustomAction>>, StatusCode> {
+    let state_guard = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let actions: Vec<CustomAction> = state_guard.custom_actions.values().cloned().collect();
+    
+    println!("📋 Custom actions API request - returning {} actions", actions.len());
+    for action in &actions {
+        println!("  📝 Action: {} (id: {}, keys: {})", action.name, action.id, action.key_sequence.len());
+    }
+    
+    Ok(JsonResponse(actions))
+}
+
 async fn acknowledge_recording(
     State(state): State<AppState>,
 ) -> Result<JsonResponse<ApiResponse>, StatusCode> {
@@ -1455,8 +1720,34 @@ pub fn run() {
             get_recording_modal_info,
             clear_recording_modal,
             start_actual_recording,
-            stop_actual_recording
+            stop_actual_recording,
+            load_custom_actions_on_startup,
+            get_all_custom_actions
         ])
+        .setup(|app| {
+            // Tauri起動後にカスタムアクションを読み込み
+            let state: tauri::State<AppState> = app.state();
+            let state_clone: Arc<Mutex<ServerState>> = Arc::clone(&state);
+            
+            tauri::async_runtime::spawn(async move {
+                println!("📂 Loading custom actions on startup...");
+                match load_custom_actions().await {
+                    Ok(loaded_actions) => {
+                        if let Ok(mut state_guard) = state_clone.lock() {
+                            state_guard.custom_actions = loaded_actions;
+                            println!("✅ Loaded {} custom actions on startup", state_guard.custom_actions.len());
+                        } else {
+                            eprintln!("❌ Failed to update state with loaded custom actions");
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("❌ Failed to load custom actions on startup: {}", e);
+                    }
+                }
+            });
+            
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

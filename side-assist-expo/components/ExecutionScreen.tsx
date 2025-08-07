@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Animated, ScrollView, Text, TouchableOpacity } from 'react-native';
 import { Header, StatusIndicator, ActionButton, Button } from './ui';
 import { MaterialIcons } from '@expo/vector-icons';
 import AlertManager from '../utils/AlertManager';
+import { CustomAction } from '../services/NetworkService';
 
 interface ExecutionScreenProps {
   onSettingsPress: () => void;
@@ -12,6 +13,7 @@ interface ExecutionScreenProps {
   onExecuteCustomAction: (actionId: string) => Promise<boolean>;
   onPrepareRecording: (actionId: string, name: string, icon?: string) => Promise<boolean>;
   resetRecordingState: () => void;
+  customActions: CustomAction[];
   onDisconnect: () => void;
 }
 
@@ -23,8 +25,17 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   onExecuteCustomAction,
   onPrepareRecording,
   resetRecordingState,
+  customActions,
   onDisconnect,
 }) => {
+  // カスタムアクション状態をログ出力
+  useEffect(() => {
+    console.log(`🎭 [ExecutionScreen] Custom actions updated: ${customActions.length} actions`);
+    customActions.forEach((action, index) => {
+      console.log(`  ${index + 1}. ${action.name} (id: ${action.id}, keys: ${action.key_sequence.length})`);
+    });
+  }, [customActions]);
+
   const [buttonScales] = useState(() => ({
     ultradeepthink: new Animated.Value(1),
     copy: new Animated.Value(1),
@@ -49,7 +60,7 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   }, []);
 
   // グローバルなリセット関数を作成（useConnectionで呼び出される）
-  React.useEffect(() => {
+  useEffect(() => {
     // グローバルなwindowオブジェクトに関数を追加
     (window as any).resetExecutionScreenRecordingState = handleResetRecordingState;
     
@@ -154,6 +165,24 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
         errorMessage = `${action.text}コマンドの実行中にエラーが発生しました`;
       }
       AlertManager.showAlert('エラー', errorMessage);
+    }
+  };
+
+  // カスタムアクション実行処理
+  const handleCustomAction = async (action: CustomAction) => {
+    console.log(`🎭 [ExecutionScreen] Executing custom action: ${action.name} (${action.id})`);
+    
+    try {
+      const success = await onExecuteCustomAction(action.id);
+      if (success) {
+        console.log(`✅ [ExecutionScreen] Custom action executed successfully: ${action.name}`);
+        AlertManager.showAlert('実行完了', `カスタムアクション「${action.name}」を実行しました。`);
+      } else {
+        throw new Error('Custom action execution failed');
+      }
+    } catch (error) {
+      console.error('🚨 [ExecutionScreen] Custom action execution error:', error);
+      AlertManager.showAlert('エラー', `カスタムアクション「${action.name}」の実行中にエラーが発生しました。`);
     }
   };
 
@@ -346,6 +375,53 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
             </View>
           </View>
         </View>
+
+        {/* 保存済みカスタムアクションセクション */}
+        {customActions.length > 0 && (
+          <View className="px-6 py-4">
+            <View className="bg-white rounded-3xl p-6 shadow-soft mb-4">
+              <View className="mb-4">
+                <Text className="text-lg font-bold text-neutral-900 mb-2">
+                  保存済みカスタムアクション
+                </Text>
+                <Text className="text-sm text-neutral-500 mb-4">
+                  録画済みのキーシーケンスを実行できます ({customActions.length}個)
+                </Text>
+              </View>
+              
+              {/* カスタムアクション一覧 */}
+              <View className="space-y-3">
+                {customActions.map((action) => (
+                  <TouchableOpacity
+                    key={action.id}
+                    className="bg-neutral-50 rounded-xl p-4 flex-row items-center justify-between border border-neutral-200"
+                    onPress={() => handleCustomAction(action)}
+                    activeOpacity={0.8}
+                  >
+                    <View className="flex-1 flex-row items-center">
+                      <View className="w-8 h-8 bg-blue-500 rounded-full items-center justify-center mr-3">
+                        <MaterialIcons 
+                          name={action.icon ? action.icon as any : 'build'} 
+                          size={18} 
+                          color="#ffffff" 
+                        />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-base font-semibold text-neutral-900 mb-1">
+                          {action.name}
+                        </Text>
+                        <Text className="text-xs text-neutral-500">
+                          {action.key_sequence.length}個のキー・{new Date(action.created_at * 1000).toLocaleDateString()}作成
+                        </Text>
+                      </View>
+                    </View>
+                    <MaterialIcons name="play-arrow" size={24} color="#6b7280" />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+        )}
 
         {/* 接続解除ボタン */}
         <View className="px-6 pb-8">
