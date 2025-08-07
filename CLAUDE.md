@@ -87,6 +87,13 @@ Side Assist Plusは、モバイルアプリとデスクトップアプリの連�
 - **デスクトップ**: pnpm使用
 - **モバイル**: npm使用（pnpm禁止、Expoで破綻するため）
 
+### バージョン管理の重要事項
+- **React**: Expo推奨バージョン（19.0.0）を厳守
+  - `react`, `react-dom`, `react-test-renderer`は全て同一バージョンに統一
+  - バージョン不一致は`react-native-renderer`との競合を引き起こす
+- **Dependencies**: Expo推奨バージョンに合わせる
+  - `react-native-safe-area-context`: 5.4.0使用
+
 ### コード品質管理
 - **Lefthook**: 自動lint/format（コミット前）
 - **ESLint + Prettier**: 両プラットフォーム共通設定
@@ -109,13 +116,25 @@ lsof -ti:1420,8080 | xargs kill -9
 - **macOS**: システム環境設定 → プライバシーとセキュリティ → アクセシビリティ
 - **iOS**: アプリ設定 → ローカルネットワーク許可
 
+### React/Expo バージョン不一致エラー
+```
+Incompatible React versions: react-native-renderer vs react
+```
+**解決法:**
+1. ReactバージョンをExpo推奨バージョンに統一（19.0.0）
+2. 完全クリーンインストール: `rm -rf node_modules package-lock.json && npm install`
+3. useColorSchemeは直接React Nativeからインポート: `import { useColorScheme } from "react-native"`
+
 ### Expo Metro問題
 - `./mo.sh`で自動プロセス管理
 - キャッシュクリア: `npx expo start -c`
+- ポート競合時は既存プロセス終了後に再起動
 
 ## 特記事項
 
-- TailwindCSS v4使用（デスクトップ）、v3.4使用（モバイル、NativeWind v4対応のため）
-- Rust依存関係: rdev（フォーク版）、enigo、axum、tokio
-- 国際化対応: 日本語・英語サポート
-- クロスプラットフォーム: Windows/macOS/Linux完全対応
+- **React**: Expo 53.0.20はReact 19.0.0を推奨（19.1.1は非互換）
+- **TailwindCSS**: v4使用（デスクトップ）、v3.4使用（モバイル、NativeWind v4対応のため）
+- **Rust依存関係**: rdev（フォーク版）、enigo、axum、tokio
+- **国際化対応**: 日本語・英語サポート
+- **クロスプラットフォーム**: Windows/macOS/Linux完全対応
+- **useColorScheme**: カスタムコンポーネント不要、React Nativeから直接インポート
