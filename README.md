@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="docs/mascot.svg" alt="Side Assist Plus Mascot" width="400"/>
+</div>
+
 # 🚀 Side Assist Plus
 
 # ⚠️ 重要：npmを使用すること！pnpm使用禁止！
