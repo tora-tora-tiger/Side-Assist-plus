@@ -49,6 +49,27 @@ sudo gem install cocoapods
 ```
 
 #### 🪟 Windows
+
+**推奨:** Git Bash または WSL を使用してください（PowerShell では動作しません）
+
+##### Proto Tool セットアップ（推奨 - Node.js バージョン管理）
+```bash
+# Proto Tool インストール（Node.js バージョン管理ツール）
+# PowerShellで実行:
+iwr https://moonrepo.dev/install/proto.ps1 | iex
+
+# または手動ダウンロード: https://github.com/moonrepo/proto/releases
+# インストール後、環境変数PATHにprotoを追加
+
+# プロジェクト指定バージョンの自動インストール
+proto install node 24.0.2
+proto install npm 11.3.0
+
+# または自動インストール設定を有効化
+proto setup
+```
+
+##### 従来の方法
 ```powershell
 # Chocolatey経由で一括インストール
 choco install nodejs rust android-sdk
@@ -56,6 +77,8 @@ choco install nodejs rust android-sdk
 winget install OpenJS.NodeJS
 winget install Rustlang.Rustup
 ```
+
+**重要:** プロジェクトは Node.js 24.0.2 と npm 11.3.0 を要求します。バージョン不一致でビルドが失敗します。
 
 #### 🐧 Linux (Ubuntu/Debian)
 ```bash

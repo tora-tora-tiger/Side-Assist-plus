@@ -13,6 +13,18 @@ if [ ! -d "node_modules" ]; then
     fi
 fi
 
+# Tauri CLIチェック
+if ! npx tauri --version &>/dev/null; then
+    echo "🔧 Tauri CLIが見つかりません。初回セットアップ中..."
+    echo "📦 Tauri CLIをインストール中..."
+    npm install @tauri-apps/cli@latest
+    if [ $? -ne 0 ]; then
+        echo "❌ Tauri CLIのインストールに失敗しました"
+        exit 1
+    fi
+    echo "✅ Tauri CLIのインストールが完了しました"
+fi
+
 # ポート競合チェック
 echo "🔗 ポート競合チェック中..."
 VITE_PORT_PIDS=$(lsof -ti:1420 2>/dev/null)
