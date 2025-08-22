@@ -384,7 +384,7 @@ async fn execute_custom_action(action: &CustomAction) -> Result<String, String> 
                         println!("🔑 Executed key: {} ({}/{})", recorded_key.key, executed_keys, key_sequence.len());
                         
                         // キー間の遅延（元のタイムスタンプは無視して一定間隔）
-                        thread::sleep(time::Duration::from_millis(100));
+                        thread::sleep(time::Duration::from_millis(0));
                     }
                 } else {
                     println!("⚠️ Unsupported key in sequence: {}", recorded_key.key);
