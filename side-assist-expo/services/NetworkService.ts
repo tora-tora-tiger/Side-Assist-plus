@@ -71,6 +71,32 @@ export class NetworkService {
     return this.sendAction(ip, port, { type: "text", text }, password);
   }
 
+  static async sendGesture(
+    ip: string,
+    port: string,
+    fingers: number,
+    direction: string,
+    action: string,
+    actionData?: string,
+    password?: string,
+  ): Promise<boolean> {
+    console.log(
+      `🤏 [NetworkService] Sending gesture: ${fingers} fingers ${direction} -> ${action}`,
+    );
+    return this.sendAction(
+      ip,
+      port,
+      {
+        type: "gesture",
+        fingers,
+        direction,
+        action,
+        action_data: actionData,
+      },
+      password,
+    );
+  }
+
   // Unified action endpoint
   static async sendAction(
     ip: string,
@@ -277,6 +303,81 @@ export class NetworkService {
       return [];
     }
   }
+
+  // Settings methods
+  static async getSettings(
+    ip: string,
+    port: string,
+  ): Promise<AppSettings | null> {
+    try {
+      const url = `http://${ip}:${port}/settings`;
+      console.log(`⚙️ [NetworkService] Fetching settings from: ${url}`);
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      console.log(
+        `📊 [NetworkService] Settings response status: ${response.status} ${response.statusText}`,
+      );
+
+      if (response.ok) {
+        const settings = await response.json();
+        console.log(`✅ [NetworkService] Retrieved settings:`, settings);
+        return settings;
+      } else {
+        const errorText = await response.text();
+        console.error(
+          `❌ [NetworkService] Failed to get settings: ${response.status} - ${errorText}`,
+        );
+        return null;
+      }
+    } catch (error) {
+      console.error("❌ [NetworkService] Failed to get settings:", error);
+      return null;
+    }
+  }
+
+  static async updateSettings(
+    ip: string,
+    port: string,
+    settings: Partial<AppSettings>,
+    password?: string,
+  ): Promise<boolean> {
+    try {
+      const url = `http://${ip}:${port}/settings`;
+      console.log(`⚙️ [NetworkService] Updating settings:`, settings);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ settings, password }),
+      });
+
+      console.log(
+        `📊 [NetworkService] Update settings response: ${response.status} ${response.statusText}`,
+      );
+
+      if (response.ok) {
+        console.log(`✅ [NetworkService] Settings updated successfully`);
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.error(
+          `❌ [NetworkService] Failed to update settings: ${response.status} - ${errorText}`,
+        );
+        return false;
+      }
+    } catch (error) {
+      console.error("❌ [NetworkService] Failed to update settings:", error);
+      return false;
+    }
+  }
 }
 
 // カスタムアクション型定義
@@ -292,4 +393,9 @@ export interface RecordedKey {
   key: string;
   event_type: string;
   timestamp: number;
+}
+
+// アプリ設定型定義
+export interface AppSettings {
+  hapticsEnabled: boolean;
 }

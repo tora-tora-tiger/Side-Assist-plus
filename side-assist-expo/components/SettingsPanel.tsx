@@ -1,7 +1,8 @@
 import React from "react";
-import { View, Text, Linking } from "react-native";
+import { View, Text, Linking, Switch } from "react-native";
 import { Header, Button } from "./ui";
 import { getDeviceConfig } from "../utils/DeviceConfig";
+import { useSettings } from "../contexts/SettingsContext";
 import AlertManager from "../utils/AlertManager";
 
 interface SettingsPanelProps {
@@ -18,6 +19,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onClose,
 }) => {
   const deviceConfig = getDeviceConfig();
+  const { settings, isLoading, updateSetting } = useSettings();
 
   const handleOpenSettings = async () => {
     try {
@@ -51,6 +53,53 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <Text className="text-gray-600 text-sm">
             開発モード: {deviceConfig.developmentMode ? "ON" : "OFF"}
           </Text>
+        </View>
+
+        {/* ハプティクス設定 */}
+        <View className="mb-6">
+          <Text className="text-lg font-semibold mb-3">ハプティクス設定</Text>
+          <View className="flex-row items-center justify-between py-2">
+            <View className="flex-1">
+              <Text className="text-base text-gray-800">
+                振動フィードバック
+              </Text>
+              <Text className="text-sm text-gray-600">
+                ジェスチャー操作時の触覚フィードバック
+              </Text>
+            </View>
+            <Switch
+              value={settings?.hapticsEnabled ?? true}
+              onValueChange={async value => {
+                console.log(`🎯 [SettingsPanel] Toggling haptics: ${value}`);
+                console.log(
+                  `🎯 [SettingsPanel] Current settings before update:`,
+                  settings,
+                );
+                const success = await updateSetting("hapticsEnabled", value);
+                if (success) {
+                  console.log(
+                    `✅ [SettingsPanel] Haptics setting updated successfully to: ${value}`,
+                  );
+                } else {
+                  console.log(
+                    `❌ [SettingsPanel] Failed to update haptics setting`,
+                  );
+                  AlertManager.showAlert(
+                    "エラー",
+                    "ハプティクス設定の更新に失敗しました",
+                  );
+                }
+              }}
+              disabled={isLoading || !isConnected}
+              trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
+              thumbColor={settings?.hapticsEnabled ? "#ffffff" : "#f3f4f6"}
+            />
+          </View>
+          {!isConnected && (
+            <Text className="text-xs text-gray-400 mt-1">
+              PCに接続すると設定を変更できます
+            </Text>
+          )}
         </View>
 
         <View className="mb-6">

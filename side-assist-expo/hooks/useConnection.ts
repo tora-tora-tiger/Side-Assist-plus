@@ -299,6 +299,33 @@ export const useConnection = () => {
     );
   }, [macIP, macPort, isConnected, isAuthenticated, password]);
 
+  const sendGesture = useCallback(
+    async (
+      fingers: number,
+      direction: string,
+      action: string,
+      actionData?: string,
+    ): Promise<boolean> => {
+      if (!macIP || !macPort || !isConnected || !isAuthenticated) {
+        console.log(
+          "❌ [useConnection] sendGesture failed - not connected/authenticated",
+        );
+        return false;
+      }
+
+      return await NetworkService.sendGesture(
+        macIP,
+        macPort,
+        fingers,
+        direction,
+        action,
+        actionData,
+        password,
+      );
+    },
+    [macIP, macPort, isConnected, isAuthenticated, password],
+  );
+
   const executeCustomAction = useCallback(
     async (actionId: string): Promise<boolean> => {
       if (!macIP || !macPort || !isConnected || !isAuthenticated) {
@@ -507,6 +534,7 @@ export const useConnection = () => {
     sendText,
     sendCopy,
     sendPaste,
+    sendGesture,
     executeCustomAction,
     prepareRecording,
     resetRecordingState,
