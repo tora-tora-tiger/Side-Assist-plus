@@ -95,7 +95,7 @@ jobs:
     name: Build Desktop App
     needs: [test-desktop, test-mobile]
     runs-on: ${{ matrix.os }}
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
