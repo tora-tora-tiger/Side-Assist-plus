@@ -150,7 +150,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
   // 初期化時と接続情報が変わった時に設定を読み込む
   useEffect(() => {
     loadSettings();
-  }, [ip, port, loadSettings]);
+  }, [ip, port]);
 
   // 設定状態変更をログ出力
   useEffect(() => {
