@@ -24,13 +24,8 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'pnpm'
-        cache-dependency-path: side-assist-desktop/pnpm-lock.yaml
-
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 8
+        cache: 'npm'
+        cache-dependency-path: side-assist-desktop/package-lock.json
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
@@ -44,18 +39,18 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev librsvg2-dev
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev librsvg2-dev
 
     - name: Install dependencies (Desktop)
-      run: pnpm install
+      run: npm ci
       working-directory: side-assist-desktop
 
     - name: Check TypeScript types
-      run: pnpm run typecheck
+      run: npm run typecheck
       working-directory: side-assist-desktop
 
     - name: Lint code
-      run: pnpm run lint
+      run: npm run lint
       working-directory: side-assist-desktop
 
     - name: Check Rust code
@@ -67,7 +62,7 @@ jobs:
       working-directory: side-assist-desktop/src-tauri
 
     - name: Build frontend
-      run: pnpm run build
+      run: npm run build
       working-directory: side-assist-desktop
 
   test-mobile:
@@ -112,13 +107,8 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'pnpm'
-        cache-dependency-path: side-assist-desktop/pnpm-lock.yaml
-
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 8
+        cache: 'npm'
+        cache-dependency-path: side-assist-desktop/package-lock.json
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
@@ -132,14 +122,14 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev librsvg2-dev
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev librsvg2-dev
 
     - name: Install dependencies
-      run: pnpm install
+      run: npm ci
       working-directory: side-assist-desktop
 
     - name: Build Tauri app
-      run: pnpm tauri build
+      run: npm run tauri build
       working-directory: side-assist-desktop
 
     - name: Upload artifacts (Ubuntu)
