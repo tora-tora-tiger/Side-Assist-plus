@@ -4,9 +4,7 @@ use std::{thread, time};
 
 /// キーイベント送信用のヘルパー関数
 fn send(event_type: &EventType) -> Result<(), SimulateError> {
-    let delay = time::Duration::from_millis(30);
     let result = simulate(event_type);
-    thread::sleep(delay);
     result
 }
 
@@ -59,7 +57,7 @@ pub async fn simulate_copy() -> Result<String, String> {
     
     tokio::task::spawn_blocking(|| {
         fn send_copy(event_type: &EventType) -> Result<(), SimulateError> {
-            let delay = time::Duration::from_millis(50);
+            let delay = time::Duration::from_millis(0);
             let result = simulate(event_type);
             // OS同期のための待機（特にmacOS）
             thread::sleep(delay);
@@ -115,7 +113,7 @@ pub async fn simulate_paste() -> Result<String, String> {
     
     tokio::task::spawn_blocking(|| {
         fn send_paste(event_type: &EventType) -> Result<(), SimulateError> {
-            let delay = time::Duration::from_millis(50);
+            let delay = time::Duration::from_millis(0);
             let result = simulate(event_type);
             // OS同期のための待機（特にmacOS）
             thread::sleep(delay);
