@@ -91,8 +91,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 }
               }}
               disabled={isLoading || !isConnected}
-              trackColor={{ false: "#767577", true: "#81b0ff" }}
-              thumbColor={settings?.hapticsEnabled ? "#f5dd4b" : "#f4f3f4"}
+              trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
+              thumbColor={settings?.hapticsEnabled ? "#ffffff" : "#f3f4f6"}
             />
           </View>
           {!isConnected && (
