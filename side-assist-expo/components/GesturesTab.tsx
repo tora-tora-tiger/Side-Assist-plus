@@ -4,6 +4,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { GestureService } from "../services/GestureService";
 import { GestureResult, GestureMapping } from "../constants/gestures";
+import { useSettings } from "../contexts/SettingsContext";
 
 interface GesturesTabProps {
   onGestureDetected?: (gesture: {
@@ -23,6 +24,24 @@ export const GesturesTab: React.FC<GesturesTabProps> = ({
   const [gestureMappings, setGestureMappings] = useState<GestureMapping[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // 設定フック（ハプティクス制御用）
+  const { settings } = useSettings();
+
+  // 設定変更をログ出力（デバッグ用）
+  useEffect(() => {
+    console.log(`🎛️ [GesturesTab] Settings changed:`, settings);
+    console.log(
+      `🎛️ [GesturesTab] Haptics enabled: ${settings?.hapticsEnabled}`,
+    );
+    console.log(`🎛️ [GesturesTab] Settings object reference:`, Date.now());
+  }, [settings]);
+
+  // 実際の設定値を確実に使用するため、settingsが変更された時点での値を記録
+  const currentHapticsEnabled = settings?.hapticsEnabled ?? true;
+  console.log(
+    `🔍 [GesturesTab] Current haptics state in render: ${currentHapticsEnabled}`,
+  );
+
   // ジェスチャーサービスの初期化
   useEffect(() => {
     const mappings = gestureService.getGestureMappings();
@@ -33,8 +52,19 @@ export const GesturesTab: React.FC<GesturesTabProps> = ({
     console.log(`🔄 [GesturesTab] Toggling gesture mode: ${!isGestureMode}`);
 
     if (!isGestureMode) {
-      // ジェスチャーモード開始時の触覚フィードバック
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      // ジェスチャーモード開始時の触覚フィードバック（設定に応じて）
+      const hapticsEnabled = settings?.hapticsEnabled ?? true;
+      console.log(
+        `🎛️ [GesturesTab] Haptics check - enabled: ${hapticsEnabled} (settings: ${JSON.stringify(settings)})`,
+      );
+      if (hapticsEnabled) {
+        console.log(`📳 [GesturesTab] Executing haptics: gesture mode start`);
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      } else {
+        console.log(
+          `🔇 [GesturesTab] Haptics disabled - skipping gesture mode start`,
+        );
+      }
       console.log(`✅ [GesturesTab] Gesture mode ENABLED`);
     } else {
       console.log(`❌ [GesturesTab] Gesture mode DISABLED`);
@@ -53,11 +83,24 @@ export const GesturesTab: React.FC<GesturesTabProps> = ({
     if (result.detected && result.mapping && onGestureDetected) {
       setIsProcessing(true);
 
-      // ジェスチャー認識成功の触覚フィードバック（2段階）
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      setTimeout(async () => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      }, 100);
+      // ジェスチャー認識成功の触覚フィードバック（2段階）（設定に応じて）
+      const hapticsEnabled = settings?.hapticsEnabled ?? true;
+      console.log(
+        `🎛️ [GesturesTab] Haptics check - enabled: ${hapticsEnabled} (settings: ${JSON.stringify(settings)})`,
+      );
+      if (hapticsEnabled) {
+        console.log(
+          `📳 [GesturesTab] Executing haptics: gesture recognition success`,
+        );
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setTimeout(async () => {
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        }, 100);
+      } else {
+        console.log(
+          `🔇 [GesturesTab] Haptics disabled - skipping gesture recognition feedback`,
+        );
+      }
 
       const gestureDescription = `${result.mapping.fingers}本指 ${getDirectionDisplayName(result.event?.direction || "unknown")}スワイプ → ${result.mapping.displayName}`;
       setLastGesture(gestureDescription);
@@ -70,20 +113,28 @@ export const GesturesTab: React.FC<GesturesTabProps> = ({
           mapping: result.mapping,
         });
 
-        // アクション実行成功の触覚フィードバック（長い振動）
-        await Haptics.notificationAsync(
-          Haptics.NotificationFeedbackType.Success,
-        );
+        // アクション実行成功の触覚フィードバック（長い振動）（設定に応じて）
+        if (settings?.hapticsEnabled) {
+          await Haptics.notificationAsync(
+            Haptics.NotificationFeedbackType.Success,
+          );
+        }
       } catch (error) {
         console.error("🚨 [GesturesTab] Gesture execution error:", error);
-        // エラーの触覚フィードバック（警告パターン）
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        // エラーの触覚フィードバック（警告パターン）（設定に応じて）
+        if (settings?.hapticsEnabled) {
+          await Haptics.notificationAsync(
+            Haptics.NotificationFeedbackType.Error,
+          );
+        }
       }
 
       setIsProcessing(false);
     } else if (result.error) {
-      // ジェスチャー認識失敗の触覚フィードバック（弱い振動）
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      // ジェスチャー認識失敗の触覚フィードバック（弱い振動）（設定に応じて）
+      if (settings?.hapticsEnabled) {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
       console.log(`❌ [GesturesTab] Gesture not recognized: ${result.error}`);
     }
   };

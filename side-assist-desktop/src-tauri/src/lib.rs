@@ -23,12 +23,14 @@ mod network;
 mod storage;
 mod keyboard;
 mod simulation;
+mod settings;
 
 // モジュールからのインポート  
 use network::get_local_ip_address;
 use storage::{save_custom_actions, load_custom_actions};
 use keyboard::{string_to_key, key_to_string};
 use simulation::{simulate_typing, simulate_copy, simulate_paste};
+use settings::{get_current_settings, update_settings_persistent, load_settings_persistent};
 
 // グローバル録画状態（rdevコールバック用）
 lazy_static! {
@@ -946,6 +948,8 @@ async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Erro
         .route("/recording/status", get(get_recording_status))
         .route("/recording/acknowledge", post(acknowledge_recording))
         .route("/custom_actions", get(get_custom_actions))
+        .route("/settings", get(get_settings))
+        .route("/settings", post(update_settings_endpoint))
         .layer(CorsLayer::permissive())
         .with_state(Arc::clone(&state));
 
@@ -1284,6 +1288,45 @@ async fn get_custom_actions(
     Ok(JsonResponse(actions))
 }
 
+// Settings endpoints
+async fn get_settings(
+    State(state): State<AppState>,
+) -> Result<JsonResponse<settings::AppSettings>, StatusCode> {
+    let _state_guard = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+    let current_settings = get_current_settings();
+    
+    println!("⚙️ Settings API request - returning current settings: {:?}", current_settings);
+    Ok(JsonResponse(current_settings))
+}
+
+#[derive(Deserialize)]
+struct UpdateSettingsRequest {
+    settings: serde_json::Value,
+}
+
+async fn update_settings_endpoint(
+    State(state): State<AppState>,
+    Json(request): Json<UpdateSettingsRequest>,
+) -> Result<JsonResponse<settings::AppSettings>, StatusCode> {
+    let _state_guard = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+    println!("⚙️ Settings update request: {:?}", request.settings);
+    
+    // settings.rsのupdate_settings関数を使用して永続化
+    // アプリハンドルが必要だが、storage.rsのパターンに合わせて独立したパス取得を使用
+    match update_settings_persistent(request.settings) {
+        Ok(updated_settings) => {
+            println!("✅ Settings updated and saved successfully: {:?}", updated_settings);
+            Ok(JsonResponse(updated_settings))
+        }
+        Err(e) => {
+            println!("❌ Failed to update settings: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
 async fn acknowledge_recording(
     State(state): State<AppState>,
 ) -> Result<JsonResponse<ApiResponse>, StatusCode> {
@@ -1387,11 +1430,23 @@ pub fn run() {
             get_all_custom_actions
         ])
         .setup(|app| {
-            // Tauri起動後にカスタムアクションを読み込み
+            // Tauri起動後にカスタムアクションと設定を読み込み
             let state: tauri::State<AppState> = app.state();
             let state_clone: Arc<Mutex<ServerState>> = Arc::clone(&state);
             
             tauri::async_runtime::spawn(async move {
+                // 設定を読み込み
+                println!("⚙️ Loading settings on startup...");
+                match load_settings_persistent() {
+                    Ok(settings) => {
+                        println!("✅ Loaded settings on startup: {:?}", settings);
+                    }
+                    Err(e) => {
+                        eprintln!("❌ Failed to load settings on startup: {}", e);
+                    }
+                }
+                
+                // カスタムアクションを読み込み
                 println!("📂 Loading custom actions on startup...");
                 match load_custom_actions().await {
                     Ok(loaded_actions) => {

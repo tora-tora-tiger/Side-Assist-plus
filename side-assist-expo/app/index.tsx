@@ -10,6 +10,7 @@ import { SettingsPanel } from "../components/SettingsPanel";
 import { PasswordInput } from "../components/PasswordInput";
 import { DebugToast } from "../components/DebugToast";
 import { CustomAlert } from "../components/CustomAlert";
+import { SettingsProvider } from "../contexts/SettingsContext";
 
 const App = () => {
   const [showSettings, setShowSettings] = useState(false);
@@ -109,86 +110,88 @@ const App = () => {
   };
 
   return (
-    <View className="flex-1 bg-white">
-      {(() => {
-        console.log(
-          "🔍 [App] Rendering state - isConnected:",
-          isConnected,
-          "isAuthenticated:",
-          isAuthenticated,
-        );
+    <SettingsProvider ip={macIP} port="8080">
+      <View className="flex-1 bg-white">
+        {(() => {
+          console.log(
+            "🔍 [App] Rendering state - isConnected:",
+            isConnected,
+            "isAuthenticated:",
+            isAuthenticated,
+          );
 
-        if (!isConnected) {
-          console.log("📱 [App] Rendering HomeScreen (not connected)");
-          return (
-            <HomeScreen
-              isConnected={isConnected}
-              onSettingsPress={() => setShowSettings(true)}
-              onConnect={connectManually}
-              onDisconnect={disconnect}
-            />
-          );
-        } else if (isAuthenticated) {
-          console.log(
-            "🎯 [App] Rendering ExecutionScreen (connected & authenticated)",
-          );
-          return (
-            <ExecutionScreen
-              onSettingsPress={() => setShowSettings(true)}
-              onSendText={handleSendText}
-              onSendCopy={sendCopy}
-              onSendPaste={sendPaste}
-              onSendGesture={sendGesture}
-              onExecuteCustomAction={executeCustomAction}
-              onPrepareRecording={prepareRecording}
-              resetRecordingState={resetRecordingState}
-              customActions={customActions}
-              onDisconnect={disconnect}
-            />
-          );
-        } else {
-          console.log(
-            "🔒 [App] Rendering HomeScreen + PasswordInput (connected but not authenticated)",
-          );
-          return (
-            <View className="flex-1">
+          if (!isConnected) {
+            console.log("📱 [App] Rendering HomeScreen (not connected)");
+            return (
               <HomeScreen
                 isConnected={isConnected}
                 onSettingsPress={() => setShowSettings(true)}
                 onConnect={connectManually}
                 onDisconnect={disconnect}
               />
-              <PasswordInput
-                onAuthenticate={authenticateWithPassword}
-                isVisible={true}
+            );
+          } else if (isAuthenticated) {
+            console.log(
+              "🎯 [App] Rendering ExecutionScreen (connected & authenticated)",
+            );
+            return (
+              <ExecutionScreen
+                onSettingsPress={() => setShowSettings(true)}
+                onSendText={handleSendText}
+                onSendCopy={sendCopy}
+                onSendPaste={sendPaste}
+                onSendGesture={sendGesture}
+                onExecuteCustomAction={executeCustomAction}
+                onPrepareRecording={prepareRecording}
+                resetRecordingState={resetRecordingState}
+                customActions={customActions}
+                onDisconnect={disconnect}
               />
-            </View>
-          );
-        }
-      })()}
+            );
+          } else {
+            console.log(
+              "🔒 [App] Rendering HomeScreen + PasswordInput (connected but not authenticated)",
+            );
+            return (
+              <View className="flex-1">
+                <HomeScreen
+                  isConnected={isConnected}
+                  onSettingsPress={() => setShowSettings(true)}
+                  onConnect={connectManually}
+                  onDisconnect={disconnect}
+                />
+                <PasswordInput
+                  onAuthenticate={authenticateWithPassword}
+                  isVisible={true}
+                />
+              </View>
+            );
+          }
+        })()}
 
-      <SettingsPanel
-        isVisible={showSettings}
-        isConnected={isConnected}
-        macIP={macIP}
-        onClose={() => setShowSettings(false)}
-      />
+        <SettingsPanel
+          isVisible={showSettings}
+          isConnected={isConnected}
+          macIP={macIP}
+          onClose={() => setShowSettings(false)}
+        />
 
-      <DebugToast
-        message={debugMessage}
-        visible={showDebugToast}
-        onHide={() => setShowDebugToast(false)}
-        duration={3000}
-      />
+        <DebugToast
+          message={debugMessage}
+          visible={showDebugToast}
+          onHide={() => setShowDebugToast(false)}
+          duration={3000}
+        />
 
-      <CustomAlert
-        visible={!!alertData}
-        title={alertData?.title || ""}
-        message={alertData?.message || ""}
-        buttons={alertData?.buttons}
-        onDismiss={() => AlertManager.hideAlert()}
-      />
-    </View>
+        <CustomAlert
+          visible={!!alertData}
+          title={alertData?.title || ""}
+          message={alertData?.message || ""}
+          buttons={alertData?.buttons}
+          onDismiss={() => AlertManager.hideAlert()}
+        />
+      </View>
+    </SettingsProvider>
   );
 };
 
