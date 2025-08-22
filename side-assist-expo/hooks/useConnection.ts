@@ -1,6 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { NetworkService, CustomAction } from "../services/NetworkService";
 import { DeepLinkService, ConnectionParams } from "../services/DeepLinkService";
+import {
+  ConnectionStorageService,
+  StoredConnectionInfo,
+} from "../services/ConnectionStorageService";
 import AlertManager from "../utils/AlertManager";
 
 export const useConnection = () => {
@@ -13,6 +17,8 @@ export const useConnection = () => {
   const [recordingStatus, setRecordingStatus] = useState<
     "idle" | "recording" | "completed"
   >("idle");
+  const [isAutoReconnecting, setIsAutoReconnecting] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   // recordingStatusを使用してログに出力
   console.log("Current recording status:", recordingStatus);
   const hasStartedRecording = useRef(false);
@@ -26,6 +32,13 @@ export const useConnection = () => {
   const recordingMonitorRef = useRef<ReturnType<typeof setInterval> | null>(
     null,
   );
+
+  // 初期化の重複実行防止用フラグ
+  const initializationRef = useRef({
+    isInitializing: false,
+    hasInitialized: false,
+    initializationId: 0,
+  });
 
   // DeepLink処理のハンドラー
   const handleDeepLink = useCallback(async (params: ConnectionParams) => {
@@ -74,6 +87,9 @@ export const useConnection = () => {
       console.log(
         "🎉 [useConnection] QR code connection and authentication successful!",
       );
+
+      // 接続情報を保存
+      await saveConnectionInfo(params.ip, params.port, params.password);
     } else {
       console.log(
         "❌ [useConnection] Authentication failed with provided password",
@@ -138,6 +154,104 @@ export const useConnection = () => {
     }
   }, []);
 
+  const startRecordingMonitoring = useCallback(() => {
+    if (recordingMonitorRef.current) {
+      clearInterval(recordingMonitorRef.current);
+    }
+
+    console.log("🎥 Starting recording status monitoring...");
+
+    recordingMonitorRef.current = setInterval(async () => {
+      if (!macIP || !macPort) return;
+
+      try {
+        const status = await NetworkService.getRecordingStatus(macIP, macPort);
+        console.log("🎥 Recording status check:", status);
+
+        // サーバーレスポンスの形式に合わせて判定を修正
+        const isCurrentlyRecording =
+          status.isRecording || status.status === "recording";
+        const isCompleted = status.status === "completed";
+
+        // 録画完了状態を検出した場合は、録画していたとみなしてアラートを表示
+        // action_id が存在し、かつ未処理の場合のみアラート表示
+        if (
+          isCompleted &&
+          status.actionId &&
+          typeof status.actionId === "string"
+        ) {
+          // 同じ action_id のアラートを重複表示しないようにチェック
+          if (!processedCompletedActionIds.current.has(status.actionId)) {
+            console.log(
+              "🎉 Recording completed for new action:",
+              status.actionId,
+            );
+
+            // この action_id を処理済みとしてマーク
+            processedCompletedActionIds.current.add(status.actionId);
+
+            hasStartedRecording.current = false;
+            setRecordingStatus("completed");
+
+            const message = status.message || "録画が完了しました";
+            AlertManager.showAlert("録画完了", message, [
+              {
+                text: "OK",
+                onPress: async () => {
+                  console.log("✅ User acknowledged recording completion");
+                  resetRecordingState();
+                },
+              },
+            ]);
+
+            // 完了確認を送信
+            console.log("✅ Sending acknowledgment...");
+            await NetworkService.acknowledgeRecording(macIP, macPort);
+
+            // カスタムアクションを再読み込み（新しく保存されたアクションを反映）
+            console.log(
+              "🔄 Reloading custom actions after recording completion...",
+            );
+            await loadCustomActions();
+          } else {
+            console.log(
+              "🔄 Already processed completion for action:",
+              status.actionId,
+            );
+          }
+        } else if (isCurrentlyRecording && !hasStartedRecording.current) {
+          console.log("🔴 Recording started!");
+          hasStartedRecording.current = true;
+          setRecordingStatus("recording");
+        } else if (isCurrentlyRecording) {
+          console.log("🔴 Still recording...");
+        } else {
+          console.log("⚪ Recording idle");
+        }
+      } catch (error) {
+        console.error("Recording status monitoring error:", error);
+      }
+    }, 1000); // 1秒ごとにチェック
+  }, [macIP, macPort, loadCustomActions, resetRecordingState]);
+
+  // 接続情報を保存
+  const saveConnectionInfo = useCallback(
+    async (ip: string, port: string, password: string): Promise<void> => {
+      console.log("💾 [useConnection] Saving connection info...");
+
+      const connectionInfo: StoredConnectionInfo = {
+        ip,
+        port,
+        password,
+        lastConnectedAt: Date.now(),
+        autoReconnect: true,
+      };
+
+      await ConnectionStorageService.saveConnectionInfo(connectionInfo);
+    },
+    [],
+  );
+
   const stopRecordingMonitoring = useCallback(() => {
     if (recordingMonitorRef.current) {
       clearInterval(recordingMonitorRef.current);
@@ -156,6 +270,197 @@ export const useConnection = () => {
       setCustomActions([]);
     }
   }, [isAuthenticated, macIP, macPort, loadCustomActions]);
+
+  // 初期化時の自動接続 - 重複実行防止機能付き
+  useEffect(() => {
+    // 重複実行防止チェック
+    if (
+      initializationRef.current.isInitializing ||
+      initializationRef.current.hasInitialized
+    ) {
+      console.log(
+        "⚠️ [useConnection] Initialization already in progress or completed, skipping",
+      );
+      return;
+    }
+
+    // 初期化開始をマーク
+    const currentInitId = ++initializationRef.current.initializationId;
+    initializationRef.current.isInitializing = true;
+    console.log(`🚀 [useConnection] Starting initialization #${currentInitId}`);
+
+    let isCancelled = false;
+
+    const initializeConnection = async () => {
+      try {
+        console.log(
+          `🔄 [useConnection] Loading stored connection info (init #${currentInitId})`,
+        );
+        const storedInfo = await ConnectionStorageService.loadConnectionInfo();
+
+        // キャンセルチェック
+        if (
+          isCancelled ||
+          initializationRef.current.initializationId !== currentInitId
+        ) {
+          console.log(
+            `❌ [useConnection] Init #${currentInitId} cancelled or superseded`,
+          );
+          return;
+        }
+
+        if (!storedInfo) {
+          console.log(
+            `ℹ️ [useConnection] No stored connection info found (init #${currentInitId})`,
+          );
+          if (!isCancelled) {
+            setIsInitialized(true);
+            initializationRef.current.hasInitialized = true;
+          }
+          return;
+        }
+
+        if (!storedInfo.autoReconnect) {
+          console.log(
+            `ℹ️ [useConnection] Auto reconnect disabled (init #${currentInitId})`,
+          );
+          if (!isCancelled) {
+            setIsInitialized(true);
+            initializationRef.current.hasInitialized = true;
+          }
+          return;
+        }
+
+        console.log(
+          `🔄 [useConnection] Auto-connecting to ${storedInfo.ip}:${storedInfo.port} (init #${currentInitId})`,
+        );
+
+        // キャンセルチェック
+        if (
+          isCancelled ||
+          initializationRef.current.initializationId !== currentInitId
+        ) {
+          console.log(
+            `❌ [useConnection] Init #${currentInitId} cancelled before auto-connect`,
+          );
+          return;
+        }
+
+        setIsAutoReconnecting(true);
+
+        // 接続テスト
+        console.log(
+          `📡 [useConnection] Testing connection (init #${currentInitId})`,
+        );
+        const connected = await NetworkService.testConnection(
+          storedInfo.ip,
+          storedInfo.port,
+        );
+
+        // キャンセルチェック
+        if (
+          isCancelled ||
+          initializationRef.current.initializationId !== currentInitId
+        ) {
+          console.log(
+            `❌ [useConnection] Init #${currentInitId} cancelled after connection test`,
+          );
+          return;
+        }
+
+        if (!connected) {
+          console.log(
+            `❌ [useConnection] Server not reachable (init #${currentInitId})`,
+          );
+          if (!isCancelled) {
+            setIsAutoReconnecting(false);
+            setIsInitialized(true);
+            initializationRef.current.hasInitialized = true;
+          }
+          return;
+        }
+
+        // 認証を試行
+        console.log(
+          `🔐 [useConnection] Authenticating (init #${currentInitId})`,
+        );
+        const authSuccess = await NetworkService.authenticateWithPassword(
+          storedInfo.ip,
+          storedInfo.port,
+          storedInfo.password,
+        );
+
+        // 最終キャンセルチェック
+        if (
+          isCancelled ||
+          initializationRef.current.initializationId !== currentInitId
+        ) {
+          console.log(
+            `❌ [useConnection] Init #${currentInitId} cancelled after authentication`,
+          );
+          return;
+        }
+
+        if (authSuccess) {
+          console.log(
+            `✅ [useConnection] Auto connect successful! (init #${currentInitId})`,
+          );
+          setMacIP(storedInfo.ip);
+          setMacPort(storedInfo.port);
+          setPassword(storedInfo.password);
+          setIsConnected(true);
+          setIsAuthenticated(true);
+
+          // 最終接続時刻を更新
+          await ConnectionStorageService.updateLastConnectedTime();
+        } else {
+          console.log(
+            `❌ [useConnection] Authentication failed (init #${currentInitId})`,
+          );
+        }
+
+        setIsAutoReconnecting(false);
+        setIsInitialized(true);
+        initializationRef.current.hasInitialized = true;
+      } catch (error) {
+        console.error(
+          `💥 [useConnection] Initialization error (init #${currentInitId}):`,
+          error,
+        );
+        if (
+          !isCancelled &&
+          initializationRef.current.initializationId === currentInitId
+        ) {
+          setIsAutoReconnecting(false);
+          setIsInitialized(true);
+          initializationRef.current.hasInitialized = true;
+        }
+      } finally {
+        // 初期化完了をマーク
+        if (initializationRef.current.initializationId === currentInitId) {
+          initializationRef.current.isInitializing = false;
+          console.log(
+            `🏁 [useConnection] Initialization #${currentInitId} completed`,
+          );
+        }
+      }
+    };
+
+    initializeConnection();
+
+    return () => {
+      console.log(`🛑 [useConnection] Cleanup init #${currentInitId}`);
+      isCancelled = true;
+      // 進行中の初期化をキャンセル（ただし完了したものはリセットしない）
+      if (
+        initializationRef.current.initializationId === currentInitId &&
+        initializationRef.current.isInitializing &&
+        !initializationRef.current.hasInitialized
+      ) {
+        initializationRef.current.isInitializing = false;
+      }
+    };
+  }, []);
 
   const startConnectionMonitoring = useCallback(() => {
     console.log(
@@ -364,89 +669,15 @@ export const useConnection = () => {
 
       return result;
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [macIP, macPort, isConnected, isAuthenticated, password],
+    [
+      macIP,
+      macPort,
+      isConnected,
+      isAuthenticated,
+      password,
+      startRecordingMonitoring,
+    ],
   );
-
-  const startRecordingMonitoring = useCallback(() => {
-    if (recordingMonitorRef.current) {
-      clearInterval(recordingMonitorRef.current);
-    }
-
-    console.log("🎥 Starting recording status monitoring...");
-
-    recordingMonitorRef.current = setInterval(async () => {
-      if (!macIP || !macPort) return;
-
-      try {
-        const status = await NetworkService.getRecordingStatus(macIP, macPort);
-        console.log("🎥 Recording status check:", status);
-
-        // サーバーレスポンスの形式に合わせて判定を修正
-        const isCurrentlyRecording =
-          status.isRecording || status.status === "recording";
-        const isCompleted = status.status === "completed";
-
-        // 録画完了状態を検出した場合は、録画していたとみなしてアラートを表示
-        // action_id が存在し、かつ未処理の場合のみアラート表示
-        if (
-          isCompleted &&
-          status.actionId &&
-          typeof status.actionId === "string"
-        ) {
-          // 同じ action_id のアラートを重複表示しないようにチェック
-          if (!processedCompletedActionIds.current.has(status.actionId)) {
-            console.log(
-              "🎉 Recording completed for new action:",
-              status.actionId,
-            );
-
-            // この action_id を処理済みとしてマーク
-            processedCompletedActionIds.current.add(status.actionId);
-
-            hasStartedRecording.current = false;
-            setRecordingStatus("completed");
-
-            const message = status.message || "録画が完了しました";
-            AlertManager.showAlert("録画完了", message, [
-              {
-                text: "OK",
-                onPress: async () => {
-                  console.log("✅ User acknowledged recording completion");
-                  resetRecordingState();
-                },
-              },
-            ]);
-
-            // 完了確認を送信
-            console.log("✅ Sending acknowledgment...");
-            await NetworkService.acknowledgeRecording(macIP, macPort);
-
-            // カスタムアクションを再読み込み（新しく保存されたアクションを反映）
-            console.log(
-              "🔄 Reloading custom actions after recording completion...",
-            );
-            await loadCustomActions();
-          } else {
-            console.log(
-              "🔄 Already processed completion for action:",
-              status.actionId,
-            );
-          }
-        } else if (isCurrentlyRecording && !hasStartedRecording.current) {
-          console.log("🔴 Recording started!");
-          hasStartedRecording.current = true;
-          setRecordingStatus("recording");
-        } else if (isCurrentlyRecording) {
-          console.log("🔴 Still recording...");
-        } else {
-          console.log("⚪ Recording idle");
-        }
-      } catch (error) {
-        console.error("Recording status monitoring error:", error);
-      }
-    }, 1000); // 1秒ごとにチェック
-  }, [macIP, macPort, loadCustomActions, resetRecordingState]);
 
   const connectManually = useCallback(
     async (ip: string, port: string, password: string): Promise<boolean> => {
@@ -486,6 +717,10 @@ export const useConnection = () => {
           setIsConnected(true);
           setIsAuthenticated(true);
           console.log("✅ [useConnection] Manual connection successful");
+
+          // 接続情報を保存
+          await saveConnectionInfo(ip, port, password);
+
           return true;
         } else {
           console.log("❌ [useConnection] Authentication failed");
@@ -496,31 +731,53 @@ export const useConnection = () => {
         return false;
       }
     },
-    [isConnected, isAuthenticated, macIP],
+    [isConnected, isAuthenticated, macIP, saveConnectionInfo],
   );
 
-  const disconnect = useCallback(() => {
-    console.log("🔌 [useConnection] disconnect START");
+  const disconnect = useCallback(
+    async (
+      clearStoredInfo: boolean = false,
+      resetInitialization: boolean = false,
+    ) => {
+      console.log("🔌 [useConnection] disconnect START");
 
-    // 全ての監視を停止
-    stopConnectionMonitoring();
-    stopRecordingMonitoring();
+      // 全ての監視を停止
+      stopConnectionMonitoring();
+      stopRecordingMonitoring();
 
-    // 接続状態をリセット
-    setIsConnected(false);
-    setIsAuthenticated(false);
-    setMacIP("");
-    setMacPort("");
-    setPassword("");
+      // 接続状態をリセット
+      setIsConnected(false);
+      setIsAuthenticated(false);
+      setMacIP("");
+      setMacPort("");
+      setPassword("");
 
-    // 録画関連の状態もリセット
-    hasStartedRecording.current = false;
-    processedCompletedActionIds.current.clear();
-    setRecordingStatus("idle");
+      // 録画関連の状態もリセット
+      hasStartedRecording.current = false;
+      processedCompletedActionIds.current.clear();
+      setRecordingStatus("idle");
 
-    console.log("🔌 [useConnection] Connection disconnected and state reset");
-    console.log("🔌 [useConnection] disconnect END");
-  }, [stopConnectionMonitoring, stopRecordingMonitoring]);
+      // 初期化状態のリセット（手動切断時など）
+      if (resetInitialization) {
+        console.log("🔄 [useConnection] Resetting initialization state");
+        initializationRef.current.isInitializing = false;
+        initializationRef.current.hasInitialized = false;
+        initializationRef.current.initializationId++;
+        setIsInitialized(false);
+        setIsAutoReconnecting(false);
+      }
+
+      // オプションで保存された接続情報をクリア
+      if (clearStoredInfo) {
+        console.log("🗑️ [useConnection] Clearing stored connection info...");
+        await ConnectionStorageService.clearConnectionInfo();
+      }
+
+      console.log("🔌 [useConnection] Connection disconnected and state reset");
+      console.log("🔌 [useConnection] disconnect END");
+    },
+    [stopConnectionMonitoring, stopRecordingMonitoring],
+  );
 
   return {
     isConnected,
@@ -529,6 +786,8 @@ export const useConnection = () => {
     isAuthenticated,
     password,
     customActions,
+    isAutoReconnecting,
+    isInitialized,
     startConnectionMonitoring,
     stopConnectionMonitoring,
     sendText,
@@ -542,5 +801,37 @@ export const useConnection = () => {
     authenticateWithPassword,
     connectManually,
     disconnect,
+    clearStoredConnection: () => ConnectionStorageService.clearConnectionInfo(),
+    // 開発用：初期化状態をリセットして再接続を試行
+    resetAndRetryConnection: useCallback(async () => {
+      console.log(
+        "🔄 [useConnection] Reset and retry connection for development",
+      );
+      // 初期化状態をリセット
+      initializationRef.current.isInitializing = false;
+      initializationRef.current.hasInitialized = false;
+      initializationRef.current.initializationId++;
+
+      // 状態をリセット
+      setIsInitialized(false);
+      setIsAutoReconnecting(false);
+
+      // 少し待ってから自動接続を再試行
+      setTimeout(async () => {
+        try {
+          const storedInfo =
+            await ConnectionStorageService.loadConnectionInfo();
+          if (storedInfo && storedInfo.autoReconnect) {
+            console.log(
+              "🔄 [useConnection] Retrying auto-connection after reset",
+            );
+            // useEffectが再実行されるように状態を更新
+            setIsInitialized(false);
+          }
+        } catch (error) {
+          console.error("❌ [useConnection] Retry connection error:", error);
+        }
+      }, 100);
+    }, []),
   };
 };

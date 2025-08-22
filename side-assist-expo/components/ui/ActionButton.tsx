@@ -1,5 +1,5 @@
 import React from "react";
-import { TouchableOpacity, View, Animated } from "react-native";
+import { TouchableOpacity, View, Animated, ViewStyle } from "react-native";
 
 interface ActionButtonProps {
   icon: React.ReactNode;
@@ -8,6 +8,7 @@ interface ActionButtonProps {
   size?: number;
   animatedValue?: Animated.Value;
   backgroundColor?: string;
+  style?: ViewStyle;
 }
 
 export const ActionButton: React.FC<ActionButtonProps> = ({
@@ -17,6 +18,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
   size = 75,
   animatedValue,
   backgroundColor = "#e5e7eb",
+  style,
 }) => {
   const ButtonComponent = animatedValue ? Animated.View : View;
   const animatedStyle = animatedValue
@@ -27,6 +29,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
     width: size,
     height: size,
     backgroundColor: disabled ? "#a3a3a3" : backgroundColor,
+    ...style,
   };
 
   return (
