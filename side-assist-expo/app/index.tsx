@@ -31,6 +31,7 @@ const App = () => {
     sendText,
     sendCopy,
     sendPaste,
+    sendGesture,
     executeCustomAction,
     prepareRecording,
     resetRecordingState,
@@ -137,6 +138,7 @@ const App = () => {
               onSendText={handleSendText}
               onSendCopy={sendCopy}
               onSendPaste={sendPaste}
+              onSendGesture={sendGesture}
               onExecuteCustomAction={executeCustomAction}
               onPrepareRecording={prepareRecording}
               resetRecordingState={resetRecordingState}

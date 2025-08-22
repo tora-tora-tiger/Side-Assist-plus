@@ -1,19 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { View, Animated, ScrollView } from "react-native";
-import { Header, StatusIndicator, Button } from "./ui";
-import { MaterialIcons } from "@expo/vector-icons";
+import { View, Animated } from "react-native";
+import { Header, StatusIndicator, TabNavigator } from "./ui";
 import AlertManager from "../utils/AlertManager";
 import { CustomAction } from "../services/NetworkService";
 import { ActionType } from "../constants/actions";
-import { ActionGrid } from "./ActionGrid";
-import { RecordingSection } from "./RecordingSection";
-import { CustomActionList } from "./CustomActionList";
+import { ActionsTab } from "./ActionsTab";
+import { GesturesTab } from "./GesturesTab";
 
 interface ExecutionScreenProps {
   onSettingsPress: () => void;
   onSendText: (text: string) => Promise<void>;
   onSendCopy: () => Promise<boolean>;
   onSendPaste: () => Promise<boolean>;
+  onSendGesture?: (
+    fingers: number,
+    direction: string,
+    action: string,
+    actionData?: string,
+  ) => Promise<boolean>;
   onExecuteCustomAction: (actionId: string) => Promise<boolean>;
   onPrepareRecording: (
     actionId: string,
@@ -30,11 +34,15 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   onSendText,
   onSendCopy,
   onSendPaste,
+  onSendGesture,
   onExecuteCustomAction,
   onPrepareRecording,
   customActions,
   onDisconnect,
 }) => {
+  // タブ管理
+  const [activeTab, setActiveTab] = useState("actions");
+
   // カスタムアクション状態をログ出力
   useEffect(() => {
     console.log(
@@ -63,6 +71,12 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   );
   // recordingActionIdを実際に使用
   console.log("Current recording action ID:", recordingActionId);
+
+  // タブ定義
+  const tabs = [
+    { id: "actions", title: "Actions", icon: "apps" as const },
+    { id: "gestures", title: "Gestures", icon: "pan-tool" as const },
+  ];
 
   // 録画状態リセット関数の実装
   const handleResetRecordingState = React.useCallback(() => {
@@ -242,6 +256,45 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
     }
   };
 
+  // ジェスチャー検出ハンドラー
+  const handleGestureDetected = async (gesture: {
+    fingers: number;
+    direction: string;
+    action: string;
+    mapping: { displayName: string; actionData?: string };
+  }) => {
+    console.log(`🤏 [ExecutionScreen] Gesture detected:`, gesture);
+
+    if (!onSendGesture) {
+      console.error("❌ [ExecutionScreen] onSendGesture not available");
+      AlertManager.showAlert("エラー", "ジェスチャー機能が利用できません");
+      return;
+    }
+
+    try {
+      const success = await onSendGesture(
+        gesture.fingers,
+        gesture.direction,
+        gesture.action,
+        gesture.mapping.actionData,
+      );
+
+      if (success) {
+        console.log(
+          `✅ [ExecutionScreen] Gesture executed successfully: ${gesture.mapping.displayName}`,
+        );
+      } else {
+        throw new Error("Gesture execution failed on server");
+      }
+    } catch (error) {
+      console.error("🚨 [ExecutionScreen] Gesture execution error:", error);
+      AlertManager.showAlert(
+        "ジェスチャーエラー",
+        `ジェスチャー実行中にエラーが発生しました: ${error}`,
+      );
+    }
+  };
+
   return (
     <View className="flex-1 bg-neutral-50">
       {/* ヘッダー */}
@@ -252,42 +305,34 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
         onSettingsPress={onSettingsPress}
       />
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* ステータス表示 */}
-        <View className="px-6 py-4">
-          <StatusIndicator isConnected={true} variant="detailed" />
-        </View>
+      {/* ステータス表示 */}
+      <View className="px-6 py-4">
+        <StatusIndicator isConnected={true} variant="detailed" />
+      </View>
 
-        {/* メインコンテンツ - アクションボタングリッド */}
-        <ActionGrid
-          onActionPress={handleActionPress}
-          buttonScales={buttonScales}
-        />
+      {/* タブナビゲーション */}
+      <TabNavigator
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
-        {/* 録画セクション */}
-        <RecordingSection
-          isRecordingPrepared={isRecordingPrepared}
-          onPrepareRecording={handlePrepareRecording}
-          buttonScales={{ recordButton: buttonScales.recordButton }}
-        />
-
-        {/* 保存済みカスタムアクションセクション */}
-        <CustomActionList
-          customActions={customActions}
-          onCustomActionPress={handleCustomAction}
-        />
-
-        {/* 接続解除ボタン */}
-        <View className="px-6 pb-8">
-          <Button
-            title="接続を解除"
-            icon={<MaterialIcons name="link-off" size={20} />}
-            variant="danger"
-            size="md"
-            onPress={handleDisconnect}
+      {/* タブコンテンツ */}
+      <View className="flex-1">
+        {activeTab === "actions" ? (
+          <ActionsTab
+            onActionPress={handleActionPress}
+            onCustomActionPress={handleCustomAction}
+            onPrepareRecording={handlePrepareRecording}
+            onDisconnect={handleDisconnect}
+            customActions={customActions}
+            isRecordingPrepared={isRecordingPrepared}
+            buttonScales={buttonScales}
           />
-        </View>
-      </ScrollView>
+        ) : (
+          <GesturesTab onGestureDetected={handleGestureDetected} />
+        )}
+      </View>
     </View>
   );
 };

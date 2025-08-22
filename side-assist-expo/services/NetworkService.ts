@@ -71,6 +71,32 @@ export class NetworkService {
     return this.sendAction(ip, port, { type: "text", text }, password);
   }
 
+  static async sendGesture(
+    ip: string,
+    port: string,
+    fingers: number,
+    direction: string,
+    action: string,
+    actionData?: string,
+    password?: string,
+  ): Promise<boolean> {
+    console.log(
+      `🤏 [NetworkService] Sending gesture: ${fingers} fingers ${direction} -> ${action}`,
+    );
+    return this.sendAction(
+      ip,
+      port,
+      {
+        type: "gesture",
+        fingers,
+        direction,
+        action,
+        action_data: actionData,
+      },
+      password,
+    );
+  }
+
   // Unified action endpoint
   static async sendAction(
     ip: string,

@@ -6,15 +6,7 @@ import { actions, ActionType } from "../constants/actions";
 
 interface ActionGridProps {
   onActionPress: (action: ActionType) => Promise<void>;
-  buttonScales: {
-    ultradeepthink: Animated.Value;
-    copy: Animated.Value;
-    paste: Animated.Value;
-    action4: Animated.Value;
-    action5: Animated.Value;
-    action6: Animated.Value;
-    recordButton: Animated.Value;
-  };
+  buttonScales: Record<string, Animated.Value>;
 }
 
 export const ActionGrid: React.FC<ActionGridProps> = ({

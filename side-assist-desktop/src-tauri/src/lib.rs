@@ -148,6 +148,13 @@ pub enum ActionType {
         name: String,
         icon: Option<String>,
     },
+    #[serde(rename = "gesture")]
+    Gesture { 
+        fingers: u8,
+        direction: String,
+        action: String,
+        action_data: Option<String>,
+    },
 }
 
 #[derive(Deserialize)]  
@@ -1123,6 +1130,46 @@ async fn handle_input(
             
             println!("✅ Recording modal prepared successfully for: {}", name);
             Ok(format!("Recording prepared for action: {}", name))
+        }
+        ActionType::Gesture { fingers, direction, action, action_data } => {
+            println!("🤏 Processing gesture: {} fingers {} direction -> {}", fingers, direction, action);
+            
+            match action.as_str() {
+                "copy" => {
+                    println!("📋 Processing gesture copy command");
+                    simulate_copy().await
+                }
+                "paste" => {
+                    println!("📋 Processing gesture paste command");
+                    simulate_paste().await
+                }
+                "text_input" => {
+                    if let Some(text) = action_data {
+                        println!("⌨️ Processing gesture text input: '{}'", text);
+                        simulate_typing(text.clone()).await
+                    } else {
+                        Err("No text data provided for gesture text input".to_string())
+                    }
+                }
+                "custom_action" => {
+                    println!("🎭 Processing gesture custom action");
+                    // 最初のカスタムアクションを実行
+                    let action = {
+                        let state_guard = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                        state_guard.custom_actions.values().next().cloned()
+                    };
+                    
+                    if let Some(action) = action {
+                        println!("🎭 Executing gesture custom action: {} with {} keys", action.name, action.key_sequence.len());
+                        execute_custom_action(&action).await
+                    } else {
+                        Err("No custom actions available for gesture".to_string())
+                    }
+                }
+                _ => {
+                    Err(format!("Unknown gesture action: {}", action))
+                }
+            }
         }
     };
     
