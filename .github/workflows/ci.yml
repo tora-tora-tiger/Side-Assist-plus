@@ -1,0 +1,164 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test-desktop:
+    name: Test Desktop App
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+        cache-dependency-path: side-assist-desktop/pnpm-lock.yaml
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Rust cache
+      uses: swatinem/rust-cache@v2
+      with:
+        workspaces: './side-assist-desktop/src-tauri -> target'
+
+    - name: Install dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev librsvg2-dev
+
+    - name: Install dependencies (Desktop)
+      run: pnpm install
+      working-directory: side-assist-desktop
+
+    - name: Check TypeScript types
+      run: pnpm run typecheck
+      working-directory: side-assist-desktop
+
+    - name: Lint code
+      run: pnpm run lint
+      working-directory: side-assist-desktop
+
+    - name: Check Rust code
+      run: cargo check
+      working-directory: side-assist-desktop/src-tauri
+
+    - name: Run Rust tests
+      run: cargo test
+      working-directory: side-assist-desktop/src-tauri
+
+    - name: Build frontend
+      run: pnpm run build
+      working-directory: side-assist-desktop
+
+  test-mobile:
+    name: Test Mobile App
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: side-assist-expo/package-lock.json
+
+    - name: Install dependencies (Mobile)
+      run: npm ci
+      working-directory: side-assist-expo
+
+    - name: Check TypeScript types
+      run: npm run typecheck
+      working-directory: side-assist-expo
+
+    - name: Lint code
+      run: npm run lint
+      working-directory: side-assist-expo
+
+  build-desktop:
+    name: Build Desktop App
+    needs: [test-desktop, test-mobile]
+    runs-on: ${{ matrix.os }}
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+        cache-dependency-path: side-assist-desktop/pnpm-lock.yaml
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Rust cache
+      uses: swatinem/rust-cache@v2
+      with:
+        workspaces: './side-assist-desktop/src-tauri -> target'
+
+    - name: Install dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev librsvg2-dev
+
+    - name: Install dependencies
+      run: pnpm install
+      working-directory: side-assist-desktop
+
+    - name: Build Tauri app
+      run: pnpm tauri build
+      working-directory: side-assist-desktop
+
+    - name: Upload artifacts (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-build
+        path: side-assist-desktop/src-tauri/target/release/bundle/**/*
+
+    - name: Upload artifacts (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-build
+        path: side-assist-desktop/src-tauri/target/release/bundle/**/*
+
+    - name: Upload artifacts (macOS)
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-build
+        path: side-assist-desktop/src-tauri/target/release/bundle/**/*
