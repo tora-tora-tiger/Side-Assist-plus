@@ -81,7 +81,7 @@ sudo apt-get install android-sdk adb
 
 #### デスクトップアプリ
 ```bash
-cd side-assist-desktop && pnpm install    # Node.js依存関係
+cd side-assist-desktop && npm install     # Node.js依存関係
 ```
 
 #### iOS / Android アプリ
@@ -156,7 +156,7 @@ import { Modal } from 'react-native';
 - **バックエンド**: Rust + Axum HTTP Server  
 - **入力シミュレーション**: enigo (クロスプラットフォーム)
 - **国際化**: react-i18next (日本語/英語)
-- **パッケージ管理**: pnpm
+- **パッケージ管理**: npm
 - **コード品質**: ESLint + Prettier + Lefthook
 
 ### モバイル (Expo Go + Router v5)
