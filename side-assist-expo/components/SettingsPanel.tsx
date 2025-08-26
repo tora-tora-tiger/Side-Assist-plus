@@ -1,8 +1,11 @@
 import React from "react";
 import { View, Text, Linking, Switch } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
 import { Header, Button } from "./ui";
 import { getDeviceConfig } from "../utils/DeviceConfig";
 import { useSettings } from "../contexts/SettingsContext";
+import { useActionPositions } from "../hooks/useActionPositions";
+import { positionResetNotifier } from "../utils/PositionResetNotifier";
 import AlertManager from "../utils/AlertManager";
 
 interface SettingsPanelProps {
@@ -20,6 +23,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 }) => {
   const deviceConfig = getDeviceConfig();
   const { settings, isLoading, updateSetting } = useSettings();
+  const { resetToDefault: resetLayoutToDefault } = useActionPositions();
 
   const handleOpenSettings = async () => {
     try {
@@ -27,6 +31,53 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     } catch {
       AlertManager.showAlert("エラー", "設定アプリを開けませんでした");
     }
+  };
+
+  const handleResetLayout = async () => {
+    console.log("🎯 [SettingsPanel] Reset layout button pressed");
+
+    AlertManager.showAlert(
+      "レイアウトをリセット",
+      "アクションボタンの配置を初期のグリッド状態に戻しますか？この操作は取り消せません。",
+      [
+        {
+          text: "キャンセル",
+          style: "cancel",
+        },
+        {
+          text: "リセット",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              console.log("🎯 [SettingsPanel] Executing layout reset...");
+
+              // デフォルトのコンテナサイズを使用（実際のサイズは内部で調整される）
+              await resetLayoutToDefault(350, 300);
+
+              // 他のコンポーネントに位置リセットを通知
+              console.log(
+                "📢 [SettingsPanel] Notifying position reset to other components",
+              );
+              await positionResetNotifier.notifyReset();
+
+              AlertManager.showAlert(
+                "リセット完了",
+                "アクションボタンの配置が初期状態に戻りました。",
+              );
+              console.log(
+                "✅ [SettingsPanel] Layout reset completed successfully",
+              );
+            } catch (error) {
+              console.error("❌ [SettingsPanel] Layout reset failed:", error);
+              AlertManager.showAlert(
+                "エラー",
+                "レイアウトのリセットに失敗しました。",
+              );
+            }
+          },
+        },
+      ],
+    );
   };
   if (!isVisible) return null;
 
@@ -100,6 +151,23 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               PCに接続すると設定を変更できます
             </Text>
           )}
+        </View>
+
+        {/* レイアウト設定 */}
+        <View className="mb-6">
+          <Text className="text-lg font-semibold mb-3">レイアウト設定</Text>
+          <Text className="text-sm text-gray-700 mb-3 leading-5">
+            アクションボタンの配置を初期のグリッド状態にリセットできます。
+          </Text>
+          <Text className="text-sm text-gray-600 mb-4 leading-5">
+            自由配置で移動したボタンを元の2×3グリッド配置に戻します。
+          </Text>
+          <Button
+            title="レイアウトをリセット"
+            icon={<MaterialIcons name="refresh" size={20} color="#dc2626" />}
+            onPress={handleResetLayout}
+            variant="danger"
+          />
         </View>
 
         <View className="mb-6">

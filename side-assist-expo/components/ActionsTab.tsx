@@ -7,7 +7,6 @@ import { RecordingSection } from "./RecordingSection";
 import { CustomActionList } from "./CustomActionList";
 import { CustomAction } from "../services/NetworkService";
 import { ActionType } from "../constants/actions";
-import { useActionPositions } from "../hooks/useActionPositions";
 
 interface ActionsTabProps {
   onActionPress: (action: ActionType) => Promise<void>;
@@ -30,19 +29,9 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
 }) => {
   const [isEditMode, setIsEditMode] = useState(false);
 
-  const { resetToDefault: resetPositionsToDefault } = useActionPositions();
-
   const toggleEditMode = () => {
     console.log("🎯 [ActionsTab] Toggling edit mode:", !isEditMode);
     setIsEditMode(!isEditMode);
-  };
-
-  const handleResetLayout = async () => {
-    console.log("🎯 [ActionsTab] Resetting layout to default");
-    // For freeform mode, we need container dimensions
-    // This will be handled by the FreeformActionGrid component
-    await resetPositionsToDefault(300, 400); // Default container size
-    setIsEditMode(false);
   };
 
   return (
@@ -59,22 +48,15 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
             size="sm"
             onPress={toggleEditMode}
           />
-
-          {isEditMode && (
-            <Button
-              title="デフォルトに戻す"
-              icon={<MaterialIcons name="refresh" size={16} />}
-              variant="secondary"
-              size="sm"
-              onPress={handleResetLayout}
-            />
-          )}
         </View>
 
         {isEditMode && (
           <View className="mt-2 p-3 bg-blue-50 rounded-lg">
             <Text className="text-blue-700 text-sm text-center">
               📱 アクションボタンをドラッグして自由に配置できます
+            </Text>
+            <Text className="text-blue-600 text-xs text-center mt-1">
+              配置をリセットするには設定画面を確認してください
             </Text>
           </View>
         )}

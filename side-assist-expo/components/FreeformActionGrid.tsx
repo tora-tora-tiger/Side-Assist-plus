@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { FreeformDraggableButton } from "./FreeformDraggableButton";
 import { ActionType, actions as defaultActions } from "../constants/actions";
 import { useActionPositions } from "../hooks/useActionPositions";
+import { positionResetNotifier } from "../utils/PositionResetNotifier";
 
 interface FreeformActionGridProps {
   onActionPress: (action: ActionType) => Promise<void>;
@@ -62,6 +63,7 @@ export const FreeformActionGrid: React.FC<FreeformActionGridProps> = ({
     updatePosition,
     savePositions,
     initializePositions,
+    forceReload,
   } = useActionPositions();
 
   const [containerSize, setContainerSize] = useState({
@@ -94,6 +96,22 @@ export const FreeformActionGrid: React.FC<FreeformActionGridProps> = ({
       savePositions(containerSize.width, containerSize.height);
     }
   }, [isEditMode, savePositions, containerSize]);
+
+  // Register for position reset notifications
+  useEffect(() => {
+    const handlePositionReset = async () => {
+      console.log(
+        "🔔 [FreeformActionGrid] Received position reset notification",
+      );
+      await forceReload();
+    };
+
+    positionResetNotifier.addListener(handlePositionReset);
+
+    return () => {
+      positionResetNotifier.removeListener(handlePositionReset);
+    };
+  }, [forceReload]);
 
   // Handle position changes from draggable buttons
   const handlePositionChange = useCallback(

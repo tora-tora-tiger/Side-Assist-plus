@@ -21,6 +21,7 @@ interface UseActionPositionsReturn {
     containerWidth: number,
     containerHeight: number,
   ) => Promise<void>;
+  forceReload: () => Promise<void>;
 }
 
 export const useActionPositions = (): UseActionPositionsReturn => {
@@ -182,6 +183,42 @@ export const useActionPositions = (): UseActionPositionsReturn => {
     [],
   );
 
+  // 強制リロード機能（外部からの通知で再初期化）
+  const forceReload = useCallback(async () => {
+    console.log(
+      "🔄 [useActionPositions] Force reloading positions from storage",
+    );
+
+    try {
+      setIsLoading(true);
+      const storedData =
+        await ActionPositionStorageService.loadActionPositions();
+
+      if (storedData && storedData.positions.length === defaultActions.length) {
+        console.log(
+          "🔄 [useActionPositions] Force reload: Using stored positions",
+        );
+        setPositions(storedData.positions);
+      } else {
+        console.log(
+          "🔄 [useActionPositions] Force reload: No stored data, using defaults",
+        );
+        // デフォルトサイズでデフォルト位置を生成
+        const defaultPositions =
+          ActionPositionStorageService.getDefaultPositions(
+            350,
+            300,
+            defaultActions,
+          );
+        setPositions(defaultPositions);
+      }
+    } catch (error) {
+      console.error("❌ [useActionPositions] Force reload failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   return {
     positions,
     isLoading,
@@ -189,5 +226,6 @@ export const useActionPositions = (): UseActionPositionsReturn => {
     resetToDefault,
     savePositions,
     initializePositions,
+    forceReload,
   };
 };

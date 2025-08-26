@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ActionType } from "../constants/actions";
+import { calculateDefaultPositions } from "../constants/defaultPositions";
 
 const ACTION_POSITIONS_KEY = "@side_assist_action_positions";
 
@@ -19,41 +20,48 @@ export interface StoredActionPositions {
 }
 
 export class ActionPositionStorageService {
-  // デフォルトの位置を計算（3x2グリッド）
+  // デフォルトの位置を計算（2x3グリッド - 前のActionGrid.tsxレイアウトを再現）
   static getDefaultPositions(
     containerWidth: number,
     containerHeight: number,
     actions: ActionType[],
   ): ActionPosition[] {
-    const buttonSize = 75; // ActionButtonのデフォルトサイズ
-    const padding = 20;
-    const availableWidth = containerWidth - padding * 2;
-    const availableHeight = containerHeight - padding * 2;
-
-    // 3列で配置
-    const cols = 3;
-    const rows = Math.ceil(actions.length / cols);
-    const spacing = Math.max(
-      (availableWidth - cols * buttonSize) / (cols - 1),
-      20,
-    );
-    const verticalSpacing = Math.max(
-      (availableHeight - rows * buttonSize) / (rows + 1),
-      20,
+    console.log(
+      "🎯 [ActionPositionStorage] Generating default positions for grid layout",
     );
 
-    return actions.map((action, index) => {
-      const row = Math.floor(index / cols);
-      const col = index % cols;
+    // 新しいグリッド配置計算関数を使用
+    const positions = calculateDefaultPositions(
+      containerWidth,
+      containerHeight,
+    );
 
+    // アクションの順序に合わせて位置を調整
+    const actionPositions = actions.map(action => {
+      const defaultPos = positions.find(pos => pos.id === action.id);
+      if (defaultPos) {
+        return defaultPos;
+      }
+
+      // フォールバック: アクションが見つからない場合は適当な位置に配置
+      console.warn(
+        `⚠️ [ActionPositionStorage] Position not found for action: ${action.id}`,
+      );
       return {
         id: action.id,
-        x: padding + col * (buttonSize + spacing),
-        y: padding + verticalSpacing + row * (buttonSize + verticalSpacing),
-        width: buttonSize,
-        height: buttonSize,
+        x: 40,
+        y: 40,
+        width: 75,
+        height: 75,
       };
     });
+
+    console.log(
+      "🎯 [ActionPositionStorage] Generated positions:",
+      actionPositions.length,
+      "items",
+    );
+    return actionPositions;
   }
 
   /**
