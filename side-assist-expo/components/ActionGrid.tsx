@@ -1,114 +1,86 @@
 import React from "react";
-import { View, Animated } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import { ActionButton } from "./ui";
-import { actions, ActionType } from "../constants/actions";
+import { View, Animated, StyleSheet } from "react-native";
+import { DndProvider } from "@mgcrea/react-native-dnd";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { DraggableActionButton } from "./DraggableActionButton";
+import { ActionType } from "../constants/actions";
+import { useActionOrder } from "../hooks/useActionOrder";
 
 interface ActionGridProps {
   onActionPress: (action: ActionType) => Promise<void>;
   buttonScales: Record<string, Animated.Value>;
+  isEditMode?: boolean;
 }
+
+const styles = StyleSheet.create({
+  rootView: {
+    flex: 1,
+  },
+});
 
 export const ActionGrid: React.FC<ActionGridProps> = ({
   onActionPress,
   buttonScales,
+  isEditMode = false,
 }) => {
+  const { actions, reorderActionsByIds } = useActionOrder();
+
+  const handleDragEnd = ({
+    active,
+    over,
+  }: {
+    active: { id: string | number };
+    over: { id: string | number } | null;
+  }) => {
+    "worklet";
+
+    if (!over || !isEditMode) {
+      console.log(
+        "🎯 [ActionGrid] Drag ended without valid drop or not in edit mode",
+      );
+      return;
+    }
+
+    const overId = String(over.id).replace("drop-", "");
+
+    if (String(active.id) !== overId) {
+      console.log("🎯 [ActionGrid] Reordering actions:", {
+        activeId: active.id,
+        overId,
+      });
+      reorderActionsByIds(String(active.id), overId);
+    }
+  };
+
+  const handleDragStart = () => {
+    "worklet";
+    console.log("🎯 [ActionGrid] Drag started");
+  };
+
   return (
-    <View className="flex-1 px-6 py-4">
-      <View className="bg-white rounded-3xl p-6 shadow-soft">
-        {/* 2x3 グリッド */}
-        <View className="flex-row justify-between">
-          {/* 左列 */}
-          <View className="flex-1 items-center">
-            <View className="space-y-6">
-              <ActionButton
-                icon={
-                  <MaterialIcons
-                    name={actions[0].iconName}
-                    size={32}
-                    color="#ffffff"
-                  />
-                }
-                onPress={() => onActionPress(actions[0])}
-                animatedValue={buttonScales.ultradeepthink}
-                backgroundColor={actions[0].backgroundColor}
-              />
-              <ActionButton
-                icon={
-                  <MaterialIcons
-                    name={actions[3].iconName}
-                    size={32}
-                    color="#ffffff"
-                  />
-                }
-                onPress={() => onActionPress(actions[3])}
-                animatedValue={buttonScales.action4}
-                backgroundColor={actions[3].backgroundColor}
-              />
+    <GestureHandlerRootView style={styles.rootView}>
+      <View className="flex-1 px-6 py-4">
+        <View
+          className={`bg-white rounded-3xl p-6 shadow-soft ${
+            isEditMode ? "border-2 border-blue-200 bg-blue-50" : ""
+          }`}
+        >
+          <DndProvider onBegin={handleDragStart} onDragEnd={handleDragEnd}>
+            <View className="grid grid-cols-3 gap-4 w-full items-center">
+              {actions.map((action, index) => (
+                <DraggableActionButton
+                  key={action.id}
+                  action={action}
+                  index={index}
+                  isEditMode={isEditMode}
+                  animatedValue={buttonScales[`action${index + 1}`]}
+                  onPress={onActionPress}
+                />
+              ))}
             </View>
-          </View>
-
-          {/* 中央列 */}
-          <View className="flex-1 items-center">
-            <View className="space-y-6">
-              <ActionButton
-                icon={
-                  <MaterialIcons
-                    name={actions[1].iconName}
-                    size={32}
-                    color="#ffffff"
-                  />
-                }
-                onPress={() => onActionPress(actions[1])}
-                animatedValue={buttonScales.copy}
-                backgroundColor={actions[1].backgroundColor}
-              />
-              <ActionButton
-                icon={
-                  <MaterialIcons
-                    name={actions[4].iconName}
-                    size={32}
-                    color="#ffffff"
-                  />
-                }
-                onPress={() => onActionPress(actions[4])}
-                animatedValue={buttonScales.action5}
-                backgroundColor={actions[4].backgroundColor}
-              />
-            </View>
-          </View>
-
-          {/* 右列 */}
-          <View className="flex-1 items-center">
-            <View className="space-y-6">
-              <ActionButton
-                icon={
-                  <MaterialIcons
-                    name={actions[2].iconName}
-                    size={32}
-                    color="#ffffff"
-                  />
-                }
-                onPress={() => onActionPress(actions[2])}
-                animatedValue={buttonScales.paste}
-                backgroundColor={actions[2].backgroundColor}
-              />
-              <ActionButton
-                icon={
-                  <MaterialIcons
-                    name={actions[5].iconName}
-                    size={32}
-                    color="#ffffff"
-                  />
-                }
-                onPress={() => onActionPress(actions[5])}
-                animatedValue={buttonScales.action6}
-                backgroundColor={actions[5].backgroundColor}
-              />
-            </View>
-          </View>
+          </DndProvider>
         </View>
       </View>
-    </View>
+    </GestureHandlerRootView>
   );
 };

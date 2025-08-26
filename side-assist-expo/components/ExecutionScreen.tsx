@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Animated } from "react-native";
+import { View, Animated, TouchableOpacity, Text } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
 import { Header, StatusIndicator, TabNavigator } from "./ui";
 import AlertManager from "../utils/AlertManager";
 import { CustomAction } from "../services/NetworkService";
@@ -43,6 +44,9 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   // タブ管理
   const [activeTab, setActiveTab] = useState("actions");
 
+  // 全画面管理
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   // カスタムアクション状態をログ出力
   useEffect(() => {
     console.log(
@@ -77,6 +81,15 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
     { id: "actions", title: "Actions", icon: "apps" as const },
     { id: "gestures", title: "Gestures", icon: "pan-tool" as const },
   ];
+
+  // 全画面モード管理
+  const handleFullscreenChange = (newIsFullscreen: boolean) => {
+    console.log(
+      "🎯 [ExecutionScreen] Fullscreen mode changed:",
+      newIsFullscreen,
+    );
+    setIsFullscreen(newIsFullscreen);
+  };
 
   // 録画状態リセット関数の実装
   const handleResetRecordingState = React.useCallback(() => {
@@ -297,25 +310,53 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
 
   return (
     <View className="flex-1 bg-neutral-50">
-      {/* ヘッダー */}
-      <Header
-        title="Side Assist Plus"
-        subtitle="PC Remote Control"
-        showSettings={true}
-        onSettingsPress={onSettingsPress}
-      />
+      {/* ヘッダー - 全画面時は非表示 */}
+      {!isFullscreen && (
+        <>
+          <Header
+            title="Side Assist Plus"
+            subtitle="PC Remote Control"
+            showSettings={true}
+            onSettingsPress={onSettingsPress}
+          />
 
-      {/* ステータス表示 */}
-      <View className="px-6 py-4">
-        <StatusIndicator isConnected={true} variant="detailed" />
+          {/* ステータス表示 */}
+          <View className="px-6 py-4">
+            <StatusIndicator isConnected={true} variant="detailed" />
+          </View>
+        </>
+      )}
+
+      {/* フルスクリーンボタン - タブの上に配置 */}
+      <View className={`px-6 ${isFullscreen ? "pt-12 pb-2" : "py-2"}`}>
+        <View className="flex-row justify-end">
+          <TouchableOpacity
+            className={`flex-row items-center justify-center py-2 px-4 rounded-lg ${
+              isFullscreen ? "bg-red-500" : "bg-blue-500"
+            }`}
+            onPress={() => handleFullscreenChange(!isFullscreen)}
+            activeOpacity={0.8}
+          >
+            <MaterialIcons
+              name={isFullscreen ? "fullscreen-exit" : "fullscreen"}
+              size={20}
+              color="white"
+            />
+            <Text className="text-white font-semibold text-sm ml-2">
+              {isFullscreen ? "終了" : "集中モード"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* タブナビゲーション */}
-      <TabNavigator
-        tabs={tabs}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
+      {/* タブナビゲーション - 全画面時は非表示 */}
+      {!isFullscreen && (
+        <TabNavigator
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
+      )}
 
       {/* タブコンテンツ */}
       <View className="flex-1">

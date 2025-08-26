@@ -1,4 +1,4 @@
-// iPad/iOSシステムジェスチャーとの競合を回避するための定義
+// iOSシステムジェスチャーとの競合を回避するための定義
 
 export interface SystemGestureConflict {
   fingers: number;

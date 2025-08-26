@@ -12,6 +12,7 @@ interface HomeScreenProps {
   onSettingsPress: () => void;
   onConnect: (ip: string, port: string, password: string) => Promise<boolean>;
   onDisconnect: () => void;
+  onClearStoredConnection?: () => Promise<boolean>;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -19,6 +20,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onSettingsPress,
   onConnect,
   onDisconnect,
+  onClearStoredConnection,
 }) => {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
@@ -218,6 +220,80 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </View>
               </View>
             </View>
+
+            {/* Clear Stored Connection */}
+            {onClearStoredConnection && (
+              <View className="px-6 pb-8">
+                <View className="bg-neutral-100 rounded-3xl p-6">
+                  <View className="flex-row items-start">
+                    <View className="w-10 h-10 bg-neutral-200 rounded-2xl items-center justify-center mr-4 mt-1">
+                      <MaterialIcons
+                        name="delete-outline"
+                        size={20}
+                        color="#6b7280"
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-lg font-semibold text-neutral-900 mb-2">
+                        保存された接続情報
+                      </Text>
+                      <Text className="text-neutral-600 text-sm leading-relaxed mb-4">
+                        以前の接続情報が保存されている場合、削除できます。
+                      </Text>
+                      <Button
+                        title="接続情報をクリア"
+                        icon={<MaterialIcons name="delete-outline" size={18} />}
+                        variant="ghost"
+                        size="sm"
+                        fullWidth={false}
+                        onPress={async () => {
+                          AlertManager.showAlert(
+                            "接続情報の削除",
+                            "保存された接続情報を削除しますか？この操作は取り消せません。",
+                            [
+                              {
+                                text: "キャンセル",
+                                style: "cancel",
+                              },
+                              {
+                                text: "削除",
+                                style: "destructive",
+                                onPress: async () => {
+                                  try {
+                                    const success =
+                                      await onClearStoredConnection();
+                                    if (success) {
+                                      AlertManager.showAlert(
+                                        "削除完了",
+                                        "接続情報が削除されました。",
+                                      );
+                                    } else {
+                                      AlertManager.showAlert(
+                                        "エラー",
+                                        "接続情報の削除に失敗しました。",
+                                      );
+                                    }
+                                  } catch (error) {
+                                    console.error(
+                                      "Clear connection error:",
+                                      error,
+                                    );
+                                    AlertManager.showAlert(
+                                      "エラー",
+                                      "接続情報の削除中にエラーが発生しました。",
+                                    );
+                                  }
+                                },
+                              },
+                            ],
+                          );
+                        }}
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
+            )}
           </>
         ) : (
           <View className="flex-1 justify-center items-center px-6">

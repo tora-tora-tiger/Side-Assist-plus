@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { View } from "react-native";
+import { View, Text } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
 import AlertManager from "../utils/AlertManager";
 import DebugToastManager from "../utils/DebugToastManager";
 
@@ -27,6 +28,8 @@ const App = () => {
     macIP,
     isAuthenticated,
     customActions,
+    isAutoReconnecting,
+    isInitialized,
     startConnectionMonitoring,
     stopConnectionMonitoring,
     sendText,
@@ -39,6 +42,7 @@ const App = () => {
     authenticateWithPassword,
     connectManually,
     disconnect,
+    clearStoredConnection,
   } = useConnection();
 
   useEffect(() => {
@@ -118,7 +122,41 @@ const App = () => {
             isConnected,
             "isAuthenticated:",
             isAuthenticated,
+            "isInitialized:",
+            isInitialized,
+            "isAutoReconnecting:",
+            isAutoReconnecting,
           );
+
+          // 初期化中またはローディング中の場合
+          if (!isInitialized || isAutoReconnecting) {
+            console.log(
+              "⏳ [App] Rendering loading screen (initializing or reconnecting)",
+            );
+            return (
+              <View className="flex-1 bg-neutral-50 justify-center items-center">
+                <View className="bg-white rounded-3xl p-8 shadow-soft w-80 max-w-xs mx-4">
+                  <View className="items-center">
+                    <View className="w-16 h-16 bg-primary-100 rounded-2xl items-center justify-center mb-6">
+                      <MaterialIcons
+                        name="autorenew"
+                        size={32}
+                        color="#0ea5e9"
+                      />
+                    </View>
+                    <Text className="text-xl font-bold text-neutral-900 mb-2">
+                      {isAutoReconnecting ? "自動接続中..." : "初期化中..."}
+                    </Text>
+                    <Text className="text-neutral-600 text-center mb-4">
+                      {isAutoReconnecting
+                        ? "保存された接続情報で自動接続しています"
+                        : "アプリを準備しています"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            );
+          }
 
           if (!isConnected) {
             console.log("📱 [App] Rendering HomeScreen (not connected)");
@@ -128,6 +166,7 @@ const App = () => {
                 onSettingsPress={() => setShowSettings(true)}
                 onConnect={connectManually}
                 onDisconnect={disconnect}
+                onClearStoredConnection={clearStoredConnection}
               />
             );
           } else if (isAuthenticated) {
@@ -159,6 +198,7 @@ const App = () => {
                   onSettingsPress={() => setShowSettings(true)}
                   onConnect={connectManually}
                   onDisconnect={disconnect}
+                  onClearStoredConnection={clearStoredConnection}
                 />
                 <PasswordInput
                   onAuthenticate={authenticateWithPassword}

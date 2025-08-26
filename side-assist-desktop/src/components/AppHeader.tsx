@@ -43,7 +43,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 <h1 className='text-2xl font-bold text-gray-900'>
                   Side Assist
                 </h1>
-                <p className='text-sm text-gray-500'>iPad Keyboard Bridge</p>
+                <p className='text-sm text-gray-500'>Tablet Keyboard Bridge</p>
               </div>
             </div>
           </div>

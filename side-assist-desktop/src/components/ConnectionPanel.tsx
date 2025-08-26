@@ -18,9 +18,7 @@ export const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
       <CardHeader className='pb-2 shrink-0'>
         <div className='flex items-center gap-2'>
           <Icon name='mobile' className='text-stone-400' />
-          <CardTitle className='text-stone-200'>
-            iPad Connection Setup
-          </CardTitle>
+          <CardTitle className='text-stone-200'>Connection Setup</CardTitle>
         </div>
       </CardHeader>
 
@@ -146,7 +144,7 @@ export const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
             )}
             <div className='space-y-3 max-w-md mx-auto'>
               <p className='text-stone-200 text-lg font-medium'>
-                Scan with your iPad camera
+                Scan with your tablet camera
               </p>
             </div>
             {/* Close button */}

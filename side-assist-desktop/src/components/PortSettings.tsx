@@ -49,7 +49,7 @@ export const PortSettings: React.FC<PortSettingsProps> = ({
       <CardContent className='p-3'>
         <div className='space-y-3'>
           <p className='text-sm text-stone-400'>
-            Network port for iPad connections (1024-65535)
+            Network port for tablet connections (1024-65535)
           </p>
 
           <div className='flex items-center gap-2'>
