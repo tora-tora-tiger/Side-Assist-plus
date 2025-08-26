@@ -62,63 +62,65 @@ export const calculateDefaultPositions = (
   // 基本パラメータ
   const buttonSize = 75;
   const cols = 3;
-  const rows = 2;
+  const padding = 0;
+  const verticalSpacing = 10 + containerHeight * 0;
 
-  // 利用可能な領域（パディングを考慮）
-  const usableWidth = containerWidth - 80; // 左右パディング
-  const usableHeight = containerHeight - 80; // 上下パディング
+  // 利用可能な領域
+  const usableWidth = containerWidth - padding * 2;
 
-  // グリッドの間隔を計算
+  // 列の間隔を計算
   const colSpacing = usableWidth / cols;
-  const rowSpacing = usableHeight / rows;
 
-  // 各ボタンの中央に配置するためのオフセット
+  // 全体の高さ（2行のボタン + 1つの間隔）
+
+  // 垂直方向の中央配置のための開始Y位置
+  const startY = 20;
+
+  // 各列の中央配置のための開始X位置
   const offsetX = (colSpacing - buttonSize) / 2;
-  const offsetY = (rowSpacing - buttonSize) / 2;
 
   return [
-    // 左列（col 0）
+    // 上段（row 0）
     {
-      id: "ultradeepthink",
-      x: 40 + offsetX,
-      y: 40 + offsetY,
+      id: "ultradeepthink", // 左上
+      x: padding + offsetX,
+      y: startY,
       width: buttonSize,
       height: buttonSize,
     },
     {
-      id: "action4",
-      x: 40 + offsetX,
-      y: 40 + offsetY + rowSpacing,
-      width: buttonSize,
-      height: buttonSize,
-    },
-    // 中央列（col 1）
-    {
-      id: "copy",
-      x: 40 + offsetX + colSpacing,
-      y: 40 + offsetY,
+      id: "copy", // 中央上
+      x: padding + offsetX + colSpacing,
+      y: startY,
       width: buttonSize,
       height: buttonSize,
     },
     {
-      id: "action5",
-      x: 40 + offsetX + colSpacing,
-      y: 40 + offsetY + rowSpacing,
+      id: "paste", // 右上
+      x: padding + offsetX + colSpacing * 2,
+      y: startY,
       width: buttonSize,
       height: buttonSize,
     },
-    // 右列（col 2）
+    // 下段（row 1）
     {
-      id: "paste",
-      x: 40 + offsetX + colSpacing * 2,
-      y: 40 + offsetY,
+      id: "action4", // 左下
+      x: padding + offsetX,
+      y: startY + buttonSize + verticalSpacing,
       width: buttonSize,
       height: buttonSize,
     },
     {
-      id: "action6",
-      x: 40 + offsetX + colSpacing * 2,
-      y: 40 + offsetY + rowSpacing,
+      id: "action5", // 中央下
+      x: padding + offsetX + colSpacing,
+      y: startY + buttonSize + verticalSpacing,
+      width: buttonSize,
+      height: buttonSize,
+    },
+    {
+      id: "action6", // 右下
+      x: padding + offsetX + colSpacing * 2,
+      y: startY + buttonSize + verticalSpacing,
       width: buttonSize,
       height: buttonSize,
     },
