@@ -16,6 +16,7 @@ interface FreeformActionGridProps {
   onActionPress: (action: ActionType) => Promise<void>;
   buttonScales: Record<string, Animated.Value>;
   isEditMode?: boolean;
+  isFullscreen?: boolean;
 }
 
 const styles = StyleSheet.create({

@@ -172,6 +172,7 @@ export const FreeformDraggableButton: React.FC<
               onPress={handlePress}
               animatedValue={animatedValue}
               backgroundColor={action.backgroundColor}
+              // eslint-disable-next-line react-native/no-inline-styles
               style={{
                 opacity: isEditMode ? 0.9 : 1,
                 borderWidth: isEditMode ? 2 : 0,
@@ -181,6 +182,7 @@ export const FreeformDraggableButton: React.FC<
                   : { width: 0, height: 2 },
                 shadowOpacity: isEditMode ? 0.3 : 0.1,
                 shadowRadius: isEditMode ? 8 : 4,
+                // Keep standard button size - fullscreen affects layout, not button size
               }}
               disabled={false}
             />
