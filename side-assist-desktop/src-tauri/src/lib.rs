@@ -792,9 +792,15 @@ async fn get_recording_modal_info(state: tauri::State<'_, AppState>) -> Result<O
 #[tauri::command]
 async fn clear_recording_modal(state: tauri::State<'_, AppState>) -> Result<String, String> {
     let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
-    state_guard.recording_modal_info = None;
     
-    Ok("Recording modal cleared".to_string())
+    // キャンセル状態に設定（モバイル側に通知するため）
+    if let Some(ref mut modal_info) = state_guard.recording_modal_info {
+        modal_info.is_recording = false;
+        modal_info.is_completed = true; // 完了状態にする
+        modal_info.recorded_keys.clear(); // キーを空にしてキャンセルを示す
+    }
+    
+    Ok("Recording modal cancelled".to_string())
 }
 
 #[tauri::command]
@@ -1494,13 +1500,24 @@ async fn get_recording_status(
     
     let response = if let Some(ref modal_info) = state_guard.recording_modal_info {
         if modal_info.is_completed {
-            // 録画完了状態
-            RecordingStatusResponse {
-                status: "completed".to_string(),
-                action_id: Some(modal_info.action_id.clone()),
-                name: Some(modal_info.name.clone()),
-                recorded_keys_count: Some(modal_info.recorded_keys.len()),
-                message: Some(format!("録画完了：「{}」に{}個のキーを保存しました", modal_info.name, modal_info.recorded_keys.len())),
+            if modal_info.recorded_keys.is_empty() {
+                // キャンセル状態（キーが空の場合）
+                RecordingStatusResponse {
+                    status: "cancelled".to_string(),
+                    action_id: Some(modal_info.action_id.clone()),
+                    name: Some(modal_info.name.clone()),
+                    recorded_keys_count: Some(0),
+                    message: Some(format!("録画がキャンセルされました：「{}」", modal_info.name)),
+                }
+            } else {
+                // 録画完了状態
+                RecordingStatusResponse {
+                    status: "completed".to_string(),
+                    action_id: Some(modal_info.action_id.clone()),
+                    name: Some(modal_info.name.clone()),
+                    recorded_keys_count: Some(modal_info.recorded_keys.len()),
+                    message: Some(format!("録画完了：「{}」に{}個のキーを保存しました", modal_info.name, modal_info.recorded_keys.len())),
+                }
             }
         } else if modal_info.is_recording {
             // 録画中

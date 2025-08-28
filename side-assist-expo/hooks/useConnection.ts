@@ -125,6 +125,7 @@ export const useConnection = () => {
         const isCurrentlyRecording =
           status.isRecording || status.status === "recording";
         const isCompleted = status.status === "completed";
+        const isCancelled = status.status === "cancelled";
 
         // 録画完了状態を検出した場合は、録画していたとみなしてアラートを表示
         // action_id が存在し、かつ未処理の場合のみアラート表示
@@ -158,6 +159,21 @@ export const useConnection = () => {
             setTimeout(async () => {
               await loadCustomActions();
             }, 1000); // 1秒待機
+          }
+        } else if (
+          isCancelled &&
+          status.actionId &&
+          typeof status.actionId === "string"
+        ) {
+          // キャンセル状態を検出した場合
+          if (!processedCompletedActionIds.current.has(status.actionId)) {
+            // この action_id を処理済みとしてマーク
+            processedCompletedActionIds.current.add(status.actionId);
+
+            hasStartedRecording.current = false;
+
+            // 完了確認を送信
+            await NetworkService.acknowledgeRecording(macIP, macPort);
           }
         } else if (isCurrentlyRecording && !hasStartedRecording.current) {
           hasStartedRecording.current = true;
