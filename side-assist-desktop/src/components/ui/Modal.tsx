@@ -28,31 +28,31 @@ export const Modal: React.FC<ModalProps> = ({
 
       {/* Modal Content */}
       <div
-        className={`relative bg-gray-900 border border-gray-700/50 rounded-xl shadow-2xl max-w-lg w-full mx-4 ${className}`}
+        className={`relative bg-gray-900 border border-gray-700/50 rounded-xl shadow-2xl max-w-md w-full mx-4 ${className}`}
       >
         {/* Header */}
         {title && (
-          <div className='flex items-center justify-between p-4 border-b border-gray-700/50'>
-            <h3 className='text-lg font-semibold text-stone-200'>{title}</h3>
+          <div className='flex items-center justify-between p-3 border-b border-gray-700/50'>
+            <h3 className='text-base font-semibold text-stone-200'>{title}</h3>
             <button
               onClick={onClose}
               className='p-1 text-stone-400 hover:text-stone-200 transition-colors'
             >
-              <Icon name='close' className='w-5 h-5' />
+              <Icon name='close' className='w-4 h-4' />
             </button>
           </div>
         )}
 
         {/* Content */}
-        <div className='p-6'>{children}</div>
+        <div className='p-3'>{children}</div>
 
         {/* Close button if no title */}
         {!title && (
           <button
             onClick={onClose}
-            className='absolute top-3 right-3 p-1 text-stone-400 hover:text-stone-200 transition-colors'
+            className='absolute top-2 right-2 p-1 text-stone-400 hover:text-stone-200 transition-colors'
           >
-            <Icon name='close' className='w-5 h-5' />
+            <Icon name='close' className='w-4 h-4' />
           </button>
         )}
       </div>

@@ -102,23 +102,23 @@ export const RecordingModal: React.FC = () => {
   if (!modalInfo?.is_visible) return null;
 
   return (
-    <Modal isOpen={true} onClose={handleCancel} title='カスタムアクション録画'>
-      <div className='p-6'>
-        <Card className='mb-6'>
-          <div className='flex items-center space-x-4 p-4'>
+    <Modal isOpen={true} onClose={handleCancel} title='録画'>
+      <div className='p-3'>
+        <Card className='mb-3'>
+          <div className='flex items-center space-x-3 p-3'>
             <div className='flex-shrink-0'>
-              <div className='w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center'>
+              <div className='w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
                 <Icon
                   name={modalInfo.icon || 'keyboard'}
-                  className='w-6 h-6 text-blue-600'
+                  className='w-4 h-4 text-blue-600'
                 />
               </div>
             </div>
             <div className='flex-1'>
-              <Heading level={3} className='font-semibold text-gray-900'>
+              <Heading level={3} className='font-semibold text-white'>
                 {modalInfo.name}
               </Heading>
-              <Text variant='small' className='text-gray-600'>
+              <Text variant='small' className='text-gray-300'>
                 ID: {modalInfo.action_id}
               </Text>
             </div>
@@ -128,16 +128,16 @@ export const RecordingModal: React.FC = () => {
         {modalInfo.is_completed ? (
           // 録画完了状態
           <div className='text-center space-y-4'>
-            <div className='p-6 bg-green-50 rounded-lg border border-green-200'>
+            <div className='p-3 bg-green-50 rounded-lg border border-green-200 text-center'>
               <Icon
                 name='check'
-                className='w-8 h-8 text-green-600 mx-auto mb-2'
+                className='w-5 h-5 text-green-600 mx-auto mb-1'
               />
               <Heading level={3} className='text-green-800 mb-2'>
                 録画完了！
               </Heading>
               <Text variant='small' className='text-green-700 mb-3'>
-                カスタムアクション「{modalInfo.name}」が正常に保存されました
+                「{modalInfo.name}」保存済み
               </Text>
               <div className='space-y-1'>
                 <Text variant='small' className='text-green-600'>
@@ -164,26 +164,29 @@ export const RecordingModal: React.FC = () => {
           </div>
         ) : !modalInfo.is_recording ? (
           <div className='text-center space-y-4'>
-            <div className='p-6 bg-amber-50 rounded-lg border border-amber-200'>
+            <div className='p-3 bg-amber-50 rounded-lg border border-amber-200 text-center'>
               <Icon
                 name='info'
-                className='w-8 h-8 text-amber-600 mx-auto mb-2'
+                className='w-5 h-5 text-amber-600 mx-auto mb-1'
               />
-              <Text variant='body' className='text-amber-800 mb-2'>
-                キーボード操作を録画する準備ができました
+              <Text variant='small' className='text-amber-800 mb-1'>
+                準備完了
               </Text>
-              <Text variant='small' className='text-amber-700'>
-                「録画開始」をクリックした後、録画したいキーボード操作を行ってください
+              <Text variant='caption' className='text-amber-700'>
+                録画開始後、キー操作を行ってください
               </Text>
             </div>
 
             {/* ショートカットタイプ選択 */}
-            <div className='p-4 bg-gray-50 rounded-lg border'>
-              <Heading level={4} className='text-gray-900 mb-3 text-left'>
+            <div className='p-3 bg-gray-800/30 rounded-lg border border-gray-700/50'>
+              <Heading
+                level={4}
+                className='text-white text-sm mb-2 text-center'
+              >
                 ショートカットタイプ
               </Heading>
-              <div className='space-y-3'>
-                <label className='flex items-center space-x-3 cursor-pointer'>
+              <div className='grid grid-cols-2 gap-3'>
+                <label className='flex flex-col items-center space-y-1 cursor-pointer p-2 rounded hover:bg-gray-700/20'>
                   <input
                     type='radio'
                     name='shortcutType'
@@ -194,18 +197,18 @@ export const RecordingModal: React.FC = () => {
                         e.target.value as 'normal' | 'sequential'
                       )
                     }
-                    className='w-4 h-4 text-blue-600'
+                    className='w-3 h-3 text-blue-400'
                   />
-                  <div>
-                    <Text variant='body' className='font-medium text-gray-900'>
-                      通常モード
+                  <div className='text-center'>
+                    <Text variant='small' className='font-medium text-white'>
+                      通常
                     </Text>
-                    <Text variant='small' className='text-gray-600'>
-                      通常のキーシーケンスを記録（例：Ctrl+C, Ctrl+V）
+                    <Text variant='caption' className='text-gray-400'>
+                      Ctrl+C等
                     </Text>
                   </div>
                 </label>
-                <label className='flex items-center space-x-3 cursor-pointer'>
+                <label className='flex flex-col items-center space-y-1 cursor-pointer p-2 rounded hover:bg-gray-700/20'>
                   <input
                     type='radio'
                     name='shortcutType'
@@ -216,21 +219,21 @@ export const RecordingModal: React.FC = () => {
                         e.target.value as 'normal' | 'sequential'
                       )
                     }
-                    className='w-4 h-4 text-blue-600'
+                    className='w-3 h-3 text-blue-400'
                   />
-                  <div>
-                    <Text variant='body' className='font-medium text-gray-900'>
-                      シーケンシャルモード
+                  <div className='text-center'>
+                    <Text variant='small' className='font-medium text-white'>
+                      連続
                     </Text>
-                    <Text variant='small' className='text-gray-600'>
-                      修飾キーを保持したシーケンス（例：Alt → H → B → A）
+                    <Text variant='caption' className='text-gray-400'>
+                      Alt→H→A
                     </Text>
                   </div>
                 </label>
               </div>
             </div>
 
-            <div className='flex space-x-3'>
+            <div className='flex space-x-2'>
               <Button
                 variant='primary'
                 size='lg'
@@ -268,16 +271,16 @@ export const RecordingModal: React.FC = () => {
           </div>
         ) : (
           <div className='text-center space-y-4'>
-            <div className='p-6 bg-red-50 rounded-lg border border-red-200'>
+            <div className='p-3 bg-red-50 rounded-lg border border-red-200 text-center'>
               <div className='flex items-center justify-center mb-3'>
                 <div className='w-4 h-4 bg-red-500 rounded-full animate-pulse mr-2'></div>
-                <Icon name='record' className='w-8 h-8 text-red-600' />
+                <Icon name='record' className='w-5 h-5 text-red-600' />
               </div>
               <Heading level={3} className='text-red-800 mb-2'>
                 録画中...
               </Heading>
-              <Text variant='small' className='text-red-700 mb-3'>
-                キーボード操作を行ってください
+              <Text variant='caption' className='text-red-700 mb-2'>
+                キー操作してください
               </Text>
               <div className='space-y-1'>
                 <Text variant='small' className='text-red-600'>
