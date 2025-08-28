@@ -45,6 +45,7 @@ lazy_static! {
 struct GlobalRecordingState {
     pub start_time: u64,
     pub recorded_keys: Arc<Mutex<Vec<RecordedKey>>>,
+    pub shortcut_type: ShortcutType,
 }
 
 #[cfg(target_os = "macos")]
@@ -220,6 +221,7 @@ struct ApiResponse {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RecordingStatusResponse {
     status: String, // "idle", "preparing", "recording", "completed"
     action_id: Option<String>,
@@ -908,10 +910,10 @@ fn rdev_callback(event: Event) {
     }
     
     // グローバル録画状態から情報を取得
-    let (start_time, recorded_keys) = {
+    let (start_time, recorded_keys, shortcut_type) = {
         if let Ok(recording_state_guard) = GLOBAL_RECORDING_STATE.lock() {
             if let Some(ref state) = *recording_state_guard {
-                (state.start_time, Arc::clone(&state.recorded_keys))
+                (state.start_time, Arc::clone(&state.recorded_keys), state.shortcut_type.clone())
             } else {
                 return; // 録画状態がない場合は終了
             }
@@ -920,7 +922,7 @@ fn rdev_callback(event: Event) {
         }
     };
     
-    // すべてのキーイベントを記録（press/release両方）
+    // ショートカットタイプに応じてキーイベントをフィルタリング
     match event.event_type {
         EventType::KeyPress(key) | EventType::KeyRelease(key) => {
             let event_type_str = match event.event_type {
@@ -928,12 +930,38 @@ fn rdev_callback(event: Event) {
                 EventType::KeyRelease(_) => "release",
                 _ => return,
             };
+            
+            // シーケンシャルモードではpressイベントのみ記録
+            // 通常モードでは修飾キーはpress/release両方、通常キーはpressのみ記録
+            let should_record_event = match shortcut_type {
+                ShortcutType::Sequential => {
+                    // シーケンシャルモード: pressイベントのみ
+                    event_type_str == "press"
+                }
+                ShortcutType::Normal => {
+                    // 通常モード: 修飾キーは両方、通常キーはpressのみ
+                    if is_modifier_key(key) {
+                        true // 修飾キーは両方のイベントを記録
+                    } else {
+                        event_type_str == "press" // 通常キーはpressのみ
+                    }
+                }
+            };
+            
+            if !should_record_event {
+                return;
+            }
+            
             let now = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_default()
                 .as_millis() as u64;
             
             let key_name = key_to_string(key);
+            
+            // デバッグログ - 静かな出力
+            eprintln!("[DEBUG] Key event: {} {} (shortcut_type: {:?})", 
+                      key_name, event_type_str, shortcut_type);
             
             // 改良されたデバウンス: キー+イベントタイプの組み合わせで重複チェック
             let should_record = {
@@ -1040,13 +1068,14 @@ async fn start_real_key_listener(state: AppState) {
         *main_state_ref = Some(Arc::clone(&state));
     }
     
-    // 録画開始時刻と記録用のベクターを取得
-    let (start_time, recorded_keys) = {
+    // 録画開始時刻、記録用のベクター、ショートカットタイプを取得
+    let (start_time, recorded_keys, shortcut_type) = {
         if let Ok(state_guard) = state.lock() {
             if let Some(ref modal_info) = state_guard.recording_modal_info {
                 let start_time = modal_info.start_time.unwrap_or(0);
                 let recorded_keys = Arc::new(Mutex::new(Vec::new()));
-                (start_time, recorded_keys)
+                let shortcut_type = modal_info.shortcut_type.clone();
+                (start_time, recorded_keys, shortcut_type)
             } else {
                 return; // モーダル情報がない場合は終了
             }
@@ -1061,6 +1090,7 @@ async fn start_real_key_listener(state: AppState) {
         *global_state = Some(GlobalRecordingState {
             start_time,
             recorded_keys: Arc::clone(&recorded_keys),
+            shortcut_type: shortcut_type.clone(),
         });
     }
     
