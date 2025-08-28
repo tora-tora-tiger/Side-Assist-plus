@@ -181,9 +181,10 @@ export class NetworkService {
     name: string,
     icon?: string,
     password?: string,
+    shortcutType?: "normal" | "sequential", // 新規追加
   ): Promise<boolean> {
     console.log(
-      `🎥 [NetworkService] Preparing recording for action: ${name} (${actionId})`,
+      `🎥 [NetworkService] Preparing recording for action: ${name} (${actionId}) - Type: ${shortcutType || "normal"}`,
     );
     return this.sendAction(
       ip,
@@ -193,6 +194,7 @@ export class NetworkService {
         action_id: actionId,
         name,
         icon,
+        shortcut_type: shortcutType || "normal", // 新規追加
       },
       password,
     );

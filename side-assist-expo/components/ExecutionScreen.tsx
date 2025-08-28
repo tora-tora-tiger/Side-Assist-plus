@@ -24,6 +24,7 @@ interface ExecutionScreenProps {
     actionId: string,
     name: string,
     icon?: string,
+    shortcutType?: "normal" | "sequential",
   ) => Promise<boolean>;
   resetRecordingState: () => void;
   customActions: CustomAction[];
@@ -225,7 +226,9 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   };
 
   // 録画準備処理
-  const handlePrepareRecording = async () => {
+  const handlePrepareRecording = async (
+    shortcutType: "normal" | "sequential" = "normal",
+  ) => {
     console.log("🎥 [ExecutionScreen] Preparing recording...");
 
     // シンプルなアニメーション
@@ -251,7 +254,12 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
         `📝 [ExecutionScreen] Preparing recording: ${actionName} (${actionId})`,
       );
 
-      const success = await onPrepareRecording(actionId, actionName, "build");
+      const success = await onPrepareRecording(
+        actionId,
+        actionName,
+        "build",
+        shortcutType,
+      );
       if (success) {
         setIsRecordingPrepared(true);
         setRecordingActionId(actionId);

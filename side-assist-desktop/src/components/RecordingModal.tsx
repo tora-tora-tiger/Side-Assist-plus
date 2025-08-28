@@ -12,18 +12,29 @@ interface RecordingModalInfo {
   icon?: string;
   is_visible: boolean;
   is_recording: boolean;
+  is_completed: boolean; // 録画完了フラグ
   start_time?: number;
   recorded_keys: Array<{
     key: string;
     event_type: string;
     timestamp: number;
+    modifiers: {
+      alt: boolean;
+      ctrl: boolean;
+      shift: boolean;
+      meta: boolean;
+    };
   }>;
+  shortcut_type: 'Normal' | 'Sequential'; // ショートカットタイプ
 }
 
 export const RecordingModal: React.FC = () => {
   const [modalInfo, setModalInfo] = useState<RecordingModalInfo | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
+  const [selectedShortcutType, setSelectedShortcutType] = useState<
+    'normal' | 'sequential'
+  >('normal');
 
   // ポーリングで録画モーダル情報を監視
   useEffect(() => {
@@ -52,7 +63,10 @@ export const RecordingModal: React.FC = () => {
 
     setIsStarting(true);
     try {
-      await invoke('start_actual_recording');
+      await invoke('start_actual_recording', {
+        shortcut_type:
+          selectedShortcutType === 'sequential' ? 'Sequential' : 'Normal',
+      });
       console.log('🔴 Recording started successfully');
     } catch (error) {
       console.error('Failed to start recording:', error);
@@ -111,7 +125,44 @@ export const RecordingModal: React.FC = () => {
           </div>
         </Card>
 
-        {!modalInfo.is_recording ? (
+        {modalInfo.is_completed ? (
+          // 録画完了状態
+          <div className='text-center space-y-4'>
+            <div className='p-6 bg-green-50 rounded-lg border border-green-200'>
+              <Icon
+                name='check'
+                className='w-8 h-8 text-green-600 mx-auto mb-2'
+              />
+              <Heading level={3} className='text-green-800 mb-2'>
+                録画完了！
+              </Heading>
+              <Text variant='small' className='text-green-700 mb-3'>
+                カスタムアクション「{modalInfo.name}」が正常に保存されました
+              </Text>
+              <div className='space-y-1'>
+                <Text variant='small' className='text-green-600'>
+                  録画されたキー: {modalInfo.recorded_keys.length}個
+                </Text>
+                <Text variant='small' className='text-green-600'>
+                  タイプ:{' '}
+                  {modalInfo.shortcut_type === 'Sequential'
+                    ? 'シーケンシャルモード'
+                    : '通常モード'}
+                </Text>
+              </div>
+            </div>
+
+            <Button
+              variant='primary'
+              size='lg'
+              onClick={handleCancel}
+              className='w-full'
+            >
+              <Icon name='check' className='w-4 h-4 mr-2' />
+              完了
+            </Button>
+          </div>
+        ) : !modalInfo.is_recording ? (
           <div className='text-center space-y-4'>
             <div className='p-6 bg-amber-50 rounded-lg border border-amber-200'>
               <Icon
@@ -124,6 +175,59 @@ export const RecordingModal: React.FC = () => {
               <Text variant='small' className='text-amber-700'>
                 「録画開始」をクリックした後、録画したいキーボード操作を行ってください
               </Text>
+            </div>
+
+            {/* ショートカットタイプ選択 */}
+            <div className='p-4 bg-gray-50 rounded-lg border'>
+              <Heading level={4} className='text-gray-900 mb-3 text-left'>
+                ショートカットタイプ
+              </Heading>
+              <div className='space-y-3'>
+                <label className='flex items-center space-x-3 cursor-pointer'>
+                  <input
+                    type='radio'
+                    name='shortcutType'
+                    value='normal'
+                    checked={selectedShortcutType === 'normal'}
+                    onChange={e =>
+                      setSelectedShortcutType(
+                        e.target.value as 'normal' | 'sequential'
+                      )
+                    }
+                    className='w-4 h-4 text-blue-600'
+                  />
+                  <div>
+                    <Text variant='body' className='font-medium text-gray-900'>
+                      通常モード
+                    </Text>
+                    <Text variant='small' className='text-gray-600'>
+                      通常のキーシーケンスを記録（例：Ctrl+C, Ctrl+V）
+                    </Text>
+                  </div>
+                </label>
+                <label className='flex items-center space-x-3 cursor-pointer'>
+                  <input
+                    type='radio'
+                    name='shortcutType'
+                    value='sequential'
+                    checked={selectedShortcutType === 'sequential'}
+                    onChange={e =>
+                      setSelectedShortcutType(
+                        e.target.value as 'normal' | 'sequential'
+                      )
+                    }
+                    className='w-4 h-4 text-blue-600'
+                  />
+                  <div>
+                    <Text variant='body' className='font-medium text-gray-900'>
+                      シーケンシャルモード
+                    </Text>
+                    <Text variant='small' className='text-gray-600'>
+                      修飾キーを保持したシーケンス（例：Alt → H → B → A）
+                    </Text>
+                  </div>
+                </label>
+              </div>
             </div>
 
             <div className='flex space-x-3'>
@@ -175,9 +279,53 @@ export const RecordingModal: React.FC = () => {
               <Text variant='small' className='text-red-700 mb-3'>
                 キーボード操作を行ってください
               </Text>
-              <Text variant='small' className='text-red-600'>
-                録画されたキー: {modalInfo.recorded_keys.length}個
-              </Text>
+              <div className='space-y-1'>
+                <Text variant='small' className='text-red-600'>
+                  録画されたキー: {modalInfo.recorded_keys.length}個
+                </Text>
+                <Text variant='small' className='text-red-500'>
+                  タイプ:{' '}
+                  {modalInfo.shortcut_type === 'Sequential'
+                    ? 'シーケンシャルモード'
+                    : '通常モード'}
+                </Text>
+                {modalInfo.recorded_keys.length > 0 && (
+                  <div className='space-y-1'>
+                    <Text variant='small' className='text-red-500'>
+                      最新:{' '}
+                      {
+                        modalInfo.recorded_keys[
+                          modalInfo.recorded_keys.length - 1
+                        ].key
+                      }{' '}
+                      (
+                      {
+                        modalInfo.recorded_keys[
+                          modalInfo.recorded_keys.length - 1
+                        ].event_type
+                      }
+                      )
+                      {modalInfo.recorded_keys[
+                        modalInfo.recorded_keys.length - 1
+                      ].modifiers.alt && ' +Alt'}
+                      {modalInfo.recorded_keys[
+                        modalInfo.recorded_keys.length - 1
+                      ].modifiers.ctrl && ' +Ctrl'}
+                      {modalInfo.recorded_keys[
+                        modalInfo.recorded_keys.length - 1
+                      ].modifiers.shift && ' +Shift'}
+                      {modalInfo.recorded_keys[
+                        modalInfo.recorded_keys.length - 1
+                      ].modifiers.meta && ' +Meta'}
+                    </Text>
+                    {modalInfo.shortcut_type === 'Sequential' && (
+                      <Text variant='small' className='text-red-400'>
+                        イベント詳細: press/release両方を記録中
+                      </Text>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             <Button

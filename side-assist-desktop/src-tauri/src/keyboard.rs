@@ -58,6 +58,8 @@ pub fn string_to_key(key_str: &str) -> Option<Key> {
         "ShiftLeft" => Some(Key::ShiftLeft),
         "ShiftRight" => Some(Key::ShiftRight),
         "Alt" => Some(Key::Alt),
+        "AltLeft" => Some(Key::Alt), // Left Alt key
+        "AltRight" => Some(Key::AltGr), // Right Alt key (AltGr)
         "Enter" => Some(Key::Return),
         "Escape" => Some(Key::Escape),
         "Backspace" => Some(Key::Backspace),
@@ -181,10 +183,52 @@ pub fn key_to_string(key: Key) -> String {
         Key::ShiftLeft => "ShiftLeft".to_string(),
         Key::ShiftRight => "ShiftRight".to_string(),
         Key::Alt => "Alt".to_string(),
+        Key::AltGr => "AltLeft".to_string(),
         Key::Return => "Enter".to_string(),
         Key::Escape => "Escape".to_string(),
         Key::Backspace => "Backspace".to_string(),
         Key::Tab => "Tab".to_string(),
         _ => format!("{:?}", key), // Fallback for unsupported keys
+    }
+}
+
+/// 修飾キーかどうかを判定する関数
+/// 
+/// 指定されたキーが修飾キー（Alt, Ctrl, Shift, Meta）かどうかを判定します。
+/// 
+/// # Arguments
+/// 
+/// * `key` - 判定するrdev::Key
+/// 
+/// # Returns
+/// 
+/// * `bool` - 修飾キーの場合true
+pub fn is_modifier_key(key: Key) -> bool {
+    matches!(key, 
+        Key::Alt | Key::AltGr | 
+        Key::ControlLeft | Key::ControlRight |
+        Key::ShiftLeft | Key::ShiftRight |
+        Key::MetaLeft | Key::MetaRight
+    )
+}
+
+/// rdev::Keyから修飾キーの種類を取得する関数
+/// 
+/// 指定されたキーがどの修飾キーかを判定し、対応する文字列を返します。
+/// 
+/// # Arguments
+/// 
+/// * `key` - 判定するrdev::Key
+/// 
+/// # Returns
+/// 
+/// * `Option<&'static str>` - 修飾キーの種類（"alt", "ctrl", "shift", "meta"）
+pub fn get_modifier_type(key: Key) -> Option<&'static str> {
+    match key {
+        Key::Alt | Key::AltGr => Some("alt"),
+        Key::ControlLeft | Key::ControlRight => Some("ctrl"),
+        Key::ShiftLeft | Key::ShiftRight => Some("shift"),
+        Key::MetaLeft | Key::MetaRight => Some("meta"),
+        _ => None,
     }
 }

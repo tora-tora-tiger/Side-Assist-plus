@@ -648,7 +648,12 @@ export const useConnection = () => {
   );
 
   const prepareRecording = useCallback(
-    async (actionId: string, name: string, icon?: string): Promise<boolean> => {
+    async (
+      actionId: string,
+      name: string,
+      icon?: string,
+      shortcutType?: "normal" | "sequential",
+    ): Promise<boolean> => {
       if (!macIP || !macPort || !isConnected || !isAuthenticated) {
         return false;
       }
@@ -660,6 +665,7 @@ export const useConnection = () => {
         name,
         icon,
         password,
+        shortcutType,
       );
 
       if (result) {
