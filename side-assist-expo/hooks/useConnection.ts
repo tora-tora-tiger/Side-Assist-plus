@@ -69,6 +69,7 @@ export const useConnection = () => {
       // 接続情報を保存
       await saveConnectionInfo(params.ip, params.port, params.password);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // DeepLink処理のセットアップ
@@ -355,6 +356,7 @@ export const useConnection = () => {
         initializationRef.current.isInitializing &&
         !initializationRef.current.hasInitialized
       ) {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         initializationRef.current.isInitializing = false;
       }
     };

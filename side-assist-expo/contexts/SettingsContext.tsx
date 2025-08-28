@@ -112,6 +112,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
   // 初期化時と接続情報が変わった時に設定を読み込む
   useEffect(() => {
     loadSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ip, port]);
 
   // 設定状態変更をログ出力

@@ -64,6 +64,7 @@ export const DraggableActionButton: React.FC<DraggableActionButtonProps> = ({
               }}
               animatedValue={animatedValue}
               backgroundColor={action.backgroundColor}
+              // eslint-disable-next-line react-native/no-inline-styles
               style={{
                 // 編集モード時のスタイル調整
                 opacity: isEditMode ? 0.9 : 1,
