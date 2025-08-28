@@ -28,7 +28,7 @@ mod settings;
 // モジュールからのインポート  
 use network::get_local_ip_address;
 use storage::{save_custom_actions, load_custom_actions};
-use keyboard::{string_to_key, key_to_string};
+use keyboard::{string_to_key, key_to_string, is_modifier_key, get_modifier_type};
 use simulation::{simulate_typing, simulate_copy, simulate_paste};
 use settings::{get_current_settings, update_settings_persistent, load_settings_persistent};
 
@@ -38,6 +38,7 @@ lazy_static! {
     static ref SHOULD_STOP_RECORDING: AtomicBool = AtomicBool::new(false);
     static ref LAST_RECORDED_KEY: Mutex<Option<(String, u64)>> = Mutex::new(None); // (key_name, timestamp) for debouncing
     static ref MAIN_STATE_REF: Mutex<Option<AppState>> = Mutex::new(None); // メイン状態への参照
+    static ref CURRENT_MODIFIERS: Mutex<KeyModifiers> = Mutex::new(KeyModifiers::default()); // 現在の修飾キー状態
 }
 
 #[derive(Clone, Debug)]
@@ -63,12 +64,26 @@ pub struct ClientInfo {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum ShortcutType {
+    Normal,      // 通常のキーシーケンス
+    Sequential,  // シーケンシャルショートカット（Alt → H → B → A）
+}
+
+impl Default for ShortcutType {
+    fn default() -> Self {
+        ShortcutType::Normal
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CustomAction {
     pub id: String,
     pub name: String,
     pub icon: Option<String>,
     pub key_sequence: Vec<RecordedKey>,
     pub created_at: u64,
+    #[serde(default)] // 既存データとの互換性を保つ
+    pub shortcut_type: ShortcutType, // ショートカットのタイプ
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -79,10 +94,31 @@ pub struct CustomActionsStorage {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct KeyModifiers {
+    pub alt: bool,
+    pub ctrl: bool,
+    pub shift: bool,
+    pub meta: bool,
+}
+
+impl Default for KeyModifiers {
+    fn default() -> Self {
+        Self {
+            alt: false,
+            ctrl: false,
+            shift: false,
+            meta: false,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RecordedKey {
     pub key: String, // Key名を文字列として保存
     pub event_type: String, // "press" or "release"
     pub timestamp: u64, // 相対タイムスタンプ（ミリ秒）
+    #[serde(default)] // 既存データとの互換性を保つ
+    pub modifiers: KeyModifiers, // 修飾キーの状態
 }
 
 
@@ -98,6 +134,7 @@ pub struct RecordingModalInfo {
     pub is_completed: bool, // 録画完了フラグ
     pub start_time: Option<u64>,
     pub recorded_keys: Vec<RecordedKey>,
+    pub shortcut_type: ShortcutType, // ショートカットの種類
 }
 
 #[derive(Clone, Debug)]
@@ -149,6 +186,7 @@ pub enum ActionType {
         action_id: String,
         name: String,
         icon: Option<String>,
+        shortcut_type: Option<String>, // "normal" or "sequential"
     },
     #[serde(rename = "gesture")]
     Gesture { 
@@ -346,57 +384,167 @@ async fn generate_qr_code(state: tauri::State<'_, AppState>) -> Result<String, S
 
 // 保存されたキーシーケンスを再生する関数
 async fn execute_custom_action(action: &CustomAction) -> Result<String, String> {
-    println!("🎬 Starting playback of custom action: {}", action.name);
+    println!("🎬 Starting playback of custom action: {} (type: {:?})", action.name, action.shortcut_type);
     
     tokio::task::spawn_blocking({
         let key_sequence = action.key_sequence.clone();
         let action_name = action.name.clone();
+        let shortcut_type = action.shortcut_type.clone();
         
         move || {
-            use rdev::{simulate, EventType, SimulateError};
             use std::{thread, time};
-            
-            fn send(event_type: &EventType) -> Result<(), SimulateError> {
-                let delay = time::Duration::from_millis(50);
-                let result = simulate(event_type);
-                thread::sleep(delay);
-                result
-            }
             
             // 再生開始前に少し待機
             thread::sleep(time::Duration::from_millis(200));
             
-            let mut executed_keys = 0;
-            for recorded_key in &key_sequence {
-                // 文字列からrdev::Keyに変換
-                if let Some(key) = string_to_key(&recorded_key.key) {
-                    // KeyPressのみ再生（録画時にKeyPressのみ記録しているため）
-                    if recorded_key.event_type == "press" {
-                        // キープレス
-                        send(&EventType::KeyPress(key))
-                            .map_err(|e| format!("Failed to press key {}: {:?}", recorded_key.key, e))?;
-                        
-                        // キーリリース（セット実行）
-                        send(&EventType::KeyRelease(key))
-                            .map_err(|e| format!("Failed to release key {}: {:?}", recorded_key.key, e))?;
-                        
-                        executed_keys += 1;
-                        println!("🔑 Executed key: {} ({}/{})", recorded_key.key, executed_keys, key_sequence.len());
-                        
-                        // キー間の遅延（元のタイムスタンプは無視して一定間隔）
-                        thread::sleep(time::Duration::from_millis(0));
-                    }
-                } else {
-                    println!("⚠️ Unsupported key in sequence: {}", recorded_key.key);
+            match shortcut_type {
+                ShortcutType::Sequential => {
+                    execute_sequential_shortcut(&key_sequence, &action_name)
+                }
+                ShortcutType::Normal => {
+                    execute_normal_shortcut(&key_sequence, &action_name)
                 }
             }
-            
-            println!("✅ Custom action playback completed: {} ({} keys executed)", action_name, executed_keys);
-            Ok(format!("Successfully executed custom action '{}' with {} keys", action_name, executed_keys))
         }
     }).await.map_err(|e| format!("Task error: {}", e))?
 }
 
+// 通常のショートカット実行（従来の方式）
+fn execute_normal_shortcut(key_sequence: &[RecordedKey], action_name: &str) -> Result<String, String> {
+    use rdev::{simulate, EventType, SimulateError};
+    use std::{thread, time};
+    
+    fn send(event_type: &EventType) -> Result<(), SimulateError> {
+        let delay = time::Duration::from_millis(50);
+        let result = simulate(event_type);
+        thread::sleep(delay);
+        result
+    }
+    
+    let mut executed_keys = 0;
+    for recorded_key in key_sequence {
+        if let Some(key) = string_to_key(&recorded_key.key) {
+            if recorded_key.event_type == "press" {
+                // キープレス
+                send(&EventType::KeyPress(key))
+                    .map_err(|e| format!("Failed to press key {}: {:?}", recorded_key.key, e))?;
+                
+                // キーリリース（セット実行）
+                send(&EventType::KeyRelease(key))
+                    .map_err(|e| format!("Failed to release key {}: {:?}", recorded_key.key, e))?;
+                
+                executed_keys += 1;
+                println!("🔑 Normal shortcut - Executed key: {} ({}/{})", recorded_key.key, executed_keys, key_sequence.len());
+                
+                thread::sleep(time::Duration::from_millis(50));
+            }
+        } else {
+            println!("⚠️ Unsupported key in sequence: {}", recorded_key.key);
+        }
+    }
+    
+    println!("✅ Normal shortcut playback completed: {} ({} keys executed)", action_name, executed_keys);
+    Ok(format!("Successfully executed normal shortcut '{}' with {} keys", action_name, executed_keys))
+}
+
+// シーケンシャルショートカット実行（Alt → H → B → A 形式）
+// 記録されたpress/releaseイベントを忠実に再現
+fn execute_sequential_shortcut(key_sequence: &[RecordedKey], action_name: &str) -> Result<String, String> {
+    use rdev::{simulate, EventType, SimulateError};
+    use std::{thread, time, collections::HashSet};
+    
+    fn send_key_event(event_type: &EventType) -> Result<(), SimulateError> {
+        let delay = time::Duration::from_millis(20); // 高速化
+        let result = simulate(event_type);
+        thread::sleep(delay);
+        result
+    }
+    
+    // エラー時の修飾キークリーンアップ用
+    fn cleanup_modifiers(active_modifiers: &HashSet<String>) {
+        for modifier_key in active_modifiers {
+            if let Some(key) = string_to_key(modifier_key) {
+                let _ = send_key_event(&EventType::KeyRelease(key));
+                println!("🧹 Emergency cleanup: Released modifier {}", modifier_key);
+            }
+        }
+    }
+    
+    let mut active_modifiers = HashSet::new();
+    let mut executed_keys = 0;
+    
+    println!("🔄 Sequential shortcut execution started - will replay {} events", key_sequence.len());
+    
+    // 記録されたイベントを順次実行（press/release を完全に忠実に再現）
+    let execution_result: Result<(), String> = (|| {
+        for (index, recorded_key) in key_sequence.iter().enumerate() {
+            if let Some(key) = string_to_key(&recorded_key.key) {
+                let is_modifier = is_modifier_key(key);
+                
+                match recorded_key.event_type.as_str() {
+                    "press" => {
+                        send_key_event(&EventType::KeyPress(key))
+                            .map_err(|e| format!("Failed to press key {}: {:?}", recorded_key.key, e))?;
+                        
+                        if is_modifier {
+                            active_modifiers.insert(recorded_key.key.clone());
+                            println!("🔧 Sequential [{:03}] - Modifier PRESSED and holding: {}", index + 1, recorded_key.key);
+                        } else {
+                            executed_keys += 1;
+                            println!("🔑 Sequential [{:03}] - Key PRESSED: {} (modifiers: alt={}, ctrl={}, shift={}, meta={}) [{}/{}]", 
+                                index + 1,
+                                recorded_key.key,
+                                recorded_key.modifiers.alt,
+                                recorded_key.modifiers.ctrl,
+                                recorded_key.modifiers.shift,
+                                recorded_key.modifiers.meta,
+                                executed_keys,
+                                key_sequence.iter().filter(|k| k.event_type == "press" && !is_modifier_key(string_to_key(&k.key).unwrap_or_else(|| rdev::Key::Unknown(0)))).count()
+                            );
+                        }
+                    }
+                    "release" => {
+                        send_key_event(&EventType::KeyRelease(key))
+                            .map_err(|e| format!("Failed to release key {}: {:?}", recorded_key.key, e))?;
+                        
+                        if is_modifier {
+                            active_modifiers.remove(&recorded_key.key);
+                            println!("🔧 Sequential [{:03}] - Modifier RELEASED: {}", index + 1, recorded_key.key);
+                        } else {
+                            println!("🔑 Sequential [{:03}] - Key RELEASED: {}", index + 1, recorded_key.key);
+                        }
+                    }
+                    _ => {
+                        println!("⚠️ Unknown event type: {} for key: {}", recorded_key.event_type, recorded_key.key);
+                    }
+                }
+                
+                // イベント間の適切な遅延（実際のタイミングを再現）
+                if index < key_sequence.len() - 1 {
+                    let current_time = recorded_key.timestamp;
+                    let next_time = key_sequence[index + 1].timestamp;
+                    let delay = (next_time.saturating_sub(current_time)).min(100); // 最大100ms
+                    
+                    if delay > 5 { // 5ms以上の遅延のみ適用
+                        thread::sleep(time::Duration::from_millis(delay));
+                    }
+                }
+                
+            } else {
+                println!("⚠️ Unsupported key in sequence: {}", recorded_key.key);
+            }
+        }
+        Ok(())
+    })();
+    
+    // エラー発生時の修飾キークリーンアップ
+    if execution_result.is_err() {
+        cleanup_modifiers(&active_modifiers);
+    }
+    
+    println!("✅ Sequential shortcut playback completed: {} ({} keys executed)", action_name, executed_keys);
+    Ok(format!("Successfully executed sequential shortcut '{}' with {} keys", action_name, executed_keys))
+}
 
 #[tauri::command]
 async fn set_port(state: tauri::State<'_, AppState>, port: u16) -> Result<String, String> {
@@ -636,7 +784,7 @@ async fn clear_recording_modal(state: tauri::State<'_, AppState>) -> Result<Stri
 }
 
 #[tauri::command]
-async fn start_actual_recording(state: tauri::State<'_, AppState>) -> Result<String, String> {
+async fn start_actual_recording(state: tauri::State<'_, AppState>, shortcut_type: String) -> Result<String, String> {
     let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
     
     if let Some(ref mut modal_info) = state_guard.recording_modal_info {
@@ -648,6 +796,13 @@ async fn start_actual_recording(state: tauri::State<'_, AppState>) -> Result<Str
                 .as_millis() as u64
         );
         modal_info.recorded_keys.clear();
+        
+        // Set shortcut type based on parameter
+        modal_info.shortcut_type = if shortcut_type == "Sequential" { 
+            ShortcutType::Sequential 
+        } else { 
+            ShortcutType::Normal 
+        };
         
         println!("🔴 Actual recording started for: {}", modal_info.name);
         
@@ -702,6 +857,7 @@ async fn stop_actual_recording(state: tauri::State<'_, AppState>) -> Result<Stri
         icon: modal_info.icon,
         key_sequence: modal_info.recorded_keys,
         created_at: now,
+        shortcut_type: modal_info.shortcut_type.clone(), // 録画時に設定されたタイプを使用
     };
     
     // 状態に追加して保存
@@ -753,6 +909,21 @@ fn rdev_callback(event: Event) {
         return;
     }
     
+    // 修飾キーの状態を更新（常に実行）
+    match event.event_type {
+        EventType::KeyPress(key) => {
+            if is_modifier_key(key) {
+                update_modifier_state(key, true);
+            }
+        }
+        EventType::KeyRelease(key) => {
+            if is_modifier_key(key) {
+                update_modifier_state(key, false);
+            }
+        }
+        _ => {}
+    }
+    
     // グローバル録画状態から情報を取得
     let (start_time, recorded_keys) = {
         if let Ok(recording_state_guard) = GLOBAL_RECORDING_STATE.lock() {
@@ -766,62 +937,110 @@ fn rdev_callback(event: Event) {
         }
     };
     
-    // キープレスのみを記録（重複を避けるため + デバウンス）
-    if let EventType::KeyPress(key) = event.event_type {
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as u64;
-        
-        let key_name = key_to_string(key);
-        
-        // デバウンス: 同じキーが50ms以内に記録されていないかチェック
-        let should_record = {
-            if let Ok(mut last_key_guard) = LAST_RECORDED_KEY.lock() {
-                if let Some((last_key, last_time)) = &*last_key_guard {
-                    if key_name == *last_key && now.saturating_sub(*last_time) < 50 {
-                        // 同じキーが50ms以内 - 重複とみなす
-                        false
+    // すべてのキーイベントを記録（press/release両方）
+    match event.event_type {
+        EventType::KeyPress(key) | EventType::KeyRelease(key) => {
+            let event_type_str = match event.event_type {
+                EventType::KeyPress(_) => "press",
+                EventType::KeyRelease(_) => "release",
+                _ => return,
+            };
+            let now = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as u64;
+            
+            let key_name = key_to_string(key);
+            
+            // 改良されたデバウンス: キー+イベントタイプの組み合わせで重複チェック
+            let should_record = {
+                let debounce_key = format!("{}_{}", key_name, event_type_str);
+                if let Ok(mut last_key_guard) = LAST_RECORDED_KEY.lock() {
+                    if let Some((last_key, last_time)) = &*last_key_guard {
+                        if debounce_key == *last_key && now.saturating_sub(*last_time) < 30 {
+                            // 同じキー+イベントが30ms以内 - 重複とみなす（短縮）
+                            false
+                        } else {
+                            // 異なるキーまたは十分時間が経過 - 記録する
+                            *last_key_guard = Some((debounce_key.clone(), now));
+                            true
+                        }
                     } else {
-                        // 異なるキーまたは十分時間が経過 - 記録する
-                        *last_key_guard = Some((key_name.clone(), now));
+                        // 初回記録
+                        *last_key_guard = Some((debounce_key.clone(), now));
                         true
                     }
                 } else {
-                    // 初回記録
-                    *last_key_guard = Some((key_name.clone(), now));
                     true
                 }
-            } else {
-                true
-            }
-        };
-        
-        if should_record {
-            let relative_time = now.saturating_sub(start_time);
-            
-            let recorded_key = RecordedKey {
-                key: key_name.clone(),
-                event_type: "press".to_string(),
-                timestamp: relative_time,
             };
-            
-            // グローバル録画状態に追加
-            if let Ok(mut keys_guard) = recorded_keys.lock() {
-                keys_guard.push(recorded_key.clone());
-                println!("🔑 Key recorded: {} (total: {})", 
-                    recorded_key.key, 
-                    keys_guard.len()
-                );
+        
+            if should_record {
+                let relative_time = now.saturating_sub(start_time);
                 
-                // キー入力直後にメイン状態にも即座に同期
-                sync_to_main_state(&keys_guard);
+                // 現在の修飾キー状態を取得
+                let modifiers = {
+                    if let Ok(modifier_guard) = CURRENT_MODIFIERS.lock() {
+                        modifier_guard.clone()
+                    } else {
+                        KeyModifiers::default()
+                    }
+                };
+                
+                let recorded_key = RecordedKey {
+                    key: key_name.clone(),
+                    event_type: event_type_str.to_string(),
+                    timestamp: relative_time,
+                    modifiers, // 修飾キーの状態を含める
+                };
+            
+                // グローバル録画状態に追加
+                if let Ok(mut keys_guard) = recorded_keys.lock() {
+                    keys_guard.push(recorded_key.clone());
+                    println!("🔑 Key recorded: {} {} with modifiers: alt={}, ctrl={}, shift={}, meta={} (total: {})", 
+                        recorded_key.key,
+                        recorded_key.event_type,
+                        recorded_key.modifiers.alt,
+                        recorded_key.modifiers.ctrl,
+                        recorded_key.modifiers.shift,
+                        recorded_key.modifiers.meta,
+                        keys_guard.len()
+                    );
+                    
+                    // キー入力直後にメイン状態にも即座に同期
+                    sync_to_main_state(&keys_guard);
+                }
+            } else {
+                println!("🚫 Key debounced: {} {} (too soon)", key_name, event_type_str);
             }
-        } else {
-            println!("🚫 Key debounced: {} (too soon)", key_name);
+        }
+        _ => {}
+    }
+}
+
+// 修飾キーの状態を更新する関数
+fn update_modifier_state(key: rdev::Key, pressed: bool) {
+    if let Ok(mut modifier_guard) = CURRENT_MODIFIERS.lock() {
+        match get_modifier_type(key) {
+            Some("alt") => {
+                modifier_guard.alt = pressed;
+                println!("🔧 Modifier update: Alt = {}", pressed);
+            }
+            Some("ctrl") => {
+                modifier_guard.ctrl = pressed;
+                println!("🔧 Modifier update: Ctrl = {}", pressed);
+            }
+            Some("shift") => {
+                modifier_guard.shift = pressed;
+                println!("🔧 Modifier update: Shift = {}", pressed);
+            }
+            Some("meta") => {
+                modifier_guard.meta = pressed;
+                println!("🔧 Modifier update: Meta = {}", pressed);
+            }
+            _ => {}
         }
     }
-    // KeyReleaseは記録しない（重複を避けるため）
 }
 
 // メイン状態への即座同期関数
@@ -1115,10 +1334,16 @@ async fn handle_input(
                 Err(format!("Custom action '{}' not found", action_id))
             }
         }
-        ActionType::PrepareRecording { action_id, name, icon } => {
-            println!("🎥 Preparing recording for action: {} ({})", name, action_id);
+        ActionType::PrepareRecording { action_id, name, icon, shortcut_type } => {
+            println!("🎥 Preparing recording for action: {} ({}) - Type: {:?}", name, action_id, shortcut_type);
             
             let mut state_guard = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            
+            // ショートカットタイプを決定
+            let determined_shortcut_type = match shortcut_type.as_deref() {
+                Some("sequential") => ShortcutType::Sequential,
+                _ => ShortcutType::Normal,
+            };
             
             // 録画モーダル情報を設定
             state_guard.recording_modal_info = Some(RecordingModalInfo {
@@ -1130,10 +1355,11 @@ async fn handle_input(
                 is_completed: false, // 初期状態では未完了
                 start_time: None,
                 recorded_keys: Vec::new(),
+                shortcut_type: determined_shortcut_type.clone(),
             });
             
-            println!("✅ Recording modal prepared successfully for: {}", name);
-            Ok(format!("Recording prepared for action: {}", name))
+            println!("✅ Recording modal prepared successfully for: {} (shortcut type: {:?})", name, &determined_shortcut_type);
+            Ok(format!("Recording prepared for action: {} (type: {:?})", name, determined_shortcut_type))
         }
         ActionType::Gesture { fingers, direction, action, action_data } => {
             println!("🤏 Processing gesture: {} fingers {} direction -> {}", fingers, direction, action);

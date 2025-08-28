@@ -11,7 +11,7 @@ import { ActionType } from "../constants/actions";
 interface ActionsTabProps {
   onActionPress: (action: ActionType) => Promise<void>;
   onCustomActionPress: (action: CustomAction) => Promise<void>;
-  onPrepareRecording: () => Promise<void>;
+  onPrepareRecording: (shortcutType: "normal" | "sequential") => Promise<void>;
   onDisconnect: () => void;
   customActions: CustomAction[];
   isRecordingPrepared: boolean;
