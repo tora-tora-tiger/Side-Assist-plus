@@ -64,7 +64,7 @@ export const RecordingModal: React.FC = () => {
     setIsStarting(true);
     try {
       await invoke('start_actual_recording', {
-        shortcut_type:
+        shortcutType:
           selectedShortcutType === 'sequential' ? 'Sequential' : 'Normal',
       });
     } catch (error) {
