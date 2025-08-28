@@ -230,7 +230,7 @@ struct RecordingStatusResponse {
 
 #[tauri::command]
 async fn load_custom_actions_on_startup(state: tauri::State<'_, AppState>) -> Result<String, String> {
-    println!("📂 Loading custom actions from persistent storage...");
+    
     
     match load_custom_actions().await {
         Ok(loaded_actions) => {
@@ -238,11 +238,10 @@ async fn load_custom_actions_on_startup(state: tauri::State<'_, AppState>) -> Re
             state_guard.custom_actions = loaded_actions;
             let count = state_guard.custom_actions.len();
             
-            println!("✅ Successfully loaded {} custom actions on startup", count);
+            
             Ok(format!("Loaded {} custom actions", count))
         }
         Err(e) => {
-            eprintln!("❌ Failed to load custom actions on startup: {}", e);
             Err(format!("Failed to load custom actions: {}", e))
         }
     }
@@ -252,7 +251,7 @@ async fn load_custom_actions_on_startup(state: tauri::State<'_, AppState>) -> Re
 async fn get_all_custom_actions(state: tauri::State<'_, AppState>) -> Result<Vec<CustomAction>, String> {
     let state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
     let actions: Vec<CustomAction> = state_guard.custom_actions.values().cloned().collect();
-    println!("📋 Returning {} custom actions to frontend", actions.len());
+    
     Ok(actions)
 }
 
@@ -282,7 +281,7 @@ async fn generate_one_time_password(state: tauri::State<'_, AppState>) -> Result
     state.one_time_password = Some(password.clone());
     state.password_expiry = Some(expiry);
     
-    println!("🔐 Generated OTP: {} (expires in 5 minutes)", password);
+    
     Ok(password)
 }
 
@@ -327,14 +326,14 @@ async fn generate_qr_code(state: tauri::State<'_, AppState>) -> Result<String, S
     };
 
     // 本当のIPアドレスを取得
-    println!("🌐 Attempting to get local IP address...");
+    
     let local_ip = match get_local_ip_address() {
         Some(ip) => {
-            println!("✅ Successfully obtained local IP: {}", ip);
+            
             ip
         },
         None => {
-            println!("❌ Failed to obtain local IP address");
+            
             return Err("ローカルIPアドレスを取得できませんでした。ネットワーク接続を確認してください。".to_string());
         }
     };
@@ -348,18 +347,18 @@ async fn generate_qr_code(state: tauri::State<'_, AppState>) -> Result<String, S
         .replace(' ', "");
     
     // デバッグ用詳細ログ
-    println!("🔧 [DEBUG] QR Code generation details:");
-    println!("  IP: '{}'", local_ip);
-    println!("  Port: {}", port);
-    println!("  Password: '{}'", password);
-    println!("  Generated URL: '{}'", url_scheme);
-    println!("  URL length: {}", url_scheme.len());
-    println!("  URL bytes: {:?}", url_scheme.as_bytes());
+    
+    
+    
+    
+    
+    
+    
 
     // URLの各文字をチェック
-    for (i, ch) in url_scheme.chars().enumerate() {
+    for (_i, ch) in url_scheme.chars().enumerate() {
         if ch.is_control() || ch == '\n' || ch == '\r' || ch == '\t' {
-            println!("  ⚠️ Control character at position {}: {:?} (code: {})", i, ch, ch as u32);
+            
         }
     }
     
@@ -374,7 +373,7 @@ async fn generate_qr_code(state: tauri::State<'_, AppState>) -> Result<String, S
         .light_color(svg::Color("#ffffff"))
         .build();
     
-    println!("✅ QR code generated successfully");
+    
     Ok(svg_string)
 }
 
@@ -384,7 +383,7 @@ async fn generate_qr_code(state: tauri::State<'_, AppState>) -> Result<String, S
 
 // 保存されたキーシーケンスを再生する関数
 async fn execute_custom_action(action: &CustomAction) -> Result<String, String> {
-    println!("🎬 Starting playback of custom action: {} (type: {:?})", action.name, action.shortcut_type);
+    
     
     tokio::task::spawn_blocking({
         let key_sequence = action.key_sequence.clone();
@@ -434,16 +433,16 @@ fn execute_normal_shortcut(key_sequence: &[RecordedKey], action_name: &str) -> R
                     .map_err(|e| format!("Failed to release key {}: {:?}", recorded_key.key, e))?;
                 
                 executed_keys += 1;
-                println!("🔑 Normal shortcut - Executed key: {} ({}/{})", recorded_key.key, executed_keys, key_sequence.len());
+                
                 
                 thread::sleep(time::Duration::from_millis(50));
             }
         } else {
-            println!("⚠️ Unsupported key in sequence: {}", recorded_key.key);
+            
         }
     }
     
-    println!("✅ Normal shortcut playback completed: {} ({} keys executed)", action_name, executed_keys);
+    
     Ok(format!("Successfully executed normal shortcut '{}' with {} keys", action_name, executed_keys))
 }
 
@@ -465,7 +464,7 @@ fn execute_sequential_shortcut(key_sequence: &[RecordedKey], action_name: &str) 
         for modifier_key in active_modifiers {
             if let Some(key) = string_to_key(modifier_key) {
                 let _ = send_key_event(&EventType::KeyRelease(key));
-                println!("🧹 Emergency cleanup: Released modifier {}", modifier_key);
+                
             }
         }
     }
@@ -473,7 +472,7 @@ fn execute_sequential_shortcut(key_sequence: &[RecordedKey], action_name: &str) 
     let mut active_modifiers = HashSet::new();
     let mut executed_keys = 0;
     
-    println!("🔄 Sequential shortcut execution started - will replay {} events", key_sequence.len());
+    
     
     // 記録されたイベントを順次実行（press/release を完全に忠実に再現）
     let execution_result: Result<(), String> = (|| {
@@ -488,19 +487,9 @@ fn execute_sequential_shortcut(key_sequence: &[RecordedKey], action_name: &str) 
                         
                         if is_modifier {
                             active_modifiers.insert(recorded_key.key.clone());
-                            println!("🔧 Sequential [{:03}] - Modifier PRESSED and holding: {}", index + 1, recorded_key.key);
+                            
                         } else {
                             executed_keys += 1;
-                            println!("🔑 Sequential [{:03}] - Key PRESSED: {} (modifiers: alt={}, ctrl={}, shift={}, meta={}) [{}/{}]", 
-                                index + 1,
-                                recorded_key.key,
-                                recorded_key.modifiers.alt,
-                                recorded_key.modifiers.ctrl,
-                                recorded_key.modifiers.shift,
-                                recorded_key.modifiers.meta,
-                                executed_keys,
-                                key_sequence.iter().filter(|k| k.event_type == "press" && !is_modifier_key(string_to_key(&k.key).unwrap_or_else(|| rdev::Key::Unknown(0)))).count()
-                            );
                         }
                     }
                     "release" => {
@@ -509,13 +498,13 @@ fn execute_sequential_shortcut(key_sequence: &[RecordedKey], action_name: &str) 
                         
                         if is_modifier {
                             active_modifiers.remove(&recorded_key.key);
-                            println!("🔧 Sequential [{:03}] - Modifier RELEASED: {}", index + 1, recorded_key.key);
+                            
                         } else {
-                            println!("🔑 Sequential [{:03}] - Key RELEASED: {}", index + 1, recorded_key.key);
+                            
                         }
                     }
                     _ => {
-                        println!("⚠️ Unknown event type: {} for key: {}", recorded_key.event_type, recorded_key.key);
+                        
                     }
                 }
                 
@@ -531,7 +520,7 @@ fn execute_sequential_shortcut(key_sequence: &[RecordedKey], action_name: &str) 
                 }
                 
             } else {
-                println!("⚠️ Unsupported key in sequence: {}", recorded_key.key);
+                
             }
         }
         Ok(())
@@ -542,7 +531,7 @@ fn execute_sequential_shortcut(key_sequence: &[RecordedKey], action_name: &str) 
         cleanup_modifiers(&active_modifiers);
     }
     
-    println!("✅ Sequential shortcut playback completed: {} ({} keys executed)", action_name, executed_keys);
+    
     Ok(format!("Successfully executed sequential shortcut '{}' with {} keys", action_name, executed_keys))
 }
 
@@ -564,7 +553,7 @@ async fn set_port(state: tauri::State<'_, AppState>, port: u16) -> Result<String
     }
     
     state.port = port;
-    println!("🔧 Port changed to: {}", port);
+    
     Ok(format!("Port set to {}", port))
 }
 
@@ -585,7 +574,7 @@ async fn stop_server(state: tauri::State<'_, AppState>) -> Result<String, String
         state_guard.operation_in_progress = true;
         state_guard.running = false;
         state_guard.connected_clients.clear();
-        println!("🛑 Server marked as stopped (will terminate on next request cycle)");
+        
     } // MutexGuardはここで解放される
     
     // サーバーが完全に停止するまで待機
@@ -597,35 +586,32 @@ async fn stop_server(state: tauri::State<'_, AppState>) -> Result<String, String
         state_guard.operation_in_progress = false;
     } // MutexGuardはここで解放される
     
-    println!("✅ Server stop operation completed");
+    
     Ok("Server stopped".to_string())
 }
 
 #[tauri::command]
 async fn start_server(state: tauri::State<'_, AppState>) -> Result<String, String> {
-    println!("🚀 start_server command called");
+    
     let app_state = Arc::clone(&state);
     
     let port = {
         let mut state = app_state.lock().map_err(|e| {
-            println!("❌ Failed to lock state: {}", e);
+            
             format!("Failed to lock state: {}", e)
         })?;
         
-        println!("📊 Current state: running={}, operation_in_progress={}, port={}", 
-                state.running, state.operation_in_progress, state.port);
-        
         if state.operation_in_progress {
-            println!("⚠️ Operation already in progress");
+            
             return Err("サーバー操作が実行中です。しばらくお待ちください。".to_string());
         }
         
         if state.running {
-            println!("⚠️ Server already running");
+            
             return Err("Server is already running. Stop it first before starting a new one.".to_string());
         }
         
-        println!("✅ Setting operation_in_progress = true");
+        
         state.operation_in_progress = true;
         state.port
     };
@@ -651,8 +637,7 @@ async fn start_server(state: tauri::State<'_, AppState>) -> Result<String, Strin
     let server_state = Arc::clone(&app_state);
     let error_state = Arc::clone(&app_state);
     tokio::spawn(async move {
-        if let Err(e) = run_http_server(server_state).await {
-            eprintln!("Server error: {}", e);
+        if let Err(_e) = run_http_server(server_state).await {
             if let Ok(mut state) = error_state.lock() {
                 state.running = false;
                 state.operation_in_progress = false;
@@ -666,7 +651,7 @@ async fn start_server(state: tauri::State<'_, AppState>) -> Result<String, Strin
         cleanup_inactive_clients(cleanup_state).await;
     });
 
-    println!("✅ Server start operation completed on port {}", port);
+    
     Ok(format!("Side Assist Server started on port {}", port))
 }
 
@@ -697,15 +682,15 @@ async fn check_accessibility_permission() -> Result<bool, String> {
         let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
         let has_permission = output.status.success() && stdout.contains("granted");
         
-        println!("🔍 Accessibility permission check:");
-        println!("   Status: {}", output.status.success());
-        println!("   Output: '{}'", stdout);
-        println!("   Result: {}", has_permission);
+        
+        
+        
+        
         
         if !has_permission {
             if let Ok(stderr) = String::from_utf8(output.stderr) {
                 if !stderr.trim().is_empty() {
-                    println!("❌ Permission check stderr: {}", stderr);
+                    
                 }
             }
         }
@@ -740,16 +725,16 @@ async fn open_system_preferences() -> Result<String, String> {
                 
             match output {
                 Ok(result) if result.status.success() => {
-                    println!("✅ Successfully opened system settings with URL: {}", url);
+                    
                     return Ok("システム設定を開きました".to_string());
                 }
                 Ok(result) => {
                     let stderr = String::from_utf8_lossy(&result.stderr);
-                    println!("⚠️ URL {} failed: {}", url, stderr);
+                    
                     last_error = format!("URL {} failed: {}", url, stderr);
                 }
                 Err(e) => {
-                    println!("❌ Failed to execute open command for {}: {}", url, e);
+                    
                     last_error = format!("Failed to execute: {}", e);
                 }
             }
@@ -779,7 +764,7 @@ async fn get_recording_modal_info(state: tauri::State<'_, AppState>) -> Result<O
 async fn clear_recording_modal(state: tauri::State<'_, AppState>) -> Result<String, String> {
     let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
     state_guard.recording_modal_info = None;
-    println!("🗑️ Recording modal cleared");
+    
     Ok("Recording modal cleared".to_string())
 }
 
@@ -804,7 +789,7 @@ async fn start_actual_recording(state: tauri::State<'_, AppState>, shortcut_type
             ShortcutType::Normal 
         };
         
-        println!("🔴 Actual recording started for: {}", modal_info.name);
+        
         
         // リアルキーリスナー開始
         let state_clone = Arc::clone(&state);
@@ -826,7 +811,7 @@ async fn stop_actual_recording(state: tauri::State<'_, AppState>) -> Result<Stri
         
         if let Some(ref mut modal_info) = state_guard.recording_modal_info {
             modal_info.is_recording = false;
-            println!("🛑 Recording stop requested for: {}", modal_info.name);
+            
         } else {
             return Err("No recording modal active".to_string());
         }
@@ -864,9 +849,9 @@ async fn stop_actual_recording(state: tauri::State<'_, AppState>) -> Result<Stri
     {
         let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
         
-        println!("💾 Adding custom action to memory: {} ({})", custom_action.name, custom_action.id);
+        
         state_guard.custom_actions.insert(modal_info.action_id.clone(), custom_action.clone());
-        println!("📊 Total custom actions in memory: {}", state_guard.custom_actions.len());
+        
         
         // モーダル状態を録画完了状態に更新（即座にクリアしない）
         if let Some(ref mut modal_info) = state_guard.recording_modal_info {
@@ -884,16 +869,14 @@ async fn stop_actual_recording(state: tauri::State<'_, AppState>) -> Result<Stri
         
         // 非同期保存を実行
         tokio::spawn(async move {
-            println!("💾 Attempting to save {} custom actions to file...", actions_to_save.len());
-            if let Err(e) = save_custom_actions(&actions_to_save).await {
-                eprintln!("❌ Failed to save custom actions to file: {}", e);
-            } else {
-                println!("✅ Custom action automatically saved to persistent storage");
+            
+            if let Err(_e) = save_custom_actions(&actions_to_save).await {
+                // Error handling for save_custom_actions
             }
         });
     }
     
-    println!("⏹️ Recording stopped and saved: {} ({} keys)", custom_action.name, custom_action.key_sequence.len());
+    
     
     Ok(format!(
         "Recording stopped. Saved {} key events for: {}",
@@ -997,21 +980,11 @@ fn rdev_callback(event: Event) {
                 // グローバル録画状態に追加
                 if let Ok(mut keys_guard) = recorded_keys.lock() {
                     keys_guard.push(recorded_key.clone());
-                    println!("🔑 Key recorded: {} {} with modifiers: alt={}, ctrl={}, shift={}, meta={} (total: {})", 
-                        recorded_key.key,
-                        recorded_key.event_type,
-                        recorded_key.modifiers.alt,
-                        recorded_key.modifiers.ctrl,
-                        recorded_key.modifiers.shift,
-                        recorded_key.modifiers.meta,
-                        keys_guard.len()
-                    );
-                    
                     // キー入力直後にメイン状態にも即座に同期
                     sync_to_main_state(&keys_guard);
                 }
             } else {
-                println!("🚫 Key debounced: {} {} (too soon)", key_name, event_type_str);
+                
             }
         }
         _ => {}
@@ -1024,19 +997,19 @@ fn update_modifier_state(key: rdev::Key, pressed: bool) {
         match get_modifier_type(key) {
             Some("alt") => {
                 modifier_guard.alt = pressed;
-                println!("🔧 Modifier update: Alt = {}", pressed);
+                
             }
             Some("ctrl") => {
                 modifier_guard.ctrl = pressed;
-                println!("🔧 Modifier update: Ctrl = {}", pressed);
+                
             }
             Some("shift") => {
                 modifier_guard.shift = pressed;
-                println!("🔧 Modifier update: Shift = {}", pressed);
+                
             }
             Some("meta") => {
                 modifier_guard.meta = pressed;
-                println!("🔧 Modifier update: Meta = {}", pressed);
+                
             }
             _ => {}
         }
@@ -1050,7 +1023,7 @@ fn sync_to_main_state(keys: &Vec<RecordedKey>) {
             if let Ok(mut state_guard) = main_state.lock() {
                 if let Some(ref mut modal_info) = state_guard.recording_modal_info {
                     modal_info.recorded_keys = keys.clone();
-                    // println!("⚡ Instantly synced {} keys to main state", keys.len());
+                    // 
                 }
             }
         }
@@ -1059,7 +1032,7 @@ fn sync_to_main_state(keys: &Vec<RecordedKey>) {
 
 // リアルキーリスナー実装（グローバルstateを使用）
 async fn start_real_key_listener(state: AppState) {
-    println!("🎧 Real key listener started - using actual rdev events");
+    
     
     // メイン状態への参照を設定
     {
@@ -1098,15 +1071,14 @@ async fn start_real_key_listener(state: AppState) {
     let listener_handle = tokio::task::spawn_blocking(move || {
         use rdev::listen;
         
-        println!("🚀 Starting rdev::listen for real key events");
+        
         
         // rdev::listenでキーイベントを監視（関数ポインタを使用）
-        if let Err(error) = listen(rdev_callback) {
-            eprintln!("❌ rdev listen error: {:?}", error);
-            eprintln!("💡 Note: On macOS, accessibility permissions are required");
+        if let Err(_error) = listen(rdev_callback) {
+            // Error handling for rdev listen
         }
         
-        println!("🔇 rdev key listener stopped");
+        
     });
     
     // シンプルな監視ループ（停止待ち）
@@ -1126,7 +1098,7 @@ async fn start_real_key_listener(state: AppState) {
         };
         
         if !should_continue {
-            println!("🔇 Real key listener monitor stopping");
+            
             
             // rdev::listenを停止する信号を送信
             SHOULD_STOP_RECORDING.store(true, Ordering::Relaxed);
@@ -1147,7 +1119,7 @@ async fn start_real_key_listener(state: AppState) {
         }
     }
     
-    println!("✅ Key listener monitor task completed");
+    
     
     // リスナータスクの終了を待つ（タイムアウト付き）
     let timeout = tokio::time::Duration::from_millis(1000);
@@ -1173,15 +1145,15 @@ async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Erro
         .with_state(Arc::clone(&state));
 
     let bind_addr = format!("0.0.0.0:{}", port);
-    println!("🔗 Attempting to bind to: {}", bind_addr);
+    
     
     let listener = tokio::net::TcpListener::bind(&bind_addr).await?;
-    println!("🚀 Side Assist Server successfully listening on http://localhost:{}", port);
-    println!("🌐 Server accessible from network on port {}", port);
-    println!("📱 Mobile endpoints:");
-    println!("  - GET  /health - Health check with client tracking");
-    println!("  - POST /input  - Unified action endpoint (requires password)");
-    println!("  - POST /auth   - Authentication endpoint");
+    
+    
+    
+    
+    
+    
     
     // サーバーの実行中に定期的にstateをチェックして停止する
     let server_task = tokio::spawn(async move {
@@ -1196,7 +1168,7 @@ async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Erro
             interval.tick().await;
             if let Ok(state_guard) = monitor_state.lock() {
                 if !state_guard.running {
-                    println!("🛑 Server shutdown requested, terminating...");
+                    
                     break;
                 }
             }
@@ -1207,13 +1179,13 @@ async fn run_http_server(state: AppState) -> Result<(), Box<dyn std::error::Erro
     tokio::select! {
         result = server_task => {
             match result {
-                Ok(Ok(())) => println!("✅ Server task completed successfully"),
-                Ok(Err(e)) => println!("❌ Server task failed: {}", e),
-                Err(e) => println!("❌ Server task panicked: {}", e),
+                Ok(Ok(())) => {},
+                Ok(Err(_e)) => {},
+                Err(_e) => {},
             }
         }
         _ = monitor_task => {
-            println!("🔍 Server monitor requested shutdown");
+            
         }
     }
     
@@ -1231,16 +1203,16 @@ async fn health_check(
     headers: HeaderMap,
     State(state): State<AppState>,
 ) -> Result<JsonResponse<HealthResponse>, StatusCode> {
-    println!("🏥 Health check request received");
-    println!("📋 Headers: {:?}", headers.keys().collect::<Vec<_>>());
+    
+    
     
     let client_id = match headers.get("x-client-id").and_then(|h| h.to_str().ok()) {
         Some(id) => {
-            println!("👤 Client ID: {}", id);
+            
             id.to_string()
         },
         None => {
-            println!("❌ Missing x-client-id header");
+            
             return Err(StatusCode::BAD_REQUEST);
         }
     };
@@ -1262,7 +1234,7 @@ async fn health_check(
 
     let client_count = state.connected_clients.len();
     
-    println!("💓 Health check from {} - {} clients connected", client_id, client_count);
+    
     
     Ok(JsonResponse(HealthResponse {
         status: "ok".to_string(),
@@ -1296,46 +1268,46 @@ async fn handle_input(
         };
         
         if !is_valid {
-        println!("❌ Invalid or expired password provided");
+        
             return Err(StatusCode::UNAUTHORIZED);
         }
     } else {
-        println!("❌ No password provided");
+        
         return Err(StatusCode::UNAUTHORIZED);
     }
     
-    println!("🎯 Processing authenticated input action: {:?}", payload.action);
+    
     
     // アクションタイプに基づいて処理を分岐
     let result = match &payload.action {
         ActionType::Text { text } => {
-            println!("⌨️ Processing text input: '{}'", text);
+            
             simulate_typing(text.clone()).await
         }
         ActionType::Copy => {
-            println!("📋 Processing copy command");
+            
             simulate_copy().await
         }
         ActionType::Paste => {
-            println!("📋 Processing paste command");
+            
             simulate_paste().await
         }
         ActionType::Custom { action_id } => {
-            println!("🎭 Processing custom action: {}", action_id);
+            
             let action = {
                 let state_guard = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
                 state_guard.custom_actions.get(action_id).cloned()
             };
             
             if let Some(action) = action {
-                println!("🎭 Executing custom action: {} with {} keys", action.name, action.key_sequence.len());
+                
                 execute_custom_action(&action).await
             } else {
                 Err(format!("Custom action '{}' not found", action_id))
             }
         }
         ActionType::PrepareRecording { action_id, name, icon, shortcut_type } => {
-            println!("🎥 Preparing recording for action: {} ({}) - Type: {:?}", name, action_id, shortcut_type);
+            
             
             let mut state_guard = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             
@@ -1358,31 +1330,31 @@ async fn handle_input(
                 shortcut_type: determined_shortcut_type.clone(),
             });
             
-            println!("✅ Recording modal prepared successfully for: {} (shortcut type: {:?})", name, &determined_shortcut_type);
+            
             Ok(format!("Recording prepared for action: {} (type: {:?})", name, determined_shortcut_type))
         }
-        ActionType::Gesture { fingers, direction, action, action_data } => {
-            println!("🤏 Processing gesture: {} fingers {} direction -> {}", fingers, direction, action);
+        ActionType::Gesture { fingers: _, direction: _, action, action_data } => {
+            
             
             match action.as_str() {
                 "copy" => {
-                    println!("📋 Processing gesture copy command");
+                    
                     simulate_copy().await
                 }
                 "paste" => {
-                    println!("📋 Processing gesture paste command");
+                    
                     simulate_paste().await
                 }
                 "text_input" => {
                     if let Some(text) = action_data {
-                        println!("⌨️ Processing gesture text input: '{}'", text);
+                        
                         simulate_typing(text.clone()).await
                     } else {
                         Err("No text data provided for gesture text input".to_string())
                     }
                 }
                 "custom_action" => {
-                    println!("🎭 Processing gesture custom action");
+                    
                     // 最初のカスタムアクションを実行
                     let action = {
                         let state_guard = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -1390,7 +1362,7 @@ async fn handle_input(
                     };
                     
                     if let Some(action) = action {
-                        println!("🎭 Executing gesture custom action: {} with {} keys", action.name, action.key_sequence.len());
+                        
                         execute_custom_action(&action).await
                     } else {
                         Err("No custom actions available for gesture".to_string())
@@ -1405,14 +1377,13 @@ async fn handle_input(
     
     match result {
         Ok(message) => {
-            println!("✅ Input processing complete");
+            
             Ok(JsonResponse(ApiResponse {
                 success: true,
                 message,
             }))
         }
         Err(e) => {
-            eprintln!("❌ Input processing failed: {}", e);
             Ok(JsonResponse(ApiResponse {
                 success: false,
                 message: e,
@@ -1441,13 +1412,13 @@ async fn handle_auth(
     };
     
     if is_valid {
-        println!("✅ Authentication successful");
+        
         Ok(JsonResponse(ApiResponse {
             success: true,
             message: "Authentication successful".to_string(),
         }))
     } else {
-        println!("❌ Authentication failed");
+        
         Err(StatusCode::UNAUTHORIZED)
     }
 }
@@ -1506,9 +1477,9 @@ async fn get_custom_actions(
     let state_guard = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let actions: Vec<CustomAction> = state_guard.custom_actions.values().cloned().collect();
     
-    println!("📋 Custom actions API request - returning {} actions", actions.len());
-    for action in &actions {
-        println!("  📝 Action: {} (id: {}, keys: {})", action.name, action.id, action.key_sequence.len());
+    
+    for _action in &actions {
+        // Action processing logic would go here
     }
     
     Ok(JsonResponse(actions))
@@ -1522,7 +1493,7 @@ async fn get_settings(
     
     let current_settings = get_current_settings();
     
-    println!("⚙️ Settings API request - returning current settings: {:?}", current_settings);
+    
     Ok(JsonResponse(current_settings))
 }
 
@@ -1537,17 +1508,16 @@ async fn update_settings_endpoint(
 ) -> Result<JsonResponse<settings::AppSettings>, StatusCode> {
     let _state_guard = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     
-    println!("⚙️ Settings update request: {:?}", request.settings);
+    
     
     // settings.rsのupdate_settings関数を使用して永続化
     // アプリハンドルが必要だが、storage.rsのパターンに合わせて独立したパス取得を使用
     match update_settings_persistent(request.settings) {
         Ok(updated_settings) => {
-            println!("✅ Settings updated and saved successfully: {:?}", updated_settings);
+            
             Ok(JsonResponse(updated_settings))
         }
-        Err(e) => {
-            println!("❌ Failed to update settings: {}", e);
+        Err(_e) => {
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
@@ -1562,7 +1532,7 @@ async fn acknowledge_recording(
         if modal_info.is_completed {
             // 録画完了状態をクリア
             state_guard.recording_modal_info = None;
-            println!("✅ Recording completion acknowledged and cleared");
+            
             
             Ok(JsonResponse(ApiResponse {
                 success: true,
@@ -1591,7 +1561,6 @@ async fn cleanup_inactive_clients(state: AppState) {
         let now = match SystemTime::now().duration_since(UNIX_EPOCH) {
             Ok(duration) => duration.as_secs(),
             Err(_) => {
-                eprintln!("Failed to get system time for cleanup");
                 continue; // スキップして次のループ処理を継続
             }
         };
@@ -1608,11 +1577,11 @@ async fn cleanup_inactive_clients(state: AppState) {
             
             for client_id in &to_remove {
                 state.connected_clients.remove(client_id);
-                println!("🗑️ Removed inactive client: {}", client_id);
+                
             }
             
             if !to_remove.is_empty() {
-                println!("📊 Active clients: {}", state.connected_clients.len());
+                
             }
         }
     }
@@ -1628,8 +1597,8 @@ pub fn run() {
     
     let state = Arc::new(Mutex::new(initial_state));
     
-    println!("🚀 Side Assist Desktop starting up...");
-    println!("📊 Initial server state: stopped, port {}", 8080);
+    
+    
     
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -1662,29 +1631,29 @@ pub fn run() {
             
             tauri::async_runtime::spawn(async move {
                 // 設定を読み込み
-                println!("⚙️ Loading settings on startup...");
+                
                 match load_settings_persistent() {
-                    Ok(settings) => {
-                        println!("✅ Loaded settings on startup: {:?}", settings);
+                    Ok(_settings) => {
+                        
                     }
-                    Err(e) => {
-                        eprintln!("❌ Failed to load settings on startup: {}", e);
+                    Err(_e) => {
+                        // Error handling for load_settings_persistent failure
                     }
                 }
                 
                 // カスタムアクションを読み込み
-                println!("📂 Loading custom actions on startup...");
+                
                 match load_custom_actions().await {
                     Ok(loaded_actions) => {
                         if let Ok(mut state_guard) = state_clone.lock() {
                             state_guard.custom_actions = loaded_actions;
-                            println!("✅ Loaded {} custom actions on startup", state_guard.custom_actions.len());
+                            
                         } else {
-                            eprintln!("❌ Failed to update state with loaded custom actions");
+                            // Error handling for state lock failure
                         }
                     }
-                    Err(e) => {
-                        eprintln!("❌ Failed to load custom actions on startup: {}", e);
+                    Err(_e) => {
+                        // Error handling for load_custom_actions failure
                     }
                 }
             });

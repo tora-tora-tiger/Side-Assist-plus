@@ -1,15 +1,15 @@
 use rdev::Key;
 
 /// 文字列からrdev::Keyに変換する関数
-/// 
+///
 /// 保存されたキー名文字列をrdev::Key列挙型に変換します。
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `key_str` - 変換するキー名文字列
-/// 
+///
 /// # Returns
-/// 
+///
 /// * `Some(Key)` - 変換成功時のrdev::Key
 /// * `None` - サポートされていないキー文字列の場合
 pub fn string_to_key(key_str: &str) -> Option<Key> {
@@ -58,29 +58,26 @@ pub fn string_to_key(key_str: &str) -> Option<Key> {
         "ShiftLeft" => Some(Key::ShiftLeft),
         "ShiftRight" => Some(Key::ShiftRight),
         "Alt" => Some(Key::Alt),
-        "AltLeft" => Some(Key::Alt), // Left Alt key
+        "AltLeft" => Some(Key::Alt),    // Left Alt key
         "AltRight" => Some(Key::AltGr), // Right Alt key (AltGr)
         "Enter" => Some(Key::Return),
         "Escape" => Some(Key::Escape),
         "Backspace" => Some(Key::Backspace),
         "Tab" => Some(Key::Tab),
-        _ => {
-            println!("⚠️ Unsupported key string: {}", key_str);
-            None
-        }
+        _ => None,
     }
 }
 
 /// 文字をrdev::Keyに変換する関数
-/// 
+///
 /// 入力文字をrdev::Key列挙型に変換します。大文字小文字は区別しません。
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `ch` - 変換する文字
-/// 
+///
 /// # Returns
-/// 
+///
 /// * `Some(Key)` - 変換成功時のrdev::Key
 /// * `None` - サポートされていない文字の場合
 pub fn char_to_key(ch: char) -> Option<Key> {
@@ -127,15 +124,15 @@ pub fn char_to_key(ch: char) -> Option<Key> {
 }
 
 /// rdev::Keyを文字列に変換する関数
-/// 
+///
 /// rdev::Key列挙型を対応する文字列に変換します。
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `key` - 変換するrdev::Key
-/// 
+///
 /// # Returns
-/// 
+///
 /// * `String` - 対応する文字列名
 pub fn key_to_string(key: Key) -> String {
     match key {
@@ -193,35 +190,40 @@ pub fn key_to_string(key: Key) -> String {
 }
 
 /// 修飾キーかどうかを判定する関数
-/// 
+///
 /// 指定されたキーが修飾キー（Alt, Ctrl, Shift, Meta）かどうかを判定します。
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `key` - 判定するrdev::Key
-/// 
+///
 /// # Returns
-/// 
+///
 /// * `bool` - 修飾キーの場合true
 pub fn is_modifier_key(key: Key) -> bool {
-    matches!(key, 
-        Key::Alt | Key::AltGr | 
-        Key::ControlLeft | Key::ControlRight |
-        Key::ShiftLeft | Key::ShiftRight |
-        Key::MetaLeft | Key::MetaRight
+    matches!(
+        key,
+        Key::Alt
+            | Key::AltGr
+            | Key::ControlLeft
+            | Key::ControlRight
+            | Key::ShiftLeft
+            | Key::ShiftRight
+            | Key::MetaLeft
+            | Key::MetaRight
     )
 }
 
 /// rdev::Keyから修飾キーの種類を取得する関数
-/// 
+///
 /// 指定されたキーがどの修飾キーかを判定し、対応する文字列を返します。
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `key` - 判定するrdev::Key
-/// 
+///
 /// # Returns
-/// 
+///
 /// * `Option<&'static str>` - 修飾キーの種類（"alt", "ctrl", "shift", "meta"）
 pub fn get_modifier_type(key: Key) -> Option<&'static str> {
     match key {

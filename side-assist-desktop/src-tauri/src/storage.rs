@@ -37,7 +37,7 @@ pub fn get_custom_actions_file_path() -> Result<PathBuf, String> {
     if !app_data_dir.exists() {
         fs::create_dir_all(&app_data_dir)
             .map_err(|e| format!("Failed to create app data directory: {}", e))?;
-        println!("📁 Created app data directory: {:?}", app_data_dir);
+        
     }
 
     Ok(app_data_dir.join("custom_actions.json"))
@@ -76,7 +76,7 @@ pub async fn save_custom_actions(actions: &HashMap<String, crate::CustomAction>)
     tokio::fs::write(&file_path, json_content).await
         .map_err(|e| format!("Failed to write custom actions to file: {}", e))?;
 
-    println!("💾 Saved {} custom actions to: {:?}", actions.len(), file_path);
+    
     Ok(())
 }
 
@@ -94,7 +94,7 @@ pub async fn load_custom_actions() -> Result<HashMap<String, crate::CustomAction
     
     // ファイルが存在しない場合は空のHashMapを返す
     if !file_path.exists() {
-        println!("📂 No custom actions file found, starting with empty collection");
+        
         return Ok(HashMap::new());
     }
 
@@ -110,6 +110,6 @@ pub async fn load_custom_actions() -> Result<HashMap<String, crate::CustomAction
         actions_map.insert(action.id.clone(), action);
     }
 
-    println!("📂 Loaded {} custom actions from: {:?}", actions_map.len(), file_path);
+    
     Ok(actions_map)
 }
