@@ -959,17 +959,15 @@ fn rdev_callback(event: Event) {
             
             let key_name = key_to_string(key);
             
-            // デバッグログ - 静かな出力
-            eprintln!("[DEBUG] Key event: {} {} (shortcut_type: {:?})", 
-                      key_name, event_type_str, shortcut_type);
-            
             // 改良されたデバウンス: キー+イベントタイプの組み合わせで重複チェック
             let should_record = {
                 let debounce_key = format!("{}_{}", key_name, event_type_str);
                 if let Ok(mut last_key_guard) = LAST_RECORDED_KEY.lock() {
                     if let Some((last_key, last_time)) = &*last_key_guard {
-                        if debounce_key == *last_key && now.saturating_sub(*last_time) < 30 {
-                            // 同じキー+イベントが30ms以内 - 重複とみなす（短縮）
+                        if debounce_key == *last_key && now.saturating_sub(*last_time) < 200 {
+                            // 同じキー+イベントが200ms以内 - 重複とみなす
+                            eprintln!("[DEBUG] Debounced: {} {} ({}ms ago)", 
+                                      key_name, event_type_str, now.saturating_sub(*last_time));
                             false
                         } else {
                             // 異なるキーまたは十分時間が経過 - 記録する
@@ -987,6 +985,10 @@ fn rdev_callback(event: Event) {
             };
         
             if should_record {
+                // デバッグログ - 実際に記録されるキーのみ表示
+                eprintln!("[DEBUG] Recording key: {} {} (shortcut_type: {:?})", 
+                          key_name, event_type_str, shortcut_type);
+                
                 let relative_time = now.saturating_sub(start_time);
                 
                 // 現在の修飾キー状態を取得
