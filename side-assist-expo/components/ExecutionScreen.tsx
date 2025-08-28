@@ -138,10 +138,10 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
     try {
       const success = await onExecuteCustomAction(action.id);
       if (success) {
-        AlertManager.showAlert(
-          "実行完了",
-          `カスタムアクション「${action.name}」を実行しました。`,
-        );
+        // AlertManager.showAlert(
+        //   "実行完了",
+        //   `カスタムアクション「${action.name}」を実行しました。`,
+        // );
       } else {
         throw new Error("Custom action execution failed");
       }
