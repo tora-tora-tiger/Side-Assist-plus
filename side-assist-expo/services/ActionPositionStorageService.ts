@@ -134,7 +134,7 @@ export class ActionPositionStorageService {
   static async clearActionPositions(): Promise<boolean> {
     try {
       await AsyncStorage.removeItem(ACTION_POSITIONS_KEY);
-      console.log("🎯 [ActionPositionStorage] Action positions cleared");
+
       return true;
     } catch (error) {
       console.error(

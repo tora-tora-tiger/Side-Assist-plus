@@ -19,7 +19,6 @@ export class NetworkService {
       }, this.TIMEOUT);
 
       const url = `http://${ip}:${port}/health`;
-      console.log(`📡 [NetworkService] Fetching: ${url}`);
 
       const response = await fetch(url, {
         method: "GET",
@@ -38,7 +37,7 @@ export class NetworkService {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(`✅ [NetworkService] Health check response:`, data);
+
         const isHealthy = data.status === "ok";
         console.log(
           `🏥 [NetworkService] Server health: ${
@@ -54,9 +53,9 @@ export class NetworkService {
       }
     } catch (error: unknown) {
       if (error instanceof Error && error.name === "AbortError") {
-        console.log(`⏱️ [NetworkService] Connection aborted (timeout)`);
+        // Request was aborted
       } else {
-        console.log(`💥 [NetworkService] Connection error:`, error);
+        // Other error types
       }
       return false;
     }
@@ -125,11 +124,8 @@ export class NetworkService {
     port: string,
     password: string,
   ): Promise<boolean> {
-    console.log(`🔐 [NetworkService] Authenticating with ${ip}:${port}`);
-
     try {
       const url = `http://${ip}:${port}/auth`;
-      console.log(`📡 [NetworkService] Auth request to: ${url}`);
 
       const response = await fetch(url, {
         method: "POST",
@@ -144,7 +140,6 @@ export class NetworkService {
       );
 
       if (response.ok) {
-        console.log(`✅ [NetworkService] Authentication successful`);
         return true;
       } else {
         console.log(
@@ -165,7 +160,6 @@ export class NetworkService {
     actionId: string,
     password?: string,
   ): Promise<boolean> {
-    console.log(`🎭 [NetworkService] Executing custom action: ${actionId}`);
     return this.sendAction(
       ip,
       port,
@@ -211,7 +205,7 @@ export class NetworkService {
   }> {
     try {
       const url = `http://${ip}:${port}/recording/status`;
-      // console.log(`📡 [NetworkService] Getting recording status from: ${url}`);
+      //
 
       const response = await fetch(url, {
         method: "GET",
@@ -222,7 +216,7 @@ export class NetworkService {
 
       if (response.ok) {
         const data = await response.json();
-        // console.log(`📊 [NetworkService] Recording status response:`, data);
+        //
         return data;
       } else {
         console.error(
@@ -264,7 +258,6 @@ export class NetworkService {
   ): Promise<CustomAction[]> {
     try {
       const url = `http://${ip}:${port}/custom_actions`;
-      console.log(`📡 [NetworkService] Fetching custom actions from: ${url}`);
 
       const response = await fetch(url, {
         method: "GET",
@@ -313,7 +306,6 @@ export class NetworkService {
   ): Promise<AppSettings | null> {
     try {
       const url = `http://${ip}:${port}/settings`;
-      console.log(`⚙️ [NetworkService] Fetching settings from: ${url}`);
 
       const response = await fetch(url, {
         method: "GET",
@@ -328,7 +320,7 @@ export class NetworkService {
 
       if (response.ok) {
         const settings = await response.json();
-        console.log(`✅ [NetworkService] Retrieved settings:`, settings);
+
         return settings;
       } else {
         const errorText = await response.text();
@@ -351,7 +343,6 @@ export class NetworkService {
   ): Promise<boolean> {
     try {
       const url = `http://${ip}:${port}/settings`;
-      console.log(`⚙️ [NetworkService] Updating settings:`, settings);
 
       const response = await fetch(url, {
         method: "POST",
@@ -366,7 +357,6 @@ export class NetworkService {
       );
 
       if (response.ok) {
-        console.log(`✅ [NetworkService] Settings updated successfully`);
         return true;
       } else {
         const errorText = await response.text();

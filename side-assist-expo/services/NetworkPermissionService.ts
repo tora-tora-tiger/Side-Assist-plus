@@ -23,7 +23,7 @@ export class NetworkPermissionService {
       });
 
       clearTimeout(timeoutId);
-      console.log("Network permission check passed");
+
       return true;
     } catch {
       console.log(
@@ -41,11 +41,11 @@ export class NetworkPermissionService {
         });
 
         clearTimeout(timeoutId);
-        console.log("Network permission check passed (alternative gateway)");
+
         return true;
       } catch {
         // 両方失敗した場合は権限なしと判定
-        console.log("Network permission denied - no access to local network");
+
         return false;
       }
     }

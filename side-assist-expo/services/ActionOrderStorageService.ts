@@ -21,7 +21,6 @@ export class ActionOrderStorageService {
       };
 
       await AsyncStorage.setItem(ACTION_ORDER_KEY, JSON.stringify(storageData));
-      console.log("🎯 [ActionOrderStorage] Action order saved:", actionIds);
     } catch (error) {
       console.error(
         "❌ [ActionOrderStorage] Failed to save action order:",
@@ -38,7 +37,6 @@ export class ActionOrderStorageService {
     try {
       const storedData = await AsyncStorage.getItem(ACTION_ORDER_KEY);
       if (!storedData) {
-        console.log("🎯 [ActionOrderStorage] No stored action order found");
         return null;
       }
 
@@ -64,7 +62,7 @@ export class ActionOrderStorageService {
   static async clearActionOrder(): Promise<boolean> {
     try {
       await AsyncStorage.removeItem(ACTION_ORDER_KEY);
-      console.log("🎯 [ActionOrderStorage] Action order cleared");
+
       return true;
     } catch (error) {
       console.error(

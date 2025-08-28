@@ -14,13 +14,10 @@ export const useConnection = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState<string>("");
   const [customActions, setCustomActions] = useState<CustomAction[]>([]);
-  const [recordingStatus, setRecordingStatus] = useState<
-    "idle" | "recording" | "completed"
-  >("idle");
   const [isAutoReconnecting, setIsAutoReconnecting] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   // recordingStatusを使用してログに出力
-  console.log("Current recording status:", recordingStatus);
+
   const hasStartedRecording = useRef(false);
   const processedCompletedActionIds = useRef<Set<string>>(new Set());
   const connectionMonitorRef = useRef<ReturnType<typeof setInterval> | null>(
@@ -42,13 +39,12 @@ export const useConnection = () => {
 
   // DeepLink処理のハンドラー
   const handleDeepLink = useCallback(async (params: ConnectionParams) => {
-    console.log("🔗 [useConnection] handleDeepLink START - params:", params);
     console.log(
       "🚨 [useConnection] This function should be called ONLY ONCE per QR scan!",
     );
 
     // まず接続をテスト
-    console.log("🔗 [useConnection] Calling NetworkService.testConnection...");
+
     const connected = await NetworkService.testConnection(
       params.ip,
       params.port,
@@ -62,7 +58,7 @@ export const useConnection = () => {
     }
 
     // 接続成功時にステートを更新
-    console.log("🔗 [useConnection] Setting connection state...");
+
     setMacIP(params.ip);
     setMacPort(params.port);
     setIsConnected(true);
@@ -95,7 +91,6 @@ export const useConnection = () => {
         "❌ [useConnection] Authentication failed with provided password",
       );
     }
-    console.log("🔗 [useConnection] handleDeepLink END");
   }, []);
 
   // DeepLink処理のセットアップ
@@ -122,7 +117,6 @@ export const useConnection = () => {
     }
 
     try {
-      console.log(`📋 Loading custom actions from ${macIP}:${macPort}...`);
       const actions = await NetworkService.getCustomActions(macIP, macPort);
       console.log(
         `📦 Received ${actions.length} custom actions:`,
@@ -140,17 +134,15 @@ export const useConnection = () => {
   }, [macIP, macPort, isConnected, isAuthenticated]);
 
   const resetRecordingState = useCallback(() => {
-    console.log("🔄 Resetting recording UI state for next recording");
     // ExecutionScreenのグローバル関数を呼び出してリセット
     if (
       typeof (window as { resetExecutionScreenRecordingState?: () => void })
         .resetExecutionScreenRecordingState === "function"
     ) {
-      console.log("🎯 Calling ExecutionScreen reset function...");
       (window as { resetExecutionScreenRecordingState?: () => void })
         .resetExecutionScreenRecordingState!();
     } else {
-      console.log("⚠️ ExecutionScreen reset function not found");
+      // No action needed when executionScreenRef is not available
     }
   }, []);
 
@@ -159,14 +151,11 @@ export const useConnection = () => {
       clearInterval(recordingMonitorRef.current);
     }
 
-    console.log("🎥 Starting recording status monitoring...");
-
     recordingMonitorRef.current = setInterval(async () => {
       if (!macIP || !macPort) return;
 
       try {
         const status = await NetworkService.getRecordingStatus(macIP, macPort);
-        console.log("🎥 Recording status check:", status);
 
         // サーバーレスポンスの形式に合わせて判定を修正
         const isCurrentlyRecording =
@@ -191,21 +180,19 @@ export const useConnection = () => {
             processedCompletedActionIds.current.add(status.actionId);
 
             hasStartedRecording.current = false;
-            setRecordingStatus("completed");
 
             const message = status.message || "録画が完了しました";
             AlertManager.showAlert("録画完了", message, [
               {
                 text: "OK",
                 onPress: async () => {
-                  console.log("✅ User acknowledged recording completion");
                   resetRecordingState();
                 },
               },
             ]);
 
             // 完了確認を送信
-            console.log("✅ Sending acknowledgment...");
+
             await NetworkService.acknowledgeRecording(macIP, macPort);
 
             // カスタムアクションを再読み込み（新しく保存されたアクションを反映）
@@ -220,13 +207,11 @@ export const useConnection = () => {
             );
           }
         } else if (isCurrentlyRecording && !hasStartedRecording.current) {
-          console.log("🔴 Recording started!");
           hasStartedRecording.current = true;
-          setRecordingStatus("recording");
         } else if (isCurrentlyRecording) {
-          console.log("🔴 Still recording...");
+          // Handle recording state
         } else {
-          console.log("⚪ Recording idle");
+          // Handle idle state
         }
       } catch (error) {
         console.error("Recording status monitoring error:", error);
@@ -237,8 +222,6 @@ export const useConnection = () => {
   // 接続情報を保存
   const saveConnectionInfo = useCallback(
     async (ip: string, port: string, password: string): Promise<void> => {
-      console.log("💾 [useConnection] Saving connection info...");
-
       const connectionInfo: StoredConnectionInfo = {
         ip,
         port,
@@ -256,14 +239,12 @@ export const useConnection = () => {
     if (recordingMonitorRef.current) {
       clearInterval(recordingMonitorRef.current);
       recordingMonitorRef.current = null;
-      console.log("🎥 Recording status monitoring stopped");
     }
   }, []);
 
   // 認証成功時にカスタムアクションを読み込み
   useEffect(() => {
     if (isAuthenticated && macIP && macPort) {
-      console.log("🔐 Authentication successful, loading custom actions...");
       loadCustomActions();
     } else {
       // 認証失敗時はカスタムアクションをクリア
@@ -287,7 +268,6 @@ export const useConnection = () => {
     // 初期化開始をマーク
     const currentInitId = ++initializationRef.current.initializationId;
     initializationRef.current.isInitializing = true;
-    console.log(`🚀 [useConnection] Starting initialization #${currentInitId}`);
 
     let isCancelled = false;
 
@@ -449,7 +429,6 @@ export const useConnection = () => {
     initializeConnection();
 
     return () => {
-      console.log(`🛑 [useConnection] Cleanup init #${currentInitId}`);
       isCancelled = true;
       // 進行中の初期化をキャンセル（ただし完了したものはリセットしない）
       if (
@@ -472,12 +451,10 @@ export const useConnection = () => {
 
     // 既存のタイマーをクリア
     if (connectionMonitorRef.current) {
-      console.log("🔍 [useConnection] Clearing existing monitor interval");
       clearInterval(connectionMonitorRef.current);
       connectionMonitorRef.current = null;
     }
     if (monitoringTimeoutRef.current) {
-      console.log("🔍 [useConnection] Clearing existing monitor timeout");
       clearTimeout(monitoringTimeoutRef.current);
       monitoringTimeoutRef.current = null;
     }
@@ -510,7 +487,6 @@ export const useConnection = () => {
         setIsConnected(connected);
 
         if (!connected) {
-          console.log("🔌 [useConnection] Connection lost");
           setIsConnected(false);
           setIsAuthenticated(false);
           setPassword("");
@@ -525,21 +501,15 @@ export const useConnection = () => {
   }, [macIP, macPort]);
 
   const stopConnectionMonitoring = useCallback(() => {
-    console.log("🛑 [useConnection] Stopping connection monitoring...");
-
     if (connectionMonitorRef.current) {
       clearInterval(connectionMonitorRef.current);
       connectionMonitorRef.current = null;
-      console.log("🛑 [useConnection] Cleared monitoring interval");
     }
 
     if (monitoringTimeoutRef.current) {
       clearTimeout(monitoringTimeoutRef.current);
       monitoringTimeoutRef.current = null;
-      console.log("🛑 [useConnection] Cleared monitoring timeout");
     }
-
-    console.log("🛑 [useConnection] Connection monitoring stopped");
   }, []);
 
   const authenticateWithPassword = useCallback(
@@ -556,11 +526,9 @@ export const useConnection = () => {
       if (success) {
         setIsAuthenticated(true);
         setPassword(inputPassword);
-        console.log("✅ Authentication successful");
       } else {
         setIsAuthenticated(false);
         setPassword("");
-        console.log("❌ Authentication failed");
       }
       return success;
     },
@@ -688,7 +656,6 @@ export const useConnection = () => {
   const connectManually = useCallback(
     async (ip: string, port: string, password: string): Promise<boolean> => {
       try {
-        console.log("🔗 [useConnection] connectManually START with IP:", ip);
         console.log(
           "🔗 [useConnection] Current state - isConnected:",
           isConnected,
@@ -706,7 +673,6 @@ export const useConnection = () => {
 
         const connected = await NetworkService.testConnection(ip, port);
         if (!connected) {
-          console.log("❌ [useConnection] Cannot reach server");
           return false;
         }
 
@@ -716,20 +682,17 @@ export const useConnection = () => {
           password,
         );
         if (authSuccess) {
-          console.log("✅ [useConnection] Setting connection state...");
           setMacIP(ip);
           setMacPort(port);
           setPassword(password);
           setIsConnected(true);
           setIsAuthenticated(true);
-          console.log("✅ [useConnection] Manual connection successful");
 
           // 接続情報を保存
           await saveConnectionInfo(ip, port, password);
 
           return true;
         } else {
-          console.log("❌ [useConnection] Authentication failed");
           return false;
         }
       } catch (error) {
@@ -745,8 +708,6 @@ export const useConnection = () => {
       clearStoredInfo: boolean = false,
       resetInitialization: boolean = false,
     ) => {
-      console.log("🔌 [useConnection] disconnect START");
-
       // 全ての監視を停止
       stopConnectionMonitoring();
       stopRecordingMonitoring();
@@ -761,11 +722,9 @@ export const useConnection = () => {
       // 録画関連の状態もリセット
       hasStartedRecording.current = false;
       processedCompletedActionIds.current.clear();
-      setRecordingStatus("idle");
 
       // 初期化状態のリセット（手動切断時など）
       if (resetInitialization) {
-        console.log("🔄 [useConnection] Resetting initialization state");
         initializationRef.current.isInitializing = false;
         initializationRef.current.hasInitialized = false;
         initializationRef.current.initializationId++;
@@ -775,12 +734,8 @@ export const useConnection = () => {
 
       // オプションで保存された接続情報をクリア
       if (clearStoredInfo) {
-        console.log("🗑️ [useConnection] Clearing stored connection info...");
         await ConnectionStorageService.clearConnectionInfo();
       }
-
-      console.log("🔌 [useConnection] Connection disconnected and state reset");
-      console.log("🔌 [useConnection] disconnect END");
     },
     [stopConnectionMonitoring, stopRecordingMonitoring],
   );

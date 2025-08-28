@@ -38,7 +38,6 @@ export const usePermissions = (
       // プラグインを使って権限をチェック
       const hasPermission = (await checkAccessibilityPermission()) as boolean;
 
-      console.log('Permission check result:', hasPermission);
       setHasAccessibilityPermission(hasPermission);
 
       if (config.logPermissionStatus && onLog && !hasLoggedPermissionStatus) {
@@ -59,7 +58,7 @@ export const usePermissions = (
         const rustResult = await invoke<boolean>(
           'check_accessibility_permission'
         );
-        console.log('Rust permission check result:', rustResult);
+
         setHasAccessibilityPermission(rustResult);
 
         if (config.logPermissionStatus && onLog && !hasLoggedPermissionStatus) {

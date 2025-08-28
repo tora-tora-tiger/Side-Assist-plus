@@ -40,7 +40,6 @@ export const serverService = {
           return await this.start();
         } catch (error) {
           lastError = error;
-          console.log(`Server start attempt ${i + 1} failed, retrying...`);
 
           if (i < retries - 1) {
             // 少し待機してからリトライ

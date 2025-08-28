@@ -38,16 +38,12 @@ export class DeepLinkService {
   private static handleURL = (event: { url: string }) => {
     const params = this.parseConnectionURL(event.url);
     if (params) {
-      console.log("🔗 Deep link connection params:", params);
       this.listeners.forEach(listener => listener(params));
     }
   };
 
   static parseConnectionURL(url: string): ConnectionParams | null {
     try {
-      console.log("🔧 [DEBUG] Starting URL parsing...");
-      console.log("🔧 [DEBUG] Raw URL:", JSON.stringify(url));
-      console.log("🔧 [DEBUG] URL length:", url.length);
       console.log(
         "🔧 [DEBUG] URL char codes:",
         url.split("").map(c => c.charCodeAt(0)),
@@ -58,7 +54,7 @@ export class DeepLinkService {
         .trim()
         .replace(/\s+/g, "")
         .replace(/[\r\n\t]/g, "");
-      console.log("🔧 [DEBUG] Cleaned URL:", JSON.stringify(cleanUrl));
+
       console.log(
         "🔧 [DEBUG] URL change detected:",
         url !== cleanUrl ? "YES" : "NO",
@@ -66,8 +62,6 @@ export class DeepLinkService {
 
       // 基本的なURL形式チェック
       if (!cleanUrl.startsWith("sideassist://connect")) {
-        console.log("❌ URL does not start with sideassist://connect");
-        console.log("❌ Actual start:", cleanUrl.substring(0, 30));
         return null;
       }
 
@@ -75,12 +69,10 @@ export class DeepLinkService {
       // sideassist://connect?ip=192.168.1.100&port=8080&password=12345
       const queryStart = cleanUrl.indexOf("?");
       if (queryStart === -1) {
-        console.log("❌ No query parameters found in URL");
         return null;
       }
 
       const queryString = cleanUrl.substring(queryStart + 1);
-      console.log("🔧 [DEBUG] Query string:", queryString);
 
       // 手動でパラメータを解析
       const params = new URLSearchParams(queryString);
@@ -88,10 +80,8 @@ export class DeepLinkService {
       const port = params.get("port");
       const password = params.get("password");
 
-      console.log("🔧 [DEBUG] URLSearchParams entries:");
-      for (const [key, value] of params.entries()) {
-        console.log(`  ${key}: '${value}' (length: ${value.length})`);
-      }
+      // Process all URL parameters if needed in the future
+      // for (const [key, value] of params.entries()) { ... }
 
       console.log("🔧 [DEBUG] Extracted parameters:", {
         ip: ip ? `'${ip}' (${ip.length})` : "NULL",
@@ -122,36 +112,27 @@ export class DeepLinkService {
       }
 
       // IPアドレスの簡単な検証
-      console.log("🔧 [DEBUG] Validating IP address:", ip);
+
       if (!this.isValidIP(ip)) {
-        console.log("❌ Invalid IP address:", ip);
-        console.log("❌ IP validation failed for:", JSON.stringify(ip));
         return null;
       }
-      console.log("✅ IP address is valid");
 
       // ポート番号の検証
-      console.log("🔧 [DEBUG] Validating port:", port);
+
       const portNumber = parseInt(port, 10);
       if (isNaN(portNumber) || portNumber < 1 || portNumber > 65535) {
-        console.log("❌ Invalid port number:", port, "parsed as:", portNumber);
         return null;
       }
-      console.log("✅ Port number is valid:", portNumber);
 
       // パスワードの検証（5桁の数字）
-      console.log("🔧 [DEBUG] Validating password:", password);
-      console.log("🔧 [DEBUG] Password regex test:", /^\d{5}$/.test(password));
+
       if (!/^\d{5}$/.test(password)) {
-        console.log("❌ Invalid password format:", password);
-        console.log("❌ Password length:", password.length);
         console.log(
           "❌ Password chars:",
           password.split("").map(c => `'${c}' (${c.charCodeAt(0)})`),
         );
         return null;
       }
-      console.log("✅ Password format is valid");
 
       return { ip, port, password };
     } catch (error) {
@@ -161,14 +142,10 @@ export class DeepLinkService {
   }
 
   private static isValidIP(ip: string): boolean {
-    console.log("🔧 [DEBUG] IP validation for:", JSON.stringify(ip));
-
     // 簡単なIPアドレス検証（IPv4）
     const parts = ip.split(".");
-    console.log("🔧 [DEBUG] IP parts:", parts, "length:", parts.length);
 
     if (parts.length !== 4) {
-      console.log("❌ IP does not have 4 parts");
       return false;
     }
 
@@ -181,7 +158,6 @@ export class DeepLinkService {
       return valid;
     });
 
-    console.log("🔧 [DEBUG] Overall IP validity:", isValid);
     return isValid;
   }
 

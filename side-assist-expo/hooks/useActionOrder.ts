@@ -17,7 +17,6 @@ export const useActionOrder = (): UseActionOrderReturn => {
   // 初期化時に保存された順序を読み込み
   useEffect(() => {
     const initializeActions = async () => {
-      console.log("🎯 [useActionOrder] Initializing action order...");
       setIsLoading(true);
 
       try {
@@ -125,12 +124,9 @@ export const useActionOrder = (): UseActionOrderReturn => {
 
   // デフォルト順序にリセット
   const resetToDefault = useCallback(async () => {
-    console.log("🎯 [useActionOrder] Resetting to default order");
-
     try {
       await ActionOrderStorageService.clearActionOrder();
       setActions(defaultActions);
-      console.log("🎯 [useActionOrder] Reset to default order completed");
     } catch (error) {
       console.error(
         "❌ [useActionOrder] Failed to reset to default order:",

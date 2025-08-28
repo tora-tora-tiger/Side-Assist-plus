@@ -16,7 +16,6 @@ class DebugToastManager {
       return;
     }
 
-    console.log("🐛 [DebugToast]", message);
     this.listeners.forEach(listener => listener(message));
   }
 

@@ -53,7 +53,6 @@ export class GestureService {
 
     // デバウンス処理
     if (now - this.lastGestureTime < GestureConfig.DEBOUNCE_TIME) {
-      console.log(`⏱️ [GestureService] Debounce timeout - ignoring gesture`);
       return;
     }
 
@@ -61,7 +60,6 @@ export class GestureService {
     if (this.activeTouches.size === 0) {
       this.currentState = GestureStates.DETECTING;
       this.gestureStartTime = now;
-      console.log("🤏 [GestureService] Gesture detection started");
     }
 
     // タッチポイントを記録
@@ -294,7 +292,6 @@ export class GestureService {
   private resetGesture(): void {
     this.activeTouches.clear();
     this.currentState = GestureStates.IDLE;
-    console.log("🔄 [GestureService] Gesture state reset");
   }
 
   // 現在の状態を取得
@@ -306,6 +303,5 @@ export class GestureService {
   public forceReset(): void {
     this.resetGesture();
     this.lastGestureTime = 0;
-    console.log("🆘 [GestureService] Force reset executed");
   }
 }

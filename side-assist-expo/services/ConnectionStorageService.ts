@@ -29,8 +29,6 @@ export class ConnectionStorageService {
   static async saveConnectionInfo(
     connectionInfo: StoredConnectionInfo,
   ): Promise<boolean> {
-    console.log("💾 [ConnectionStorage] Saving connection info");
-
     try {
       // パスワードをSecureStoreに暗号化保存
       await SecureStore.setItemAsync(
@@ -51,7 +49,6 @@ export class ConnectionStorageService {
         JSON.stringify(metadata),
       );
 
-      console.log("✅ [ConnectionStorage] Connection info saved successfully");
       console.log(
         `📍 [ConnectionStorage] Saved: ${metadata.ip}:${metadata.port}`,
       );
@@ -69,8 +66,6 @@ export class ConnectionStorageService {
    * 保存された接続情報を読み込み
    */
   static async loadConnectionInfo(): Promise<StoredConnectionInfo | null> {
-    console.log("📖 [ConnectionStorage] Loading connection info");
-
     try {
       // メタデータを読み込み
       const metadataJson = await AsyncStorage.getItem(
@@ -103,7 +98,6 @@ export class ConnectionStorageService {
         autoReconnect: metadata.autoReconnect,
       };
 
-      console.log("✅ [ConnectionStorage] Connection info loaded successfully");
       console.log(
         `📍 [ConnectionStorage] Loaded: ${connectionInfo.ip}:${connectionInfo.port}`,
       );
@@ -125,8 +119,6 @@ export class ConnectionStorageService {
    * 保存された接続情報を削除
    */
   static async clearConnectionInfo(): Promise<boolean> {
-    console.log("🗑️ [ConnectionStorage] Clearing connection info");
-
     try {
       // パスワードを削除
       await SecureStore.deleteItemAsync(this.SECURE_KEY_PASSWORD);
@@ -178,14 +170,11 @@ export class ConnectionStorageService {
    * 最終接続時刻を更新
    */
   static async updateLastConnectedTime(): Promise<boolean> {
-    console.log("⏰ [ConnectionStorage] Updating last connected time");
-
     try {
       const metadataJson = await AsyncStorage.getItem(
         this.STORAGE_KEY_METADATA,
       );
       if (!metadataJson) {
-        console.log("⚠️ [ConnectionStorage] No metadata to update");
         return false;
       }
 
@@ -197,7 +186,6 @@ export class ConnectionStorageService {
         JSON.stringify(metadata),
       );
 
-      console.log("✅ [ConnectionStorage] Last connected time updated");
       return true;
     } catch (error) {
       console.error(
@@ -221,7 +209,6 @@ export class ConnectionStorageService {
         this.STORAGE_KEY_METADATA,
       );
       if (!metadataJson) {
-        console.log("⚠️ [ConnectionStorage] No metadata to update");
         return false;
       }
 
@@ -233,7 +220,6 @@ export class ConnectionStorageService {
         JSON.stringify(metadata),
       );
 
-      console.log("✅ [ConnectionStorage] Auto reconnect setting updated");
       return true;
     } catch (error) {
       console.error(

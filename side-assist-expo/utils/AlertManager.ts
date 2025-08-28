@@ -16,8 +16,6 @@ class AlertManager {
   }
 
   static showAlert(title: string, message: string, buttons?: Button[]): void {
-    console.log("📱 [AlertManager] Showing alert:", title);
-
     const alertData: AlertData = {
       title,
       message,
@@ -29,7 +27,6 @@ class AlertManager {
   }
 
   static hideAlert(): void {
-    console.log("📱 [AlertManager] Hiding alert");
     this.currentAlert = null;
     this.notifyListeners();
   }
@@ -45,7 +42,6 @@ class AlertManager {
   }
 
   static clearQueue(): void {
-    console.log("📱 [AlertManager] Clearing state");
     this.currentAlert = null;
     this.notifyListeners();
   }

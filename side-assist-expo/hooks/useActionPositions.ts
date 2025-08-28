@@ -30,8 +30,6 @@ export const useActionPositions = (): UseActionPositionsReturn => {
 
   // 位置を更新
   const updatePosition = useCallback((id: string, x: number, y: number) => {
-    console.log("🎯 [useActionPositions] Updating position:", { id, x, y });
-
     setPositions(prevPositions =>
       prevPositions.map(pos => (pos.id === id ? { ...pos, x, y } : pos)),
     );
@@ -40,8 +38,6 @@ export const useActionPositions = (): UseActionPositionsReturn => {
   // 位置を保存
   const savePositions = useCallback(
     async (containerWidth: number, containerHeight: number) => {
-      console.log("🎯 [useActionPositions] Saving positions to storage");
-
       try {
         // 境界内に制限してから保存
         const constrainedPositions = positions.map(pos =>
@@ -57,8 +53,6 @@ export const useActionPositions = (): UseActionPositionsReturn => {
           containerWidth,
           containerHeight,
         );
-
-        console.log("🎯 [useActionPositions] Positions saved successfully");
       } catch (error) {
         console.error(
           "❌ [useActionPositions] Failed to save positions:",
@@ -72,8 +66,6 @@ export const useActionPositions = (): UseActionPositionsReturn => {
   // デフォルト位置にリセット
   const resetToDefault = useCallback(
     async (containerWidth: number, containerHeight: number) => {
-      console.log("🎯 [useActionPositions] Resetting to default positions");
-
       try {
         await ActionPositionStorageService.clearActionPositions();
 
@@ -118,7 +110,7 @@ export const useActionPositions = (): UseActionPositionsReturn => {
           storedData.containerHeight === containerHeight
         ) {
           // 保存されたデータがあり、コンテナサイズも一致する場合
-          console.log("🎯 [useActionPositions] Using stored positions");
+
           setPositions(storedData.positions);
         } else if (
           storedData &&
@@ -150,7 +142,6 @@ export const useActionPositions = (): UseActionPositionsReturn => {
           setPositions(scaledPositions);
         } else {
           // 保存されたデータがないか不完全な場合はデフォルト位置を使用
-          console.log("🎯 [useActionPositions] Using default positions");
 
           const defaultPositions =
             ActionPositionStorageService.getDefaultPositions(

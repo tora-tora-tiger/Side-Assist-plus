@@ -56,7 +56,6 @@ class PositionResetNotifier {
     });
 
     await Promise.all(promises);
-    console.log("📢 [PositionResetNotifier] All listeners notified");
   }
 }
 
