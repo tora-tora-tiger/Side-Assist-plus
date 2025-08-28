@@ -35,26 +35,18 @@ export const ActionGrid: React.FC<ActionGridProps> = ({
     "worklet";
 
     if (!over || !isEditMode) {
-      console.log(
-        "🎯 [ActionGrid] Drag ended without valid drop or not in edit mode",
-      );
       return;
     }
 
     const overId = String(over.id).replace("drop-", "");
 
     if (String(active.id) !== overId) {
-      console.log("🎯 [ActionGrid] Reordering actions:", {
-        activeId: active.id,
-        overId,
-      });
       reorderActionsByIds(String(active.id), overId);
     }
   };
 
   const handleDragStart = () => {
     "worklet";
-    console.log("🎯 [ActionGrid] Drag started");
   };
 
   return (

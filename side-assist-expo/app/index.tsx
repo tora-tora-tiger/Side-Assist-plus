@@ -46,22 +46,14 @@ const App = () => {
   } = useConnection();
 
   useEffect(() => {
-    console.log(
-      "🚀 [App] Connection status changed - isConnected:",
-      isConnected,
-    );
-
     // 接続が確立されたら監視を開始
     if (isConnected) {
-      console.log("📊 [App] Starting connection monitoring");
       startConnectionMonitoring();
     } else {
-      console.log("📊 [App] Stopping connection monitoring");
       stopConnectionMonitoring();
     }
 
     return () => {
-      console.log("🛑 [App] Cleanup - stopping monitoring");
       stopConnectionMonitoring();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,9 +88,7 @@ const App = () => {
 
     try {
       const success = await sendText(text);
-      if (success) {
-        console.log(`✅ Text sent successfully: "${text}"`);
-      } else {
+      if (!success) {
         AlertManager.showAlert(
           "送信失敗",
           "テキストの送信に失敗しました。パスワードを再確認してください。",
@@ -117,22 +107,8 @@ const App = () => {
     <SettingsProvider ip={macIP} port="8080">
       <View className="flex-1 bg-white">
         {(() => {
-          console.log(
-            "🔍 [App] Rendering state - isConnected:",
-            isConnected,
-            "isAuthenticated:",
-            isAuthenticated,
-            "isInitialized:",
-            isInitialized,
-            "isAutoReconnecting:",
-            isAutoReconnecting,
-          );
-
           // 初期化中またはローディング中の場合
           if (!isInitialized || isAutoReconnecting) {
-            console.log(
-              "⏳ [App] Rendering loading screen (initializing or reconnecting)",
-            );
             return (
               <View className="flex-1 bg-neutral-50 justify-center items-center">
                 <View className="bg-white rounded-3xl p-8 shadow-soft w-80 max-w-xs mx-4">
@@ -159,7 +135,6 @@ const App = () => {
           }
 
           if (!isConnected) {
-            console.log("📱 [App] Rendering HomeScreen (not connected)");
             return (
               <HomeScreen
                 isConnected={isConnected}
@@ -170,9 +145,6 @@ const App = () => {
               />
             );
           } else if (isAuthenticated) {
-            console.log(
-              "🎯 [App] Rendering ExecutionScreen (connected & authenticated)",
-            );
             return (
               <ExecutionScreen
                 onSettingsPress={() => setShowSettings(true)}
@@ -188,9 +160,6 @@ const App = () => {
               />
             );
           } else {
-            console.log(
-              "🔒 [App] Rendering HomeScreen + PasswordInput (connected but not authenticated)",
-            );
             return (
               <View className="flex-1">
                 <HomeScreen

@@ -76,7 +76,6 @@ export const FreeformActionGrid: React.FC<FreeformActionGridProps> = ({
   const handleLayout = useCallback(
     (event: LayoutChangeEvent) => {
       const { width, height } = event.nativeEvent.layout;
-      console.log("🎯 [FreeformActionGrid] Container size:", { width, height });
 
       setContainerSize({ width, height });
 
@@ -91,9 +90,6 @@ export const FreeformActionGrid: React.FC<FreeformActionGridProps> = ({
   // Save positions when edit mode is disabled
   useEffect(() => {
     if (!isEditMode && containerSize.width > 0 && containerSize.height > 0) {
-      console.log(
-        "🎯 [FreeformActionGrid] Edit mode disabled, saving positions",
-      );
       savePositions(containerSize.width, containerSize.height);
     }
   }, [isEditMode, savePositions, containerSize]);
@@ -101,9 +97,6 @@ export const FreeformActionGrid: React.FC<FreeformActionGridProps> = ({
   // Register for position reset notifications
   useEffect(() => {
     const handlePositionReset = async () => {
-      console.log(
-        "🔔 [FreeformActionGrid] Received position reset notification",
-      );
       await forceReload();
     };
 
@@ -117,7 +110,6 @@ export const FreeformActionGrid: React.FC<FreeformActionGridProps> = ({
   // Handle position changes from draggable buttons
   const handlePositionChange = useCallback(
     (id: string, x: number, y: number) => {
-      console.log("🎯 [FreeformActionGrid] Position changed:", { id, x, y });
       updatePosition(id, x, y);
     },
     [updatePosition],

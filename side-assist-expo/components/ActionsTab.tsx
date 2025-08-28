@@ -30,7 +30,6 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
   const [isEditMode, setIsEditMode] = useState(false);
 
   const toggleEditMode = () => {
-    console.log("🎯 [ActionsTab] Toggling edit mode:", !isEditMode);
     setIsEditMode(!isEditMode);
   };
 

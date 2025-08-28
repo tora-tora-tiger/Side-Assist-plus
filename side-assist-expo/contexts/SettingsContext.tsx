@@ -40,40 +40,20 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
   // 設定を取得する
   const loadSettings = async () => {
     if (!ip) {
-      console.log(
-        "⚠️ [SettingsContext] No IP available, stopping settings load",
-      );
       setIsLoading(false);
       return;
     }
 
     try {
-      console.log(
-        `🔧 [SettingsContext] Loading settings from server: ${ip}:${port}`,
-      );
       setIsLoading(true);
       const serverSettings = await NetworkService.getSettings(ip, port);
 
       if (serverSettings) {
-        console.log(
-          "✅ [SettingsContext] Settings loaded from server:",
-          serverSettings,
-        );
-        console.log(
-          `🔧 [SettingsContext] Setting hapticsEnabled to: ${serverSettings.hapticsEnabled}`,
-        );
         setSettings(serverSettings);
       } else {
-        console.log(
-          "📝 [SettingsContext] No settings found from server, using defaults",
-        );
         const defaultSettings: AppSettings = {
           hapticsEnabled: true,
         };
-        console.log(
-          "📝 [SettingsContext] Using default settings:",
-          defaultSettings,
-        );
         setSettings(defaultSettings);
       }
     } catch (error) {
@@ -81,14 +61,9 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
       const defaultSettings: AppSettings = {
         hapticsEnabled: true,
       };
-      console.log(
-        "❌ [SettingsContext] Using default settings due to error:",
-        defaultSettings,
-      );
       setSettings(defaultSettings);
     } finally {
       setIsLoading(false);
-      console.log("🔧 [SettingsContext] Settings loading completed");
     }
   };
 
@@ -105,14 +80,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
     }
 
     try {
-      console.log(
-        `🎯 [SettingsContext] Updating setting: ${String(key)} = ${value}`,
-      );
-
       const updatedSettings = { ...settings, [key]: value };
-      console.log(
-        `📡 [SettingsContext] Sending update to server: ${String(key)} = ${value}`,
-      );
       const success = await NetworkService.updateSettings(
         ip,
         port,
@@ -121,14 +89,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
       );
 
       if (success) {
-        console.log(`✅ [SettingsContext] Server update successful`);
-        console.log(
-          `📤 [SettingsContext] Updating global state to:`,
-          updatedSettings,
-        );
         setSettings(updatedSettings);
 
-        console.log(`🔍 [SettingsContext] Global state should now be updated`);
         return true;
       } else {
         console.error(
@@ -153,9 +115,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
   }, [ip, port]);
 
   // 設定状態変更をログ出力
-  useEffect(() => {
-    console.log(`🌐 [SettingsContext] Global settings changed:`, settings);
-  }, [settings]);
+  useEffect(() => {}, [settings]);
 
   const value: SettingsContextType = {
     settings,

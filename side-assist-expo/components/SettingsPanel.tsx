@@ -34,8 +34,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   };
 
   const handleResetLayout = async () => {
-    console.log("🎯 [SettingsPanel] Reset layout button pressed");
-
     AlertManager.showAlert(
       "レイアウトをリセット",
       "アクションボタンの配置を初期のグリッド状態に戻しますか？この操作は取り消せません。",
@@ -49,23 +47,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           style: "destructive",
           onPress: async () => {
             try {
-              console.log("🎯 [SettingsPanel] Executing layout reset...");
-
               // デフォルトのコンテナサイズを使用（実際のサイズは内部で調整される）
               await resetLayoutToDefault(350, 300);
 
               // 他のコンポーネントに位置リセットを通知
-              console.log(
-                "📢 [SettingsPanel] Notifying position reset to other components",
-              );
               await positionResetNotifier.notifyReset();
 
               AlertManager.showAlert(
                 "リセット完了",
                 "アクションボタンの配置が初期状態に戻りました。",
-              );
-              console.log(
-                "✅ [SettingsPanel] Layout reset completed successfully",
               );
             } catch (error) {
               console.error("❌ [SettingsPanel] Layout reset failed:", error);
@@ -121,20 +111,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <Switch
               value={settings?.hapticsEnabled ?? true}
               onValueChange={async value => {
-                console.log(`🎯 [SettingsPanel] Toggling haptics: ${value}`);
-                console.log(
-                  `🎯 [SettingsPanel] Current settings before update:`,
-                  settings,
-                );
                 const success = await updateSetting("hapticsEnabled", value);
-                if (success) {
-                  console.log(
-                    `✅ [SettingsPanel] Haptics setting updated successfully to: ${value}`,
-                  );
-                } else {
-                  console.log(
-                    `❌ [SettingsPanel] Failed to update haptics setting`,
-                  );
+                if (!success) {
                   AlertManager.showAlert(
                     "エラー",
                     "ハプティクス設定の更新に失敗しました",

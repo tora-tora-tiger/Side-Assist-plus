@@ -48,18 +48,6 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   // 全画面管理
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // カスタムアクション状態をログ出力
-  useEffect(() => {
-    console.log(
-      `🎭 [ExecutionScreen] Custom actions updated: ${customActions.length} actions`,
-    );
-    customActions.forEach((action, index) => {
-      console.log(
-        `  ${index + 1}. ${action.name} (id: ${action.id}, keys: ${action.key_sequence.length})`,
-      );
-    });
-  }, [customActions]);
-
   const [buttonScales] = useState(() => ({
     ultradeepthink: new Animated.Value(1),
     copy: new Animated.Value(1),
@@ -71,11 +59,7 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   }));
 
   const [isRecordingPrepared, setIsRecordingPrepared] = useState(false);
-  const [recordingActionId, setRecordingActionId] = useState<string | null>(
-    null,
-  );
   // recordingActionIdを実際に使用
-  console.log("Current recording action ID:", recordingActionId);
 
   // タブ定義
   const tabs = [
@@ -85,18 +69,12 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
 
   // 全画面モード管理
   const handleFullscreenChange = (newIsFullscreen: boolean) => {
-    console.log(
-      "🎯 [ExecutionScreen] Fullscreen mode changed:",
-      newIsFullscreen,
-    );
     setIsFullscreen(newIsFullscreen);
   };
 
   // 録画状態リセット関数の実装
   const handleResetRecordingState = React.useCallback(() => {
-    console.log("🔄 [ExecutionScreen] Resetting recording state...");
     setIsRecordingPrepared(false);
-    console.log("✅ [ExecutionScreen] Recording state reset completed");
   }, []);
 
   // グローバルなリセット関数を作成（useConnectionで呼び出される）
@@ -114,10 +92,6 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   }, [handleResetRecordingState]);
 
   const handleActionPress = async (action: ActionType) => {
-    console.log(
-      `🔥 [ExecutionScreen] Button pressed: ${action.id} - "${action.text}"`,
-    );
-
     // シンプルなアニメーション
     const scale = buttonScales[action.id as keyof typeof buttonScales];
     Animated.sequence([
@@ -136,32 +110,18 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
     try {
       if (action.type === "clipboard") {
         if (action.id === "copy") {
-          console.log(`📋 [ExecutionScreen] Executing copy command`);
           const success = await onSendCopy();
-          if (success) {
-            console.log(
-              `✅ [ExecutionScreen] Copy command executed successfully`,
-            );
-          } else {
+          if (!success) {
             throw new Error("Copy command failed");
           }
         } else if (action.id === "paste") {
-          console.log(`📋 [ExecutionScreen] Executing paste command`);
           const success = await onSendPaste();
-          if (success) {
-            console.log(
-              `✅ [ExecutionScreen] Paste command executed successfully`,
-            );
-          } else {
+          if (!success) {
             throw new Error("Paste command failed");
           }
         }
       } else {
-        console.log(`🚀 [ExecutionScreen] Sending text: "${action.text}"`);
         await onSendText(action.text);
-        console.log(
-          `✅ [ExecutionScreen] Text sent successfully: "${action.text}"`,
-        );
       }
     } catch (error) {
       console.error("🚨 [ExecutionScreen] Action press error:", error);
@@ -175,16 +135,9 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
 
   // カスタムアクション実行処理
   const handleCustomAction = async (action: CustomAction) => {
-    console.log(
-      `🎭 [ExecutionScreen] Executing custom action: ${action.name} (${action.id})`,
-    );
-
     try {
       const success = await onExecuteCustomAction(action.id);
       if (success) {
-        console.log(
-          `✅ [ExecutionScreen] Custom action executed successfully: ${action.name}`,
-        );
         AlertManager.showAlert(
           "実行完了",
           `カスタムアクション「${action.name}」を実行しました。`,
@@ -217,7 +170,6 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
           text: "解除",
           style: "destructive",
           onPress: () => {
-            console.log("🔌 [ExecutionScreen] User confirmed disconnect");
             onDisconnect();
           },
         },
@@ -229,8 +181,6 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
   const handlePrepareRecording = async (
     shortcutType: "normal" | "sequential" = "normal",
   ) => {
-    console.log("🎥 [ExecutionScreen] Preparing recording...");
-
     // シンプルなアニメーション
     const scale = buttonScales.recordButton;
     Animated.sequence([
@@ -250,10 +200,6 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
       const actionId = `custom_${Date.now()}`;
       const actionName = `Custom Action ${new Date().toLocaleTimeString()}`;
 
-      console.log(
-        `📝 [ExecutionScreen] Preparing recording: ${actionName} (${actionId})`,
-      );
-
       const success = await onPrepareRecording(
         actionId,
         actionName,
@@ -262,8 +208,7 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
       );
       if (success) {
         setIsRecordingPrepared(true);
-        setRecordingActionId(actionId);
-        console.log("✅ [ExecutionScreen] Recording prepared successfully");
+
         AlertManager.showAlert(
           "録画準備完了",
           `デスクトップで「${actionName}」の録画を開始できます。`,
@@ -284,8 +229,6 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
     action: string;
     mapping: { displayName: string; actionData?: string };
   }) => {
-    console.log(`🤏 [ExecutionScreen] Gesture detected:`, gesture);
-
     if (!onSendGesture) {
       console.error("❌ [ExecutionScreen] onSendGesture not available");
       AlertManager.showAlert("エラー", "ジェスチャー機能が利用できません");
@@ -300,11 +243,7 @@ export const ExecutionScreen: React.FC<ExecutionScreenProps> = ({
         gesture.mapping.actionData,
       );
 
-      if (success) {
-        console.log(
-          `✅ [ExecutionScreen] Gesture executed successfully: ${gesture.mapping.displayName}`,
-        );
-      } else {
+      if (!success) {
         throw new Error("Gesture execution failed on server");
       }
     } catch (error) {

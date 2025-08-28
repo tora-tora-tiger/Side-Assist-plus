@@ -28,19 +28,7 @@ export const GesturesTab: React.FC<GesturesTabProps> = ({
   const { settings } = useSettings();
 
   // 設定変更をログ出力（デバッグ用）
-  useEffect(() => {
-    console.log(`🎛️ [GesturesTab] Settings changed:`, settings);
-    console.log(
-      `🎛️ [GesturesTab] Haptics enabled: ${settings?.hapticsEnabled}`,
-    );
-    console.log(`🎛️ [GesturesTab] Settings object reference:`, Date.now());
-  }, [settings]);
-
-  // 実際の設定値を確実に使用するため、settingsが変更された時点での値を記録
-  const currentHapticsEnabled = settings?.hapticsEnabled ?? true;
-  console.log(
-    `🔍 [GesturesTab] Current haptics state in render: ${currentHapticsEnabled}`,
-  );
+  useEffect(() => {}, [settings]);
 
   // ジェスチャーサービスの初期化
   useEffect(() => {
@@ -49,25 +37,12 @@ export const GesturesTab: React.FC<GesturesTabProps> = ({
   }, [gestureService]);
 
   const toggleGestureMode = async () => {
-    console.log(`🔄 [GesturesTab] Toggling gesture mode: ${!isGestureMode}`);
-
     if (!isGestureMode) {
       // ジェスチャーモード開始時の触覚フィードバック（設定に応じて）
       const hapticsEnabled = settings?.hapticsEnabled ?? true;
-      console.log(
-        `🎛️ [GesturesTab] Haptics check - enabled: ${hapticsEnabled} (settings: ${JSON.stringify(settings)})`,
-      );
       if (hapticsEnabled) {
-        console.log(`📳 [GesturesTab] Executing haptics: gesture mode start`);
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      } else {
-        console.log(
-          `🔇 [GesturesTab] Haptics disabled - skipping gesture mode start`,
-        );
       }
-      console.log(`✅ [GesturesTab] Gesture mode ENABLED`);
-    } else {
-      console.log(`❌ [GesturesTab] Gesture mode DISABLED`);
     }
 
     setIsGestureMode(!isGestureMode);
@@ -85,21 +60,11 @@ export const GesturesTab: React.FC<GesturesTabProps> = ({
 
       // ジェスチャー認識成功の触覚フィードバック（2段階）（設定に応じて）
       const hapticsEnabled = settings?.hapticsEnabled ?? true;
-      console.log(
-        `🎛️ [GesturesTab] Haptics check - enabled: ${hapticsEnabled} (settings: ${JSON.stringify(settings)})`,
-      );
       if (hapticsEnabled) {
-        console.log(
-          `📳 [GesturesTab] Executing haptics: gesture recognition success`,
-        );
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setTimeout(async () => {
           await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         }, 100);
-      } else {
-        console.log(
-          `🔇 [GesturesTab] Haptics disabled - skipping gesture recognition feedback`,
-        );
       }
 
       const gestureDescription = `${result.mapping.fingers}本指 ${getDirectionDisplayName(result.event?.direction || "unknown")}スワイプ → ${result.mapping.displayName}`;
@@ -135,7 +100,6 @@ export const GesturesTab: React.FC<GesturesTabProps> = ({
       if (settings?.hapticsEnabled) {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
-      console.log(`❌ [GesturesTab] Gesture not recognized: ${result.error}`);
     }
   };
 
@@ -168,10 +132,6 @@ export const GesturesTab: React.FC<GesturesTabProps> = ({
         <View
           className="flex-1 mx-6 mb-6 bg-white rounded-xl border-2 border-dashed border-gray-300 items-center justify-center"
           onTouchStart={event => {
-            console.log(
-              `🟢 [GesturesTab] onTouchStart: ${event.nativeEvent.touches.length} touches`,
-            );
-
             const touches = Array.from(event.nativeEvent.touches).map(
               touch => ({
                 identifier: touch.identifier,
@@ -183,10 +143,6 @@ export const GesturesTab: React.FC<GesturesTabProps> = ({
             gestureService.onTouchStart(touches);
           }}
           onTouchMove={event => {
-            console.log(
-              `🟡 [GesturesTab] onTouchMove: ${event.nativeEvent.touches.length} touches`,
-            );
-
             const touches = Array.from(event.nativeEvent.touches).map(
               touch => ({
                 identifier: touch.identifier,
@@ -198,16 +154,8 @@ export const GesturesTab: React.FC<GesturesTabProps> = ({
             gestureService.onTouchMove(touches);
           }}
           onTouchEnd={event => {
-            console.log(
-              `🔴 [GesturesTab] onTouchEnd: ${event.nativeEvent.touches.length} remaining touches`,
-            );
-
             const result = gestureService.onTouchEnd(
               event.nativeEvent.touches.length,
-            );
-            console.log(
-              `📊 [GesturesTab] Direct touch gesture result:`,
-              result,
             );
             handleGestureResult(result);
           }}

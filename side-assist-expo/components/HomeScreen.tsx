@@ -26,7 +26,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [showManualInput, setShowManualInput] = useState(false);
 
   const handleOpenQRScanner = () => {
-    console.log("📷 [HomeScreen] Opening QR scanner");
     setShowQRScanner(true);
   };
 
@@ -35,10 +34,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   const handleQRCodeScanned = async (data: string) => {
-    console.log("📱 [HomeScreen] QR Code scanned:", data);
-
     const connectionParams = DeepLinkService.parseConnectionURL(data);
-    console.log("📱 Parsed connection params:", connectionParams);
 
     setShowQRScanner(false);
 
@@ -333,9 +329,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                           text: "解除",
                           style: "destructive",
                           onPress: () => {
-                            console.log(
-                              "🔌 [HomeScreen] User confirmed disconnect",
-                            );
                             onDisconnect();
                           },
                         },

@@ -67,7 +67,6 @@ export const RecordingModal: React.FC = () => {
         shortcut_type:
           selectedShortcutType === 'sequential' ? 'Sequential' : 'Normal',
       });
-      console.log('🔴 Recording started successfully');
     } catch (error) {
       console.error('Failed to start recording:', error);
       alert(`録画開始エラー: ${error}`);
@@ -81,7 +80,6 @@ export const RecordingModal: React.FC = () => {
     setIsStopping(true);
     try {
       const result = await invoke<string>('stop_actual_recording');
-      console.log('⏹️ Recording stopped:', result);
       alert(`録画完了: ${result}`);
     } catch (error) {
       console.error('Failed to stop recording:', error);
@@ -93,7 +91,6 @@ export const RecordingModal: React.FC = () => {
   const handleCancel = async () => {
     try {
       await invoke('clear_recording_modal');
-      console.log('🗑️ Recording modal cancelled');
     } catch (error) {
       console.error('Failed to cancel recording modal:', error);
     }
