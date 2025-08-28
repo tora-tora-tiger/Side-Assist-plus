@@ -154,9 +154,10 @@ export const useConnection = () => {
 
             await NetworkService.acknowledgeRecording(macIP, macPort);
 
-            // カスタムアクションを再読み込み（新しく保存されたアクションを反映）
-
-            await loadCustomActions();
+            // デスクトップ側の保存処理完了を待機してからカスタムアクションを再読み込み
+            setTimeout(async () => {
+              await loadCustomActions();
+            }, 1000); // 1秒待機
           }
         } else if (isCurrentlyRecording && !hasStartedRecording.current) {
           hasStartedRecording.current = true;

@@ -80,6 +80,9 @@ winget install Rustlang.Rustup
 
 **重要:** プロジェクトは Node.js 24.0.2 と npm 11.3.0 を要求します。バージョン不一致でビルドが失敗します。
 
+### Windows SDKのインストール
+これがないとtauriのビルドが失敗します。
+
 #### 🐧 Linux (Ubuntu/Debian)
 ```bash
 # Node.js

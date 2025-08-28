@@ -31,38 +31,40 @@ export const CustomActionList: React.FC<CustomActionListProps> = ({
 
         {/* カスタムアクション一覧 */}
         <View className="space-y-3">
-          {customActions.map(action => (
-            <TouchableOpacity
-              key={action.id}
-              className="bg-neutral-50 rounded-xl p-4 flex-row items-center justify-between border border-neutral-200"
-              onPress={() => onCustomActionPress(action)}
-              activeOpacity={0.8}
-            >
-              <View className="flex-1 flex-row items-center">
-                <View className="w-8 h-8 bg-blue-500 rounded-full items-center justify-center mr-3">
-                  <MaterialIcons
-                    name={
-                      (action.icon as keyof typeof MaterialIcons.glyphMap) ||
-                      "build"
-                    }
-                    size={18}
-                    color="#ffffff"
-                  />
+          {customActions
+            .sort((a, b) => b.created_at - a.created_at) // 新しい順に並び替え
+            .map(action => (
+              <TouchableOpacity
+                key={action.id}
+                className="bg-neutral-50 rounded-xl p-4 flex-row items-center justify-between border border-neutral-200"
+                onPress={() => onCustomActionPress(action)}
+                activeOpacity={0.8}
+              >
+                <View className="flex-1 flex-row items-center">
+                  <View className="w-8 h-8 bg-blue-500 rounded-full items-center justify-center mr-3">
+                    <MaterialIcons
+                      name={
+                        (action.icon as keyof typeof MaterialIcons.glyphMap) ||
+                        "build"
+                      }
+                      size={18}
+                      color="#ffffff"
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-base font-semibold text-neutral-900 mb-1">
+                      {action.name}
+                    </Text>
+                    <Text className="text-xs text-neutral-500">
+                      {action.key_sequence.length}個のキー・
+                      {new Date(action.created_at * 1000).toLocaleDateString()}
+                      作成
+                    </Text>
+                  </View>
                 </View>
-                <View className="flex-1">
-                  <Text className="text-base font-semibold text-neutral-900 mb-1">
-                    {action.name}
-                  </Text>
-                  <Text className="text-xs text-neutral-500">
-                    {action.key_sequence.length}個のキー・
-                    {new Date(action.created_at * 1000).toLocaleDateString()}
-                    作成
-                  </Text>
-                </View>
-              </View>
-              <MaterialIcons name="play-arrow" size={24} color="#6b7280" />
-            </TouchableOpacity>
-          ))}
+                <MaterialIcons name="play-arrow" size={24} color="#6b7280" />
+              </TouchableOpacity>
+            ))}
         </View>
       </View>
     </View>

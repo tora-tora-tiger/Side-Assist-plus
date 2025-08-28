@@ -36,38 +36,24 @@ export const RecordingModal: React.FC = () => {
     'normal' | 'sequential'
   >('normal');
   const [editableName, setEditableName] = useState('');
-  const [isEditingName, setIsEditingName] = useState(false);
 
-  // modalInfoが変更されたときにeditableNameを同期（編集中でない場合のみ）
+  // modalInfoが変更されたときにeditableNameを同期（初回のみ）
   useEffect(() => {
-    if (modalInfo && !isEditingName) {
+    if (modalInfo && editableName === '') {
       setEditableName(modalInfo.name);
     }
-  }, [modalInfo, isEditingName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modalInfo]);
 
-  // 名前更新ハンドラー
-  const handleNameChange = async (newName: string) => {
-    if (!modalInfo || !newName.trim() || newName === modalInfo.name) {
-      // 変更がない場合や空文字の場合は元の名前を保持
+  // 名前更新ハンドラー（フロントエンドのみ）
+  const handleNameChange = (newName: string) => {
+    if (!newName.trim()) {
+      // 空文字の場合は元の名前に戻す
       setEditableName(modalInfo?.name || '');
       return;
     }
-
-    try {
-      // RecordingModalの名前を直接更新
-      await invoke('update_recording_modal_name', {
-        newName: newName.trim(),
-      });
-
-      // 成功した場合、modalInfoとeditableNameを両方更新
-      const updatedName = newName.trim();
-      setModalInfo(prev => (prev ? { ...prev, name: updatedName } : null));
-      setEditableName(updatedName);
-    } catch (error) {
-      console.error('Failed to update action name:', error);
-      // エラーの場合は元の名前に戻す
-      setEditableName(modalInfo.name);
-    }
+    // 単純にeditableNameを更新（録画停止時に使用される）
+    setEditableName(newName.trim());
   };
 
   // ポーリングで録画モーダル情報を監視
@@ -113,7 +99,9 @@ export const RecordingModal: React.FC = () => {
 
     setIsStopping(true);
     try {
-      const result = await invoke<string>('stop_actual_recording');
+      const result = await invoke<string>('stop_actual_recording', {
+        customName: editableName.trim() || modalInfo.name,
+      });
       alert(`録画完了: ${result}`);
     } catch (error) {
       console.error('Failed to stop recording:', error);
@@ -150,9 +138,7 @@ export const RecordingModal: React.FC = () => {
                 type='text'
                 value={editableName}
                 onChange={e => setEditableName(e.target.value)}
-                onFocus={() => setIsEditingName(true)}
                 onBlur={e => {
-                  setIsEditingName(false);
                   handleNameChange(e.target.value);
                 }}
                 onKeyDown={e => {

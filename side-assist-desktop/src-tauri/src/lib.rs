@@ -790,21 +790,6 @@ async fn get_recording_modal_info(state: tauri::State<'_, AppState>) -> Result<O
 }
 
 #[tauri::command]
-async fn update_recording_modal_name(
-    state: tauri::State<'_, AppState>,
-    new_name: String
-) -> Result<String, String> {
-    let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
-    
-    if let Some(ref mut modal_info) = state_guard.recording_modal_info {
-        modal_info.name = new_name.clone();
-        Ok(format!("Recording modal name updated to: {}", new_name))
-    } else {
-        Err("No recording modal active".to_string())
-    }
-}
-
-#[tauri::command]
 async fn clear_recording_modal(state: tauri::State<'_, AppState>) -> Result<String, String> {
     let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
     state_guard.recording_modal_info = None;
@@ -848,7 +833,10 @@ async fn start_actual_recording(state: tauri::State<'_, AppState>, shortcut_type
 }
 
 #[tauri::command]
-async fn stop_actual_recording(state: tauri::State<'_, AppState>) -> Result<String, String> {
+async fn stop_actual_recording(
+    state: tauri::State<'_, AppState>, 
+    custom_name: Option<String>
+) -> Result<String, String> {
     // まず録画停止フラグを設定
     {
         let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
@@ -880,9 +868,10 @@ async fn stop_actual_recording(state: tauri::State<'_, AppState>) -> Result<Stri
         .as_secs();
     
     // カスタムアクションを作成して保存
+    let final_name = custom_name.unwrap_or(modal_info.name.clone());
     let custom_action = CustomAction {
         id: modal_info.action_id.clone(),
-        name: modal_info.name.clone(),
+        name: final_name.clone(),
         icon: modal_info.icon,
         key_sequence: modal_info.recorded_keys,
         created_at: now,
@@ -901,6 +890,7 @@ async fn stop_actual_recording(state: tauri::State<'_, AppState>) -> Result<Stri
         if let Some(ref mut modal_info) = state_guard.recording_modal_info {
             modal_info.is_recording = false;
             modal_info.is_completed = true; // 完了フラグを設定
+            modal_info.name = final_name.clone(); // 編集された名前で更新
             modal_info.recorded_keys = custom_action.key_sequence.clone();
         }
     }
@@ -925,7 +915,7 @@ async fn stop_actual_recording(state: tauri::State<'_, AppState>) -> Result<Stri
     Ok(format!(
         "Recording stopped. Saved {} key events for: {}",
         custom_action.key_sequence.len(),
-        custom_action.name
+        final_name
     ))
 }
 
@@ -1551,11 +1541,6 @@ async fn get_custom_actions(
     let state_guard = state.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let actions: Vec<CustomAction> = state_guard.custom_actions.values().cloned().collect();
     
-    
-    for _action in &actions {
-        // Action processing logic would go here
-    }
-    
     Ok(JsonResponse(actions))
 }
 
@@ -1692,8 +1677,7 @@ pub fn run() {
             get_current_password,
             generate_qr_code,
             get_recording_modal_info,
-            update_recording_modal_name,
-            clear_recording_modal,
+clear_recording_modal,
             start_actual_recording,
             stop_actual_recording,
             load_custom_actions_on_startup,
