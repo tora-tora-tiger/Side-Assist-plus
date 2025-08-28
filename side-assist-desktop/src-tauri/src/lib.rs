@@ -258,6 +258,33 @@ async fn get_all_custom_actions(state: tauri::State<'_, AppState>) -> Result<Vec
 }
 
 #[tauri::command]
+async fn update_custom_action_name(
+    state: tauri::State<'_, AppState>,
+    action_id: String,
+    new_name: String
+) -> Result<String, String> {
+    let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+    
+    if let Some(action) = state_guard.custom_actions.get_mut(&action_id) {
+        action.name = new_name.clone();
+        
+        // ファイルに永続化保存
+        let actions_to_save = state_guard.custom_actions.clone();
+        drop(state_guard); // ロックを早期解放
+        
+        tokio::spawn(async move {
+            if let Err(_e) = save_custom_actions(&actions_to_save).await {
+                // Error handling for save_custom_actions
+            }
+        });
+        
+        Ok(format!("Custom action name updated to: {}", new_name))
+    } else {
+        Err(format!("Custom action with ID '{}' not found", action_id))
+    }
+}
+
+#[tauri::command]
 async fn get_server_status(state: tauri::State<'_, AppState>) -> Result<ServerStatus, String> {
     let state = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
     Ok(ServerStatus {
@@ -760,6 +787,21 @@ async fn open_system_preferences() -> Result<String, String> {
 async fn get_recording_modal_info(state: tauri::State<'_, AppState>) -> Result<Option<RecordingModalInfo>, String> {
     let state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
     Ok(state_guard.recording_modal_info.clone())
+}
+
+#[tauri::command]
+async fn update_recording_modal_name(
+    state: tauri::State<'_, AppState>,
+    new_name: String
+) -> Result<String, String> {
+    let mut state_guard = state.lock().map_err(|e| format!("Failed to lock state: {}", e))?;
+    
+    if let Some(ref mut modal_info) = state_guard.recording_modal_info {
+        modal_info.name = new_name.clone();
+        Ok(format!("Recording modal name updated to: {}", new_name))
+    } else {
+        Err("No recording modal active".to_string())
+    }
 }
 
 #[tauri::command]
@@ -1650,11 +1692,13 @@ pub fn run() {
             get_current_password,
             generate_qr_code,
             get_recording_modal_info,
+            update_recording_modal_name,
             clear_recording_modal,
             start_actual_recording,
             stop_actual_recording,
             load_custom_actions_on_startup,
-            get_all_custom_actions
+            get_all_custom_actions,
+            update_custom_action_name
         ])
         .setup(|app| {
             // Tauri起動後にカスタムアクションと設定を読み込み

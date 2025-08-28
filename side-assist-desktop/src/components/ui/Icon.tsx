@@ -15,6 +15,9 @@ import {
   Shield,
   Activity,
   X,
+  Edit,
+  Check,
+  Terminal,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -55,6 +58,9 @@ export const Icon: React.FC<IconProps> = ({
     shield: Shield,
     loading: Activity,
     close: X,
+    edit: Edit,
+    check: Check,
+    command: Terminal,
   };
 
   const IconComponent = iconMap[name] || AlertTriangle;

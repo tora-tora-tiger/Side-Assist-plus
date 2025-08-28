@@ -10,6 +10,7 @@ import { ActivityLog } from './components/ActivityLog';
 import { PermissionStatus } from './components/PermissionStatus';
 import { PortSettings } from './components/PortSettings';
 import { RecordingModal } from './components/RecordingModal';
+import { CustomActions } from './components/CustomActions';
 import { Icon } from './components/ui';
 import './App.css';
 
@@ -94,6 +95,11 @@ function App() {
       id: 'keyboard',
       label: 'Test',
       icon: 'keyboard',
+    },
+    {
+      id: 'actions',
+      label: 'Actions',
+      icon: 'command',
     },
     {
       id: 'permissions',
@@ -212,6 +218,14 @@ function App() {
                 }
                 onTest={testTyping}
               />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'actions' && (
+          <div className='h-full p-2 overflow-hidden'>
+            <div className='h-full max-w-4xl mx-auto'>
+              <CustomActions onLog={addLog} />
             </div>
           </div>
         )}

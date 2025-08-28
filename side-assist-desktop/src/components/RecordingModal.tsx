@@ -35,6 +35,40 @@ export const RecordingModal: React.FC = () => {
   const [selectedShortcutType, setSelectedShortcutType] = useState<
     'normal' | 'sequential'
   >('normal');
+  const [editableName, setEditableName] = useState('');
+  const [isEditingName, setIsEditingName] = useState(false);
+
+  // modalInfoが変更されたときにeditableNameを同期（編集中でない場合のみ）
+  useEffect(() => {
+    if (modalInfo && !isEditingName) {
+      setEditableName(modalInfo.name);
+    }
+  }, [modalInfo, isEditingName]);
+
+  // 名前更新ハンドラー
+  const handleNameChange = async (newName: string) => {
+    if (!modalInfo || !newName.trim() || newName === modalInfo.name) {
+      // 変更がない場合や空文字の場合は元の名前を保持
+      setEditableName(modalInfo?.name || '');
+      return;
+    }
+
+    try {
+      // RecordingModalの名前を直接更新
+      await invoke('update_recording_modal_name', {
+        newName: newName.trim(),
+      });
+
+      // 成功した場合、modalInfoとeditableNameを両方更新
+      const updatedName = newName.trim();
+      setModalInfo(prev => (prev ? { ...prev, name: updatedName } : null));
+      setEditableName(updatedName);
+    } catch (error) {
+      console.error('Failed to update action name:', error);
+      // エラーの場合は元の名前に戻す
+      setEditableName(modalInfo.name);
+    }
+  };
 
   // ポーリングで録画モーダル情報を監視
   useEffect(() => {
@@ -112,9 +146,23 @@ export const RecordingModal: React.FC = () => {
               </div>
             </div>
             <div className='flex-1'>
-              <Heading level={3} className='font-semibold text-white'>
-                {modalInfo.name}
-              </Heading>
+              <input
+                type='text'
+                value={editableName}
+                onChange={e => setEditableName(e.target.value)}
+                onFocus={() => setIsEditingName(true)}
+                onBlur={e => {
+                  setIsEditingName(false);
+                  handleNameChange(e.target.value);
+                }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.currentTarget.blur();
+                  }
+                }}
+                className='font-semibold text-white bg-transparent border-none outline-none focus:bg-gray-800/30 focus:px-2 focus:py-1 focus:rounded transition-all w-full text-lg'
+                placeholder='アクション名を入力...'
+              />
               <Text variant='small' className='text-gray-300'>
                 ID: {modalInfo.action_id}
               </Text>
@@ -134,7 +182,7 @@ export const RecordingModal: React.FC = () => {
                 録画完了！
               </Heading>
               <Text variant='small' className='text-green-700 mb-3'>
-                「{modalInfo.name}」保存済み
+                「{editableName}」保存済み
               </Text>
               <div className='space-y-1'>
                 <Text variant='small' className='text-green-600'>
