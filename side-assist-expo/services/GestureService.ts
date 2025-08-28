@@ -45,10 +45,6 @@ export class GestureService {
   public onTouchStart(
     touches: { identifier: string | number; pageX: number; pageY: number }[],
   ): void {
-    console.log(
-      `🚀 [GestureService] onTouchStart called with ${touches.length} touches`,
-    );
-
     const now = Date.now();
 
     // デバウンス処理
@@ -75,10 +71,6 @@ export class GestureService {
         });
       }
     });
-
-    console.log(
-      `👆 [GestureService] Active touches: ${this.activeTouches.size}`,
-    );
   }
 
   public onTouchMove(
@@ -123,9 +115,6 @@ export class GestureService {
       gestureDuration < GestureConfig.MIN_GESTURE_TIME ||
       gestureDuration > GestureConfig.MAX_GESTURE_TIME
     ) {
-      console.log(
-        `⏱️ [GestureService] Gesture duration out of range: ${gestureDuration}ms`,
-      );
       return { detected: false, error: "Gesture duration out of range" };
     }
 
@@ -133,24 +122,14 @@ export class GestureService {
     const direction = this.calculateDirection();
     const distance = this.calculateDistance();
 
-    console.log(
-      `📊 [GestureService] Gesture analysis: ${fingerCount} fingers, ${direction}, distance: ${distance}px`,
-    );
-
     // 距離チェック
     if (distance < GestureConfig.MIN_SWIPE_DISTANCE) {
-      console.log(
-        `📏 [GestureService] Swipe distance too short: ${distance}px`,
-      );
       return { detected: false, error: "Swipe distance too short" };
     }
 
     // マッピングを検索
     const mapping = this.findMatchingMapping(fingerCount, direction);
     if (!mapping) {
-      console.log(
-        `🔍 [GestureService] No mapping found for ${fingerCount} fingers ${direction}`,
-      );
       return { detected: false, error: "No matching gesture mapping" };
     }
 
@@ -165,11 +144,6 @@ export class GestureService {
       velocity: distance / gestureDuration,
       confidence: this.calculateConfidence(fingerCount, direction, distance),
     };
-
-    console.log(`✅ [GestureService] Gesture recognized:`, {
-      mapping: mapping.displayName,
-      event: gestureEvent,
-    });
 
     this.lastGestureTime = now;
     return {

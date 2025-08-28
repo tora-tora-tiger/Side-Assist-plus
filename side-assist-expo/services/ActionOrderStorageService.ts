@@ -41,10 +41,6 @@ export class ActionOrderStorageService {
       }
 
       const parsedData: StoredActionOrder = JSON.parse(storedData);
-      console.log(
-        "🎯 [ActionOrderStorage] Action order loaded:",
-        parsedData.actionIds,
-      );
 
       return parsedData;
     } catch (error) {

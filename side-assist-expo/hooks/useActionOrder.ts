@@ -33,10 +33,6 @@ export const useActionOrder = (): UseActionOrderReturn => {
 
           // すべてのアクションが見つかった場合のみ適用
           if (orderedActions.length === defaultActions.length) {
-            console.log(
-              "🎯 [useActionOrder] Applied stored order:",
-              storedOrder.actionIds,
-            );
             setActions(orderedActions);
           } else {
             console.warn(
@@ -45,9 +41,6 @@ export const useActionOrder = (): UseActionOrderReturn => {
             setActions(defaultActions);
           }
         } else {
-          console.log(
-            "🎯 [useActionOrder] No valid stored order, using default",
-          );
           setActions(defaultActions);
         }
       } catch (error) {
@@ -63,11 +56,6 @@ export const useActionOrder = (): UseActionOrderReturn => {
 
   // インデックスベースでの並び替え
   const reorderActions = useCallback((startIndex: number, endIndex: number) => {
-    console.log("🎯 [useActionOrder] Reordering actions:", {
-      startIndex,
-      endIndex,
-    });
-
     setActions(prevActions => {
       const newActions = [...prevActions];
       const [movedAction] = newActions.splice(startIndex, 1);
@@ -88,11 +76,6 @@ export const useActionOrder = (): UseActionOrderReturn => {
   // IDベースでの並び替え（react-native-dnd用）
   const reorderActionsByIds = useCallback(
     (activeId: string, overId: string) => {
-      console.log("🎯 [useActionOrder] Reordering by IDs:", {
-        activeId,
-        overId,
-      });
-
       setActions(prevActions => {
         const activeIndex = prevActions.findIndex(
           action => action.id === activeId,

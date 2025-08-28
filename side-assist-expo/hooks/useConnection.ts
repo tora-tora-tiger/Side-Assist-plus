@@ -39,10 +39,6 @@ export const useConnection = () => {
 
   // DeepLink処理のハンドラー
   const handleDeepLink = useCallback(async (params: ConnectionParams) => {
-    console.log(
-      "🚨 [useConnection] This function should be called ONLY ONCE per QR scan!",
-    );
-
     // まず接続をテスト
 
     const connected = await NetworkService.testConnection(
@@ -50,10 +46,6 @@ export const useConnection = () => {
       params.port,
     );
     if (!connected) {
-      console.log(
-        "❌ [useConnection] Cannot reach server at:",
-        `${params.ip}:${params.port}`,
-      );
       return;
     }
 
@@ -63,15 +55,8 @@ export const useConnection = () => {
     setMacPort(params.port);
     setIsConnected(true);
 
-    console.log(
-      "✅ [useConnection] Connected to server:",
-      `${params.ip}:${params.port}`,
-    );
-
     // パスワードで認証を試行
-    console.log(
-      "🔗 [useConnection] Calling NetworkService.authenticateWithPassword...",
-    );
+
     const authSuccess = await NetworkService.authenticateWithPassword(
       params.ip,
       params.port,
@@ -80,16 +65,9 @@ export const useConnection = () => {
     if (authSuccess) {
       setIsAuthenticated(true);
       setPassword(params.password);
-      console.log(
-        "🎉 [useConnection] QR code connection and authentication successful!",
-      );
 
       // 接続情報を保存
       await saveConnectionInfo(params.ip, params.port, params.password);
-    } else {
-      console.log(
-        "❌ [useConnection] Authentication failed with provided password",
-      );
     }
   }, []);
 
@@ -107,25 +85,11 @@ export const useConnection = () => {
 
   const loadCustomActions = useCallback(async (): Promise<void> => {
     if (!macIP || !macPort || !isConnected || !isAuthenticated) {
-      console.log("⚠️ Cannot load custom actions - missing connection info:", {
-        macIP: !!macIP,
-        macPort: !!macPort,
-        isConnected,
-        isAuthenticated,
-      });
       return;
     }
 
     try {
       const actions = await NetworkService.getCustomActions(macIP, macPort);
-      console.log(
-        `📦 Received ${actions.length} custom actions:`,
-        actions.map(a => ({
-          id: a.id,
-          name: a.name,
-          keys: a.key_sequence.length,
-        })),
-      );
       setCustomActions(actions);
     } catch (error) {
       console.error("Failed to load custom actions:", error);
@@ -171,11 +135,6 @@ export const useConnection = () => {
         ) {
           // 同じ action_id のアラートを重複表示しないようにチェック
           if (!processedCompletedActionIds.current.has(status.actionId)) {
-            console.log(
-              "🎉 Recording completed for new action:",
-              status.actionId,
-            );
-
             // この action_id を処理済みとしてマーク
             processedCompletedActionIds.current.add(status.actionId);
 
@@ -196,15 +155,8 @@ export const useConnection = () => {
             await NetworkService.acknowledgeRecording(macIP, macPort);
 
             // カスタムアクションを再読み込み（新しく保存されたアクションを反映）
-            console.log(
-              "🔄 Reloading custom actions after recording completion...",
-            );
+
             await loadCustomActions();
-          } else {
-            console.log(
-              "🔄 Already processed completion for action:",
-              status.actionId,
-            );
           }
         } else if (isCurrentlyRecording && !hasStartedRecording.current) {
           hasStartedRecording.current = true;
@@ -259,9 +211,6 @@ export const useConnection = () => {
       initializationRef.current.isInitializing ||
       initializationRef.current.hasInitialized
     ) {
-      console.log(
-        "⚠️ [useConnection] Initialization already in progress or completed, skipping",
-      );
       return;
     }
 
@@ -273,9 +222,6 @@ export const useConnection = () => {
 
     const initializeConnection = async () => {
       try {
-        console.log(
-          `🔄 [useConnection] Loading stored connection info (init #${currentInitId})`,
-        );
         const storedInfo = await ConnectionStorageService.loadConnectionInfo();
 
         // キャンセルチェック
@@ -283,16 +229,10 @@ export const useConnection = () => {
           isCancelled ||
           initializationRef.current.initializationId !== currentInitId
         ) {
-          console.log(
-            `❌ [useConnection] Init #${currentInitId} cancelled or superseded`,
-          );
           return;
         }
 
         if (!storedInfo) {
-          console.log(
-            `ℹ️ [useConnection] No stored connection info found (init #${currentInitId})`,
-          );
           if (!isCancelled) {
             setIsInitialized(true);
             initializationRef.current.hasInitialized = true;
@@ -301,9 +241,6 @@ export const useConnection = () => {
         }
 
         if (!storedInfo.autoReconnect) {
-          console.log(
-            `ℹ️ [useConnection] Auto reconnect disabled (init #${currentInitId})`,
-          );
           if (!isCancelled) {
             setIsInitialized(true);
             initializationRef.current.hasInitialized = true;
@@ -311,27 +248,16 @@ export const useConnection = () => {
           return;
         }
 
-        console.log(
-          `🔄 [useConnection] Auto-connecting to ${storedInfo.ip}:${storedInfo.port} (init #${currentInitId})`,
-        );
-
         // キャンセルチェック
         if (
           isCancelled ||
           initializationRef.current.initializationId !== currentInitId
         ) {
-          console.log(
-            `❌ [useConnection] Init #${currentInitId} cancelled before auto-connect`,
-          );
           return;
         }
 
         setIsAutoReconnecting(true);
 
-        // 接続テスト
-        console.log(
-          `📡 [useConnection] Testing connection (init #${currentInitId})`,
-        );
         const connected = await NetworkService.testConnection(
           storedInfo.ip,
           storedInfo.port,
@@ -342,16 +268,10 @@ export const useConnection = () => {
           isCancelled ||
           initializationRef.current.initializationId !== currentInitId
         ) {
-          console.log(
-            `❌ [useConnection] Init #${currentInitId} cancelled after connection test`,
-          );
           return;
         }
 
         if (!connected) {
-          console.log(
-            `❌ [useConnection] Server not reachable (init #${currentInitId})`,
-          );
           if (!isCancelled) {
             setIsAutoReconnecting(false);
             setIsInitialized(true);
@@ -359,11 +279,6 @@ export const useConnection = () => {
           }
           return;
         }
-
-        // 認証を試行
-        console.log(
-          `🔐 [useConnection] Authenticating (init #${currentInitId})`,
-        );
         const authSuccess = await NetworkService.authenticateWithPassword(
           storedInfo.ip,
           storedInfo.port,
@@ -375,16 +290,10 @@ export const useConnection = () => {
           isCancelled ||
           initializationRef.current.initializationId !== currentInitId
         ) {
-          console.log(
-            `❌ [useConnection] Init #${currentInitId} cancelled after authentication`,
-          );
           return;
         }
 
         if (authSuccess) {
-          console.log(
-            `✅ [useConnection] Auto connect successful! (init #${currentInitId})`,
-          );
           setMacIP(storedInfo.ip);
           setMacPort(storedInfo.port);
           setPassword(storedInfo.password);
@@ -393,10 +302,6 @@ export const useConnection = () => {
 
           // 最終接続時刻を更新
           await ConnectionStorageService.updateLastConnectedTime();
-        } else {
-          console.log(
-            `❌ [useConnection] Authentication failed (init #${currentInitId})`,
-          );
         }
 
         setIsAutoReconnecting(false);
@@ -419,9 +324,6 @@ export const useConnection = () => {
         // 初期化完了をマーク
         if (initializationRef.current.initializationId === currentInitId) {
           initializationRef.current.isInitializing = false;
-          console.log(
-            `🏁 [useConnection] Initialization #${currentInitId} completed`,
-          );
         }
       }
     };
@@ -442,13 +344,6 @@ export const useConnection = () => {
   }, []);
 
   const startConnectionMonitoring = useCallback(() => {
-    console.log(
-      "🔍 [useConnection] startConnectionMonitoring called with IP:",
-      macIP,
-      "Port:",
-      macPort,
-    );
-
     // 既存のタイマーをクリア
     if (connectionMonitorRef.current) {
       clearInterval(connectionMonitorRef.current);
@@ -464,22 +359,13 @@ export const useConnection = () => {
     const currentPort = macPort;
 
     if (!currentIP || !currentPort) {
-      console.log(
-        "❌ [useConnection] Cannot start monitoring - missing IP or Port",
-      );
       return;
     }
 
     // 初期接続直後は10秒待ってから監視開始（重複health checkを避ける）
-    console.log(
-      "🔍 [useConnection] Delaying monitoring start by 10 seconds to avoid duplicate health checks...",
-    );
 
     monitoringTimeoutRef.current = setTimeout(() => {
       const checkConnection = async () => {
-        console.log(
-          "🔍 [useConnection] Periodic health check - calling testConnection...",
-        );
         const connected = await NetworkService.testConnection(
           currentIP,
           currentPort,
@@ -494,9 +380,6 @@ export const useConnection = () => {
       };
 
       connectionMonitorRef.current = setInterval(checkConnection, 10000); // 10秒間隔に延長
-      console.log(
-        "🔍 [useConnection] Connection monitoring started with 10s interval (after delay)",
-      );
     }, 10000);
   }, [macIP, macPort]);
 
@@ -580,9 +463,6 @@ export const useConnection = () => {
       actionData?: string,
     ): Promise<boolean> => {
       if (!macIP || !macPort || !isConnected || !isAuthenticated) {
-        console.log(
-          "❌ [useConnection] sendGesture failed - not connected/authenticated",
-        );
         return false;
       }
 
@@ -656,18 +536,8 @@ export const useConnection = () => {
   const connectManually = useCallback(
     async (ip: string, port: string, password: string): Promise<boolean> => {
       try {
-        console.log(
-          "🔗 [useConnection] Current state - isConnected:",
-          isConnected,
-          "isAuthenticated:",
-          isAuthenticated,
-        );
-
         // すでに接続済みの場合は重複処理を防ぐ
         if (isConnected && isAuthenticated && macIP === ip) {
-          console.log(
-            "⚠️ [useConnection] Already connected and authenticated to this IP, skipping",
-          );
           return true;
         }
 
@@ -765,9 +635,6 @@ export const useConnection = () => {
     clearStoredConnection: () => ConnectionStorageService.clearConnectionInfo(),
     // 開発用：初期化状態をリセットして再接続を試行
     resetAndRetryConnection: useCallback(async () => {
-      console.log(
-        "🔄 [useConnection] Reset and retry connection for development",
-      );
       // 初期化状態をリセット
       initializationRef.current.isInitializing = false;
       initializationRef.current.hasInitialized = false;
@@ -783,9 +650,6 @@ export const useConnection = () => {
           const storedInfo =
             await ConnectionStorageService.loadConnectionInfo();
           if (storedInfo && storedInfo.autoReconnect) {
-            console.log(
-              "🔄 [useConnection] Retrying auto-connection after reset",
-            );
             // useEffectが再実行されるように状態を更新
             setIsInitialized(false);
           }

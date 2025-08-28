@@ -49,9 +49,6 @@ export class ConnectionStorageService {
         JSON.stringify(metadata),
       );
 
-      console.log(
-        `📍 [ConnectionStorage] Saved: ${metadata.ip}:${metadata.port}`,
-      );
       return true;
     } catch (error) {
       console.error(
@@ -72,9 +69,6 @@ export class ConnectionStorageService {
         this.STORAGE_KEY_METADATA,
       );
       if (!metadataJson) {
-        console.log(
-          "ℹ️ [ConnectionStorage] No saved connection metadata found",
-        );
         return null;
       }
 
@@ -83,9 +77,6 @@ export class ConnectionStorageService {
       // パスワードを読み込み
       const password = await SecureStore.getItemAsync(this.SECURE_KEY_PASSWORD);
       if (!password) {
-        console.log(
-          "⚠️ [ConnectionStorage] Metadata found but no password - clearing metadata",
-        );
         await this.clearConnectionInfo();
         return null;
       }
@@ -97,13 +88,6 @@ export class ConnectionStorageService {
         lastConnectedAt: metadata.lastConnectedAt,
         autoReconnect: metadata.autoReconnect,
       };
-
-      console.log(
-        `📍 [ConnectionStorage] Loaded: ${connectionInfo.ip}:${connectionInfo.port}`,
-      );
-      console.log(
-        `⏰ [ConnectionStorage] Last connected: ${new Date(connectionInfo.lastConnectedAt).toLocaleString()}`,
-      );
 
       return connectionInfo;
     } catch (error) {
@@ -126,9 +110,6 @@ export class ConnectionStorageService {
       // メタデータを削除
       await AsyncStorage.removeItem(this.STORAGE_KEY_METADATA);
 
-      console.log(
-        "✅ [ConnectionStorage] Connection info cleared successfully",
-      );
       return true;
     } catch (error) {
       console.error(
@@ -152,9 +133,6 @@ export class ConnectionStorageService {
       );
 
       const hasConnection = metadataJson !== null && hasPassword !== null;
-      console.log(
-        `🔍 [ConnectionStorage] Has stored connection: ${hasConnection}`,
-      );
 
       return hasConnection;
     } catch (error) {
@@ -200,10 +178,6 @@ export class ConnectionStorageService {
    * 自動再接続設定を更新
    */
   static async updateAutoReconnect(autoReconnect: boolean): Promise<boolean> {
-    console.log(
-      `🔄 [ConnectionStorage] Updating auto reconnect: ${autoReconnect}`,
-    );
-
     try {
       const metadataJson = await AsyncStorage.getItem(
         this.STORAGE_KEY_METADATA,

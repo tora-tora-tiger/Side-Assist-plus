@@ -26,10 +26,6 @@ export class NetworkPermissionService {
 
       return true;
     } catch {
-      console.log(
-        "Network permission check - no access to router, checking common gateway",
-      );
-
       // ルーターに失敗した場合、別の一般的なゲートウェイをチェック
       try {
         const controller = new AbortController();

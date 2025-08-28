@@ -44,21 +44,11 @@ export class DeepLinkService {
 
   static parseConnectionURL(url: string): ConnectionParams | null {
     try {
-      console.log(
-        "🔧 [DEBUG] URL char codes:",
-        url.split("").map(c => c.charCodeAt(0)),
-      );
-
       // URLの改行や空白を除去
       const cleanUrl = url
         .trim()
         .replace(/\s+/g, "")
         .replace(/[\r\n\t]/g, "");
-
-      console.log(
-        "🔧 [DEBUG] URL change detected:",
-        url !== cleanUrl ? "YES" : "NO",
-      );
 
       // 基本的なURL形式チェック
       if (!cleanUrl.startsWith("sideassist://connect")) {
@@ -83,31 +73,8 @@ export class DeepLinkService {
       // Process all URL parameters if needed in the future
       // for (const [key, value] of params.entries()) { ... }
 
-      console.log("🔧 [DEBUG] Extracted parameters:", {
-        ip: ip ? `'${ip}' (${ip.length})` : "NULL",
-        port: port ? `'${port}' (${port.length})` : "NULL",
-        password: password ? `'${password}' (${password.length})` : "NULL",
-        allParams: Object.fromEntries(params.entries()),
-      });
-
       // 必須パラメータをチェック
       if (!ip || !port || !password) {
-        console.log("❌ Missing required parameters:", {
-          ip: ip === null ? "NULL" : ip === undefined ? "UNDEFINED" : `"${ip}"`,
-          port:
-            port === null
-              ? "NULL"
-              : port === undefined
-                ? "UNDEFINED"
-                : `"${port}"`,
-          password:
-            password === null
-              ? "NULL"
-              : password === undefined
-                ? "UNDEFINED"
-                : `"${password}"`,
-          url,
-        });
         return null;
       }
 
@@ -127,10 +94,6 @@ export class DeepLinkService {
       // パスワードの検証（5桁の数字）
 
       if (!/^\d{5}$/.test(password)) {
-        console.log(
-          "❌ Password chars:",
-          password.split("").map(c => `'${c}' (${c.charCodeAt(0)})`),
-        );
         return null;
       }
 
@@ -149,12 +112,9 @@ export class DeepLinkService {
       return false;
     }
 
-    const isValid = parts.every((part, index) => {
+    const isValid = parts.every(part => {
       const num = parseInt(part, 10);
       const valid = !isNaN(num) && num >= 0 && num <= 255;
-      console.log(
-        `🔧 [DEBUG] Part ${index}: '${part}' -> ${num} (valid: ${valid})`,
-      );
       return valid;
     });
 

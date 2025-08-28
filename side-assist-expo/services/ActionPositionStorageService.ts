@@ -26,10 +26,6 @@ export class ActionPositionStorageService {
     containerHeight: number,
     actions: ActionType[],
   ): ActionPosition[] {
-    console.log(
-      "🎯 [ActionPositionStorage] Generating default positions for grid layout",
-    );
-
     // 新しいグリッド配置計算関数を使用
     const positions = calculateDefaultPositions(
       containerWidth,
@@ -56,11 +52,6 @@ export class ActionPositionStorageService {
       };
     });
 
-    console.log(
-      "🎯 [ActionPositionStorage] Generated positions:",
-      actionPositions.length,
-      "items",
-    );
     return actionPositions;
   }
 
@@ -84,11 +75,6 @@ export class ActionPositionStorageService {
         ACTION_POSITIONS_KEY,
         JSON.stringify(storageData),
       );
-      console.log(
-        "🎯 [ActionPositionStorage] Action positions saved:",
-        positions.length,
-        "items",
-      );
     } catch (error) {
       console.error(
         "❌ [ActionPositionStorage] Failed to save action positions:",
@@ -105,18 +91,10 @@ export class ActionPositionStorageService {
     try {
       const storedData = await AsyncStorage.getItem(ACTION_POSITIONS_KEY);
       if (!storedData) {
-        console.log(
-          "🎯 [ActionPositionStorage] No stored action positions found",
-        );
         return null;
       }
 
       const parsedData: StoredActionPositions = JSON.parse(storedData);
-      console.log(
-        "🎯 [ActionPositionStorage] Action positions loaded:",
-        parsedData.positions.length,
-        "items",
-      );
 
       return parsedData;
     } catch (error) {

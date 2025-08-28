@@ -5,16 +5,10 @@ export class NetworkService {
 
   static async testConnection(ip: string, port: string): Promise<boolean> {
     this.testConnectionCallCount++;
-    console.log(
-      `🔗 [NetworkService] Testing connection to ${ip}:${port} - Call #${this.testConnectionCallCount}`,
-    );
 
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
-        console.log(
-          `⏰ [NetworkService] Connection timeout after ${this.TIMEOUT}ms`,
-        );
         controller.abort();
       }, this.TIMEOUT);
 
@@ -31,24 +25,13 @@ export class NetworkService {
 
       clearTimeout(timeoutId);
 
-      console.log(
-        `📊 [NetworkService] Response status: ${response.status} ${response.statusText}`,
-      );
-
       if (response.ok) {
         const data = await response.json();
 
         const isHealthy = data.status === "ok";
-        console.log(
-          `🏥 [NetworkService] Server health: ${
-            isHealthy ? "HEALTHY" : "UNHEALTHY"
-          }`,
-        );
+
         return isHealthy;
       } else {
-        console.log(
-          `❌ [NetworkService] HTTP error: ${response.status} ${response.statusText}`,
-        );
         return false;
       }
     } catch (error: unknown) {
@@ -79,9 +62,6 @@ export class NetworkService {
     actionData?: string,
     password?: string,
   ): Promise<boolean> {
-    console.log(
-      `🤏 [NetworkService] Sending gesture: ${fingers} fingers ${direction} -> ${action}`,
-    );
     return this.sendAction(
       ip,
       port,
@@ -135,16 +115,9 @@ export class NetworkService {
         body: JSON.stringify({ password }),
       });
 
-      console.log(
-        `📊 [NetworkService] Auth response: ${response.status} ${response.statusText}`,
-      );
-
       if (response.ok) {
         return true;
       } else {
-        console.log(
-          `❌ [NetworkService] Authentication failed: ${response.status}`,
-        );
         return false;
       }
     } catch (error) {
@@ -177,9 +150,6 @@ export class NetworkService {
     password?: string,
     shortcutType?: "normal" | "sequential", // 新規追加
   ): Promise<boolean> {
-    console.log(
-      `🎥 [NetworkService] Preparing recording for action: ${name} (${actionId}) - Type: ${shortcutType || "normal"}`,
-    );
     return this.sendAction(
       ip,
       port,
@@ -266,25 +236,9 @@ export class NetworkService {
         },
       });
 
-      console.log(
-        `📊 [NetworkService] Custom actions response status: ${response.status} ${response.statusText}`,
-      );
-
       if (response.ok) {
         const actions = await response.json();
-        console.log(
-          `📋 [NetworkService] Retrieved ${actions.length} custom actions from server`,
-        );
-        console.log(
-          `📦 [NetworkService] Actions details:`,
-          actions.map(
-            (a: { id: string; name: string; key_sequence?: unknown[] }) => ({
-              id: a.id,
-              name: a.name,
-              keys: a.key_sequence?.length || 0,
-            }),
-          ),
-        );
+
         return actions;
       } else {
         const errorText = await response.text();
@@ -313,10 +267,6 @@ export class NetworkService {
           "Content-Type": "application/json",
         },
       });
-
-      console.log(
-        `📊 [NetworkService] Settings response status: ${response.status} ${response.statusText}`,
-      );
 
       if (response.ok) {
         const settings = await response.json();
@@ -351,10 +301,6 @@ export class NetworkService {
         },
         body: JSON.stringify({ settings, password }),
       });
-
-      console.log(
-        `📊 [NetworkService] Update settings response: ${response.status} ${response.statusText}`,
-      );
 
       if (response.ok) {
         return true;
