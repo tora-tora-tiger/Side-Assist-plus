@@ -89,7 +89,6 @@ export const RecordingModal: React.FC = () => {
       });
     } catch (error) {
       console.error('Failed to start recording:', error);
-      alert(`録画開始エラー: ${error}`);
     }
     setIsStarting(false);
   };
@@ -99,13 +98,11 @@ export const RecordingModal: React.FC = () => {
 
     setIsStopping(true);
     try {
-      const result = await invoke<string>('stop_actual_recording', {
+      await invoke<string>('stop_actual_recording', {
         customName: editableName.trim() || modalInfo.name,
       });
-      alert(`録画完了: ${result}`);
     } catch (error) {
       console.error('Failed to stop recording:', error);
-      alert(`録画停止エラー: ${error}`);
     }
     setIsStopping(false);
   };

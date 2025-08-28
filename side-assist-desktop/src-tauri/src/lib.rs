@@ -1677,6 +1677,7 @@ pub fn run() {
     
     
     tauri::Builder::default()
+        .device_event_filter(tauri::DeviceEventFilter::Always)
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_macos_permissions::init())
         .manage(state)
