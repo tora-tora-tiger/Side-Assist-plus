@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { permissionConfig } from './config/permissions';
 import { usePermissions } from './hooks/usePermissions';
 import { useServer } from './hooks/useServer';
@@ -26,37 +26,40 @@ function App() {
   const [activeTab, setActiveTab] = useState('connection');
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
-  const addLog = (message: string, type: LogEntry['type'] = 'info') => {
-    const logId = `${message}-${type}`; // メッセージとタイプでIDを生成
-    const currentTime = new Date().toLocaleTimeString();
+  const addLog = useCallback(
+    (message: string, type: LogEntry['type'] = 'info') => {
+      const logId = `${message}-${type}`; // メッセージとタイプでIDを生成
+      const currentTime = new Date().toLocaleTimeString();
 
-    setLogs(prev => {
-      // 同じメッセージとタイプのログが既に存在するかチェック
-      const existingLogIndex = prev.findIndex(log => log.id === logId);
+      setLogs(prev => {
+        // 同じメッセージとタイプのログが既に存在するかチェック
+        const existingLogIndex = prev.findIndex(log => log.id === logId);
 
-      if (existingLogIndex !== -1) {
-        // 既存のログが見つかった場合、カウントを増やして時刻を更新
-        const updatedLogs = [...prev];
-        updatedLogs[existingLogIndex] = {
-          ...updatedLogs[existingLogIndex],
-          count: updatedLogs[existingLogIndex].count + 1,
-          time: currentTime,
-        };
-        return updatedLogs;
-      } else {
-        // 新しいログの場合、追加
-        const newLog: LogEntry = {
-          time: currentTime,
-          message,
-          type,
-          count: 1,
-          id: logId,
-        };
-        // 最新の5つのログを保持
-        return [...prev.slice(-4), newLog];
-      }
-    });
-  };
+        if (existingLogIndex !== -1) {
+          // 既存のログが見つかった場合、カウントを増やして時刻を更新
+          const updatedLogs = [...prev];
+          updatedLogs[existingLogIndex] = {
+            ...updatedLogs[existingLogIndex],
+            count: updatedLogs[existingLogIndex].count + 1,
+            time: currentTime,
+          };
+          return updatedLogs;
+        } else {
+          // 新しいログの場合、追加
+          const newLog: LogEntry = {
+            time: currentTime,
+            message,
+            type,
+            count: 1,
+            id: logId,
+          };
+          // 最新の5つのログを保持
+          return [...prev.slice(-4), newLog];
+        }
+      });
+    },
+    []
+  );
 
   // 権限管理フック
   const {
